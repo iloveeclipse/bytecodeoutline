@@ -268,7 +268,8 @@ public class DecompiledMethod {
             for (int i = 0; i < f.getStackSize(); ++i) {
                 appendValue(buf, f.getStack(i));
             }
-        } catch (AnalyzerException e) {
+        } catch (IndexOutOfBoundsException e) {
+            // TODO should we keep this?
             BytecodeOutlinePlugin.logError(e);
         }
     }
@@ -329,7 +330,8 @@ public class DecompiledMethod {
                     stackBuf.append('\n');
                 }
                 return new String[] {localsBuf.toString(), stackBuf.toString()};
-            } catch (AnalyzerException e) {
+            } catch (IndexOutOfBoundsException e) {
+                // TODO should we keep this?
                 BytecodeOutlinePlugin.logError(e);
             }
         }
@@ -376,7 +378,8 @@ public class DecompiledMethod {
             return new String[][][] {
                 (String[][]) locals.toArray( new String[ 3][]),
                 (String[][]) stack.toArray( new String[ 2][])};
-        } catch (AnalyzerException e) {
+        } catch (IndexOutOfBoundsException e) {
+            // TODO should we keep this?
             BytecodeOutlinePlugin.logError(e);
         }
       }
