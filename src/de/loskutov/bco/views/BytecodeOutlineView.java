@@ -830,6 +830,9 @@ public class BytecodeOutlineView extends ViewPart {
                     if (frame != null) {
                         lvtControl.setText(frame[0]);
                         stackControl.setText(frame[1]);
+                    } else {
+                        lvtControl.setText("");
+                        stackControl.setText("");
                     }
                     tableControl.setSelection(decompiledLine);
                 } else {
@@ -843,6 +846,9 @@ public class BytecodeOutlineView extends ViewPart {
             } catch (IllegalArgumentException e) {
                 BytecodeOutlinePlugin.error(null, e);
             }
+        } else if (verifyCode) {
+            lvtControl.setText("");
+            stackControl.setText("");
         }
     }
 
@@ -878,6 +884,9 @@ public class BytecodeOutlineView extends ViewPart {
                 if (frame != null) {
                     lvtControl.setText(frame[0]);
                     stackControl.setText(frame[1]);
+                } else {
+                    lvtControl.setText("");
+                    stackControl.setText("");
                 }
             }
         } catch (Exception e) {
