@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
 
-   <description url="http://asm.objectweb.org/eclipse.html">
+   <description url="http://asm.objectweb.org/eclipse/bco/index.html">
       Bytecode Outline Plugin Update Site
    </description>
    
@@ -10,5 +10,7 @@
    </feature>
 
    <category-def name="bytecode-outline" label="Bytecode Outline"/>
+
+   <archive path="plugins/de.loskutov.ByteCodeOutline_2.0.0.jar" url="http://download.forge.objectweb.org/asm/de.loskutov.ByteCodeOutline_2.0.0.jar"/>
 
 </site>
