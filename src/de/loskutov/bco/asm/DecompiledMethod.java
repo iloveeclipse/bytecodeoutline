@@ -2,6 +2,7 @@ package de.loskutov.bco.asm;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -141,8 +142,8 @@ public class DecompiledMethod {
     }
 
     /**
-     * @param i 
-     * @param input 
+     * @param i
+     * @param input
      * @return
      */
     private Index getNextIndex(List input, int startOffset) {
@@ -288,9 +289,9 @@ public class DecompiledMethod {
     }
 
     /**
-     * 
+     *
      * @param decompiledLine
-     * @return array with two elements, first is the local variables table, 
+     * @return array with two elements, first is the local variables table,
      * second is the operands stack content. "null" value could be returned too.
      */
     public String[] getFrame(final int decompiledLine, final boolean useQualifiedNames) {
@@ -305,17 +306,27 @@ public class DecompiledMethod {
             }
 
             try {
-                StringBuffer localsBuf = new StringBuffer();                
+                StringBuffer localsBuf = new StringBuffer();
+
                 for (int i = 0; i < f.getLocals(); ++i) {
                     String s = f.getLocal(i).toString();
-                    appendTypeName(useQualifiedNames, localsBuf, s);
+                    appendTypeName(i, useQualifiedNames, localsBuf, s);
+
+                    for (Iterator it = localVariables.iterator(); it.hasNext();) {
+                        LocalVariableNode lvnode = (LocalVariableNode) it.next();
+                        int n = lvnode.index;
+                        if( n==i) {
+                          localsBuf.append( " : ").append( lvnode.name);
+                        }
+                    }
+
                     localsBuf.append('\n');
                 }
                 StringBuffer stackBuf = new StringBuffer();
                 for (int i = 0; i < f.getStackSize(); ++i) {
                     String s = f.getStack(i).toString();
-                    appendTypeName(useQualifiedNames, stackBuf, s);
-                    stackBuf.append('\n');                    
+                    appendTypeName(i, useQualifiedNames, stackBuf, s);
+                    stackBuf.append('\n');
                 }
                 return new String[] {localsBuf.toString(), stackBuf.toString()};
             } catch (AnalyzerException e) {
@@ -327,26 +338,27 @@ public class DecompiledMethod {
 
     /**
      * Appends full type name or only simply name, depends on boolean flag.
-     * 
-     * @param useQualifiedNames if false, then e.g. "Object" will be appended to 
+     *
+     * @param useQualifiedNames if false, then e.g. "Object" will be appended to
      * buffer instead of "Ljava/lang/Object;" etc
      * @param buf buffer to append
      * @param s string with bytecode type name, like "Ljava/lang/Object;"
      */
-    private void appendTypeName(final boolean useQualifiedNames, StringBuffer buf, String s) {
+    private void appendTypeName(int n, final boolean useQualifiedNames, StringBuffer buf, String s) {
+        buf.append(n).append( " ");
         if(!useQualifiedNames) {
             int idx = s.lastIndexOf('/');
             if(idx > 0){
-                // from "Ljava/lang/Object;" to "Object" 
+                // from "Ljava/lang/Object;" to "Object"
                 buf.append(s.substring(idx + 1, s.length() - 1));
                 return;
-            }                     
+            }
         }
         if("Lnull;".equals(s)){
             buf.append("null");
         } else {
             buf.append(s);
-        }            
+        }
     }
 
     public int getDecompiledLine(final int sourceLine) {
