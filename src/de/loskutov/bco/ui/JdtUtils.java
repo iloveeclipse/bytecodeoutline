@@ -42,6 +42,7 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IParent;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.core.BinaryMember;
@@ -85,16 +86,60 @@ public class JdtUtils {
         sb.append('(');
         IType declaringType = iMethod.getDeclaringType();
         String[] parameterTypes = iMethod.getParameterTypes();
+
+        // doSomething(Lgenerics/DummyForAsmGenerics;)Lgenerics/DummyForAsmGenerics;
         for (int i = 0; i < parameterTypes.length; i++) {
-            sb.append(getResolvedType(parameterTypes[i], declaringType));
+            String resolvedType = getResolvedType(parameterTypes[i], declaringType);
+            if(resolvedType != null && resolvedType.length() > 0){
+                sb.append(resolvedType);
+            } else {
+                // this is a generic type
+                appendGenericType(sb, iMethod, parameterTypes[i]);
+            }
         }
         sb.append(')');
 
         // continue here with adding resolved return type
         String returnType = iMethod.getReturnType();
-        sb.append(getResolvedType(returnType, declaringType));
+        String resolvedType = getResolvedType(returnType, declaringType);
+        if(resolvedType != null && resolvedType.length() > 0){
+            sb.append(getResolvedType(returnType, declaringType));
+        } else {
+            // this is a generic type
+            appendGenericType(sb, iMethod, returnType);
+        }
 
         return sb.toString();
+    }
+
+    private static void appendGenericType(StringBuffer sb, IMethod iMethod,
+        String unresolvedType) throws JavaModelException{
+        IType declaringType = iMethod.getDeclaringType();
+
+        // unresolvedType is here like "QA;" => we remove "Q" and ";"
+        if(unresolvedType.length() < 3){
+            // ???? something wrong here ....
+            sb.append(unresolvedType);
+            return;
+        }
+        unresolvedType = unresolvedType.substring(1, unresolvedType.length() - 1);
+
+        ITypeParameter typeParameter = iMethod.getTypeParameter(unresolvedType);
+        if(typeParameter == null || !typeParameter.exists()){
+            typeParameter = declaringType.getTypeParameter(unresolvedType);
+        }
+
+        String[] bounds = typeParameter.getBounds();
+        if(bounds.length == 0){
+            sb.append("Ljava/lang/Object;");
+        } else {
+            for (int i = 0; i < bounds.length; i++) {
+                String simplyName = bounds[i];
+                simplyName =  Signature.C_UNRESOLVED + simplyName + Signature.C_NAME_END;
+                String resolvedType = getResolvedType(simplyName, declaringType);
+                sb.append(resolvedType);
+            }
+        }
     }
 
     /**
@@ -115,14 +160,15 @@ public class JdtUtils {
         } else {
             // we need resolved types
             String resolved = getResolvedTypeName(typeToResolve, declaringType);
-            
-            while (arrayCount > 0) {
-                sb.append(Signature.C_ARRAY);
-                arrayCount--;
+            if(resolved != null) {
+                while (arrayCount > 0) {
+                    sb.append(Signature.C_ARRAY);
+                    arrayCount--;
+                }
+                sb.append(Signature.C_RESOLVED);
+                sb.append(resolved);
+                sb.append(Signature.C_SEMICOLON);
             }
-            sb.append(Signature.C_RESOLVED);
-            sb.append(resolved);
-            sb.append(Signature.C_SEMICOLON);
         }
         return sb.toString();
     }
@@ -813,7 +859,7 @@ public class JdtUtils {
      */
     public static ClassLoader getClassLoader(IJavaElement type) {
         ClassLoader cl;
-    
+
         IJavaProject javaProject = type.getJavaProject();
         IPath projectPath = javaProject.getProject().getLocation();
         IClasspathEntry[] paths = null;
@@ -843,7 +889,7 @@ public class JdtUtils {
             } else {
                 p = cpEntry.getPath();
             }
-    
+
             if (p == null) {
                 continue;
             }
