@@ -1,19 +1,16 @@
-
 package de.loskutov.bco.editors;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IPackageFragment;
@@ -26,17 +23,13 @@ import org.eclipse.jdt.internal.compiler.env.IBinaryType;
 import org.eclipse.jdt.internal.core.BinaryType;
 import org.eclipse.jdt.internal.core.SourceMapper;
 
+import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
 import de.loskutov.bco.asm.DecompilerClassVisitor;
 
-
 /**
- * Yet "better" way to hook into JDT...
- * 
- * using a source mapper enables us to use the outline!
- * 
- * Sorry, still ne better news for debuging.
- * 
+ * Yet "better" way to hook into JDT... using a source mapper enables us to use the
+ * outline! Sorry, still ne better news for debuging.
  * @author Jochen Klein
  */
 public class BytecodeSourceMapper extends SourceMapper {
@@ -51,7 +44,6 @@ public class BytecodeSourceMapper extends SourceMapper {
 
     /*
      * (non-Javadoc) R2.1 fix
-     * 
      * @see org.eclipse.jdt.internal.core.SourceMapper#findSource(org.eclipse.jdt.core.IType)
      */
     public char[] findSource(IType type) {
@@ -68,6 +60,7 @@ public class BytecodeSourceMapper extends SourceMapper {
         try {
             info = (IBinaryType) declType.getElementInfo();
         } catch (JavaModelException e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             return null;
         }
         if (info == null) {
@@ -82,24 +75,29 @@ public class BytecodeSourceMapper extends SourceMapper {
         Collection exceptions = new LinkedList();
         IPackageFragment pkgFrag = type.getPackageFragment();
         IPackageFragmentRoot root = (IPackageFragmentRoot) pkgFrag.getParent();
-        String pkg = type.getPackageFragment().getElementName().replace( '.', '/');
+        String pkg = type.getPackageFragment().getElementName().replace(
+            '.', '/');
         String location = "\tDECOMPILED FROM: ";
         String classFile = new String(info.getFileName());
         int p = classFile.lastIndexOf('/');
         classFile = classFile.substring(p + 1);
 
         StringBuffer source = new StringBuffer();
-        
+
         if (root.isArchive()) {
             String archivePath = getArchivePath(root);
             location += archivePath;
-            decompileFromArchive( source, archivePath, pkg, classFile);
+            decompileFromArchive(source, archivePath, pkg, classFile);
         } else {
             try {
-                location += root.getUnderlyingResource().getLocation().toOSString() + "/" + pkg + "/" + classFile;
-                decompile( source, root.getUnderlyingResource().getLocation().toOSString(), pkg, classFile);
+                location += root.getUnderlyingResource().getLocation()
+                    .toOSString()
+                    + "/" + pkg + "/" + classFile;
+                decompile(source, root.getUnderlyingResource().getLocation()
+                    .toOSString(), pkg, classFile);
             } catch (JavaModelException e) {
                 exceptions.add(e);
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
         }
 
@@ -111,58 +109,41 @@ public class BytecodeSourceMapper extends SourceMapper {
 
         return source.toString().toCharArray();
     }
-    
-    
-    public void decompile(StringBuffer source, String root, String packege, String className) {
-      try {
-          decompile( source, new FileInputStream( root+"/"+packege+"/"+className));
-          
-      } catch (IOException e) {
-          source.append( e.toString());
-          e.printStackTrace();
-      }
-  }
 
-  public void decompileFromArchive(StringBuffer source, String archivePath, String packege, String className) {
-      try {
-        ZipFile zf = new ZipFile( archivePath);
-        // TODO implement better entry resolution (inner classes?)
-        ZipEntry ze = zf.getEntry( packege+"/"+className);
-        decompile(source, zf.getInputStream(ze));
-        
-      } catch( IOException e) {
-        source.append( e.toString());
-        e.printStackTrace();
-      }
-  }
+    public void decompile(StringBuffer source, String root, String packege,
+        String className) {
+        try {
+            decompile(source, new FileInputStream(root + "/" + packege + "/"
+                + className));
 
-  private void decompile( StringBuffer source, InputStream is) throws IOException {
-    boolean raw = true;
-    boolean asmify = false;
-    boolean verify = false;
-    DecompiledClass decompiledClass = DecompilerClassVisitor.getDecompiledClass(
-        is, null, null, raw, asmify, verify, null);
-    source.append( decompiledClass.getText());
-  }
-
-    
-
-    private void logExceptions(Collection exceptions, StringBuffer buffer) {
-        buffer.append("\n\tCAUGHT EXCEPTIONS:\n");
-        if (exceptions == null || exceptions.size() == 0)
-            return; // nothing to do
-        StringWriter stackTraces = new StringWriter();
-        PrintWriter stackTracesP = new PrintWriter(stackTraces);
-
-        Iterator i = exceptions.iterator();
-        while (i.hasNext()) {
-            ((Exception) i.next()).printStackTrace(stackTracesP);
-            stackTracesP.println("");
+        } catch (IOException e) {
+            source.append(e.toString());
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
+    }
 
-        stackTracesP.flush();
-        stackTracesP.close();
-        buffer.append(stackTraces.toString());
+    public void decompileFromArchive(StringBuffer source, String archivePath,
+        String packege, String className) {
+        try {
+            ZipFile zf = new ZipFile(archivePath);
+            // TODO implement better entry resolution (inner classes?)
+            ZipEntry ze = zf.getEntry(packege + "/" + className);
+            decompile(source, zf.getInputStream(ze));
+
+        } catch (IOException e) {
+            source.append(e.toString());
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+        }
+    }
+
+    private void decompile(StringBuffer source, InputStream is)
+        throws IOException {
+        boolean raw = true;
+        boolean asmify = false;
+        boolean verify = false;
+        DecompiledClass decompiledClass = DecompilerClassVisitor
+            .getDecompiledClass(is, null, null, raw, asmify, verify, null);
+        source.append(decompiledClass.getText());
     }
 
     private String getArchivePath(IPackageFragmentRoot root) {
@@ -170,14 +151,16 @@ public class BytecodeSourceMapper extends SourceMapper {
         IResource resource;
 
         try {
-            if ((resource = root.getUnderlyingResource()) != null)
+            if ((resource = root.getUnderlyingResource()) != null) {
                 // jar in workspace
                 archivePath = resource.getLocation().toOSString();
-            else
+            } else {
                 // external jar
                 archivePath = root.getPath().toOSString();
+            }
         } catch (JavaModelException e) {
-            throw new RuntimeException("Unexpected Java model exception: " + e.toString());
+            throw new RuntimeException("Unexpected Java model exception: "
+                + e.toString());
         }
         return archivePath;
     }
@@ -187,7 +170,7 @@ public class BytecodeSourceMapper extends SourceMapper {
      * <code>elt</elt>'s children (including <code>elt</code> itself)
      * which has a source range that encloses <code>position</code>
      * according to <code>mapper</code>.
-     * 
+     *
      * Code mostly taken from 'org.eclipse.jdt.internal.core.ClassFile'
      */
     protected IJavaElement findElement(IJavaElement elt, int position) {
@@ -205,7 +188,8 @@ public class BytecodeSourceMapper extends SourceMapper {
                         return match;
                     }
                 }
-            } catch (JavaModelException npe) {
+            } catch (JavaModelException e) {
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
         }
         return elt;
@@ -215,10 +199,10 @@ public class BytecodeSourceMapper extends SourceMapper {
      * @see org.eclipse.jdt.internal.core.SourceMapper#mapSource(IType, char[])
      */
     public void mapSource(IType type, char[] contents, boolean force) {
-        if (force)
+        if (force) {
             fSourceRanges.remove(type);
+        }
         super.mapSource(type, contents);
     }
 
 }
-

@@ -102,7 +102,7 @@ public class CommentedClassVisitor extends TraceClassVisitor {
      * @param t
      * @return simply class name without any package/outer class information
      */
-    private static String getSimpleName(Type t) {
+    public static String getSimpleName(Type t) {
         String name = t.getClassName();
         return eatPackageNames(name, '.');
     }

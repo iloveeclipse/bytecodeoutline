@@ -67,8 +67,9 @@ public class BytecodeBufferManager extends BufferManager {
                                 e);
                             BytecodeOutlinePlugin.getDefault().getLog().log(err);
                         }
-                        if (realSource == null)
+                        if (realSource == null) {
                             jManager.addBuffer(buffer);
+                        }
                     }
                 }
             }

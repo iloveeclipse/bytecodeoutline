@@ -1,7 +1,8 @@
-/* $Id: BytecodeClassFileEditor.java,v 1.1 2005-01-09 10:08:28 ekuleshov Exp $ */
+/* $Id: BytecodeClassFileEditor.java,v 1.2 2005-02-07 18:59:14 andrei Exp $ */
 
 package de.loskutov.bco.editors;
 
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jdt.core.IBuffer;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IJavaElement;
@@ -20,7 +21,7 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
 
 /**
  * A "better" way to hook into JDT...
- * 
+ *
  * @author Eugene Kuleshov, V. Grishchenko, Jochen Klein
  */
 public class BytecodeClassFileEditor extends ClassFileEditor {
@@ -56,7 +57,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
 
     /**
      * Sets edditor input only if buffer was actually opened.
-     * 
+     *
      * @param force
      *            if <code>true</code> initialize no matter what
      */
@@ -66,7 +67,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
             try {
                 doSetInput(input);
             } catch (Exception e) {
-                BytecodeOutlinePlugin.logError(e);
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
         }
     }
@@ -89,27 +90,27 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
                 // boolean always = prefs.getBoolean(JadclipsePlugin.IGNORE_EXISTING);
                 boolean reuseBuf = false;
                 boolean always = false;
-                
+
                 String origSrc = cf.getSource();
-                
+
                 // have to check our mark since all line comments are stripped
                 // in debug align mode
-                if (origSrc == null 
+                if (origSrc == null
                     || always && !origSrc.startsWith(MARK)
                     || (origSrc.startsWith(MARK) && (!reuseBuf || force))) {
                     if (sourceMapper == null)
                         sourceMapper = new BytecodeSourceMapper();
                     char[] src = sourceMapper.findSource(cf.getType());
-                    
+
                     if (src == null) {
                         src = new char[]{'\n', '/', '/', 'E', 'r', 'r', 'o', 'r', '!'};
                     }
-                    
+
                     // char[] markedSrc = new char[MARK_ARRAY.length + src.length];
                     // // next time we know this is decompiled source
                     // System.arraycopy(MARK_ARRAY, 0, markedSrc, 0, MARK_ARRAY.length);
                     // System.arraycopy(src, 0, markedSrc, MARK_ARRAY.length, src.length);
-                    
+
                     IBuffer buffer = getBufferManager().createBuffer(cf);
                     buffer.setContents(src);
                     getBufferManager().addBuffer(buffer);
@@ -119,7 +120,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
                 }
                 return opened;
             } catch (Exception e) {
-                BytecodeOutlinePlugin.logError(e);
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
         }
         return false;
@@ -137,7 +138,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
                 IClassFileEditorInput input = (IClassFileEditorInput) getEditorInput();
                 result = sourceMapper.findElement(input.getClassFile().getType(), offset);
             } catch (JavaModelException x) {
-                BytecodeOutlinePlugin.logError(x);
+                BytecodeOutlinePlugin.log(x, IStatus.ERROR);
             }
         }
         return result;
@@ -159,16 +160,18 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
             try {
                 ISourceRange range = null;
 
-                if ((reference instanceof IJavaElement) && containsDecompiled())
+                if ((reference instanceof IJavaElement) && containsDecompiled()) {
                     range = sourceMapper.getSourceRange((IJavaElement) reference);
-                else
+                } else {
                     range = reference.getSourceRange();
+                }
 
                 int offset = range.getOffset();
                 int length = range.getLength();
 
-                if (offset > -1 && length > 0)
+                if (offset > -1 && length > 0) {
                     setHighlightRange(offset, length, moveCursor);
+                }
 
                 if (moveCursor && (reference instanceof IMember)) {
                     IMember member = (IMember) reference;
@@ -192,8 +195,9 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
             }
         }
 
-        if (moveCursor)
+        if (moveCursor) {
             resetHighlightRange();
+        }
     }
 }
 

@@ -28,6 +28,7 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -619,7 +620,10 @@ public class JdtUtils {
             try {
                 is = new FileInputStream(classPath);
             } catch (FileNotFoundException e) {
-                BytecodeOutlinePlugin.logError(e);
+                // if autobuild is disabled, we get tons of this errors.
+                // but I think we cannot ignore them, therefore WARNING and not
+                // ERROR status
+                BytecodeOutlinePlugin.log(e, IStatus.WARNING);
             }
         }
         return is;
@@ -646,7 +650,7 @@ public class JdtUtils {
                 underlyingResource = classFile.getResource();
             }
         } catch (JavaModelException e) {
-            BytecodeOutlinePlugin.logError(e);
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             return null;
         }
         IPath rawLocation = underlyingResource.getRawLocation();
@@ -658,7 +662,7 @@ public class JdtUtils {
         try {
             return new FileInputStream(rawLocation.toOSString());
         } catch (FileNotFoundException e) {
-            BytecodeOutlinePlugin.logError(e);
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
         return null;
     }
@@ -692,7 +696,7 @@ public class JdtUtils {
         try {
             jar = new JarFile(path.toOSString());
         } catch (IOException e) {
-            BytecodeOutlinePlugin.logError(e);
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             return null;
         }
         String fullClassName = getFullBytecodeName(classFile);
@@ -704,7 +708,7 @@ public class JdtUtils {
             try {
                 return jar.getInputStream(jarEntry);
             } catch (IOException e) {
-                BytecodeOutlinePlugin.logError(e);
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
         }
         return null;
@@ -869,7 +873,7 @@ public class JdtUtils {
             defaultOutputLocation = javaProject.getOutputLocation();
         } catch (JavaModelException e) {
             // don't show message to user
-            BytecodeOutlinePlugin.logError(e);
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
         if (paths == null) {
             return JdtUtils.class.getClassLoader();
@@ -904,7 +908,7 @@ public class JdtUtils {
                 urls.add(p.toFile().toURL());
             } catch (MalformedURLException e) {
                 // don't show message to user
-                BytecodeOutlinePlugin.logError(e);
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
         }
         if (urls.isEmpty()) {

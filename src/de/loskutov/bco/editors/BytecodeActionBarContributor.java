@@ -20,7 +20,7 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
  * @author V. Grishchenko, Eugene Kuleshov
  */
 public class BytecodeActionBarContributor extends ClassFileEditorActionContributor {
-    private BytecodeClassFileEditor editor;
+    BytecodeClassFileEditor editor;
     private ShowBytecodeAction dAction;
 
 
@@ -50,8 +50,9 @@ public class BytecodeActionBarContributor extends ClassFileEditorActionContribut
         if (targetEditor instanceof BytecodeClassFileEditor) {
             editor = (BytecodeClassFileEditor) targetEditor;
             editor.doSetInput(false);
-        } else
+        } else {
             editor = null;
+        }
         super.setActiveEditor(targetEditor);
     }
 
@@ -66,8 +67,9 @@ public class BytecodeActionBarContributor extends ClassFileEditorActionContribut
       }
 
       public void run() {
-          if (editor != null)
-              editor.doSetInput(true);
+          if (editor != null) {
+            editor.doSetInput(true);
+        }
       }
   }
 

@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 import org.eclipse.core.filebuffers.FileBuffers;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
@@ -736,7 +737,7 @@ public class BytecodeOutlineView extends ViewPart {
 
     protected void handleSelectionChanged(IWorkbenchPart part,
         ISelection selection) {
-        if (!isLinkedWithEditor() || !isActive()
+        if (!isLinkedWithEditor() || !isActive() || !isVisible
             || !(part instanceof IEditorPart)) {
             return;
         }
@@ -983,7 +984,7 @@ public class BytecodeOutlineView extends ViewPart {
               updateVerifierControl( decompiledLine);
             }
         } catch (Exception e) {
-            BytecodeOutlinePlugin.logError(e);
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
     }
 
@@ -1079,7 +1080,7 @@ public class BytecodeOutlineView extends ViewPart {
                     }
                 } catch (JavaModelException e) {
                     // this is compilation problem - don't show the message
-                    BytecodeOutlinePlugin.logError(e);
+                    BytecodeOutlinePlugin.log(e, IStatus.WARNING);
                 }
             } else if (childEl.getElementType() == IJavaElement.METHOD) {
                 IMethod iMethod = (IMethod) childEl;
@@ -1087,7 +1088,7 @@ public class BytecodeOutlineView extends ViewPart {
                     methodName = JdtUtils.createMethodSignature(iMethod);
                 } catch (JavaModelException e) {
                     // this is compilation problem - don't show the message
-                    BytecodeOutlinePlugin.logError(e);
+                    BytecodeOutlinePlugin.log(e, IStatus.WARNING);
                 }
             }
         }
@@ -1105,14 +1106,14 @@ public class BytecodeOutlineView extends ViewPart {
                 }
             } catch (JavaModelException e1) {
                 // this is compilation problem - don't show the message
-                BytecodeOutlinePlugin.logError(e);
-                BytecodeOutlinePlugin.logError(e1);
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+                BytecodeOutlinePlugin.log(e1, IStatus.WARNING);
             }
         } finally {
             try {
                 is.close();
             } catch (IOException e) {
-                BytecodeOutlinePlugin.logError(e);
+                BytecodeOutlinePlugin.log(e, IStatus.WARNING);
             }
         }
         return decompiledClass;

@@ -27,7 +27,7 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
     private ResourceBundle resourceBundle;
     /** asm logo */
     public static final String IMG_ASM = "icons/asm.gif"; //$NON-NLS-1$
-    
+
     /**
      * The constructor.
      */
@@ -84,7 +84,7 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
             return key;
         }
     }
-    
+
     /**
      * Returns the plugin's resource bundle,
      */
@@ -121,9 +121,10 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
     }
 
     /**
+     * @param statusID one of IStatus. constants like IStatus.ERROR etc
      * @param error
      */
-    public static void logError(Throwable error) {
+    public static void log(Throwable error, int statusID) {
         String message = error.getMessage();
         if(message == null){
             message = error.toString();
@@ -131,9 +132,9 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
         getDefault().getLog()
             .log(
                 new Status(
-                    IStatus.ERROR,
+                    statusID,
                     "BytecodeOutline", 0, message, error)); //$NON-NLS-1$
     }
-   
-    
+
+
 }

@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.core.runtime.IStatus;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -96,7 +97,7 @@ public class DecompiledMethod {
                     .indexOf(':')));
                 error = error.substring(error.indexOf(':') + 2);
             } else {
-                BytecodeOutlinePlugin.logError(e);
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
                 error = null;
             }
         }
@@ -270,7 +271,7 @@ public class DecompiledMethod {
             }
         } catch (IndexOutOfBoundsException e) {
             // TODO should we keep this?
-            BytecodeOutlinePlugin.logError(e);
+            BytecodeOutlinePlugin.log(e, IStatus.WARNING);
         }
     }
 
@@ -332,7 +333,7 @@ public class DecompiledMethod {
                 return new String[] {localsBuf.toString(), stackBuf.toString()};
             } catch (IndexOutOfBoundsException e) {
                 // TODO should we keep this?
-                BytecodeOutlinePlugin.logError(e);
+                BytecodeOutlinePlugin.log(e, IStatus.WARNING);
             }
         }
         return null;
@@ -380,7 +381,7 @@ public class DecompiledMethod {
                 (String[][]) stack.toArray( new String[ 2][])};
         } catch (IndexOutOfBoundsException e) {
             // TODO should we keep this?
-            BytecodeOutlinePlugin.logError(e);
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
       }
       return null;
@@ -412,15 +413,21 @@ public class DecompiledMethod {
         }
     }
 
-    private String getTypeName( final boolean useQualifiedNames, String s) {
-      if(!useQualifiedNames) {
-          int idx = s.lastIndexOf('/');
-          if(idx > 0){
-              // from "Ljava/lang/Object;" to "Object"
-              return s.substring(idx + 1, s.length() - 1);
-          }
-      }
-      return "Lnull;".equals(s) ? "null" : s;
+    private String getTypeName(final boolean useQualifiedNames, String s) {
+        if (!useQualifiedNames) {
+            int idx = s.lastIndexOf('/');
+            if (idx > 0) {
+                // from "Ljava/lang/Object;" to "Object"
+                return s.substring(idx + 1, s.length() - 1);
+            }
+            // this is the case on LVT view - ignore it
+            if("." == s){
+                return s;
+            }
+            // resolve primitive types
+            return CommentedClassVisitor.getSimpleName(Type.getType(s));
+        }
+        return "Lnull;".equals(s) ? "null" : s;
     }
 
     public int getDecompiledLine(final int sourceLine) {
