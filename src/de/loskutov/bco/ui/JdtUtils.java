@@ -33,12 +33,15 @@ import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IParent;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.internal.core.BinaryMember;
 import org.eclipse.jdt.internal.core.JavaElement;
 import org.eclipse.jdt.internal.core.PackageFragmentRoot;
 import org.eclipse.jdt.internal.core.SourceMapper;
@@ -58,6 +61,129 @@ public class JdtUtils {
      */
     private JdtUtils() {
         // don't call
+    }
+
+    public static String createMethodSignature(IMethod iMethod)
+        throws JavaModelException {
+        StringBuffer sb = new StringBuffer();
+
+        // Eclipse put class name as constructor name - we change it!
+        if (iMethod.isConstructor()) {
+            sb.append("<init>"); //$NON-NLS-1$
+        } else {
+            sb.append(iMethod.getElementName());
+        }
+
+        if (iMethod instanceof BinaryMember) {
+            // binary info should be full qualified
+            return sb.append(iMethod.getSignature()).toString();
+        }
+
+        sb.append('(');
+
+        IType declaringType = iMethod.getDeclaringType();
+        String[] parameterTypes = iMethod.getParameterTypes();
+        for (int i = 0; i < parameterTypes.length; i++) {
+            sb.append(getResolvedType(parameterTypes[i], declaringType));
+        }
+        sb.append(')');
+        // continue here with adding resolved return type
+        String returnType = iMethod.getReturnType();
+        sb.append(getResolvedType(returnType, declaringType));
+
+        return sb.toString();
+    }
+
+    /**
+     * @param typeToResolve
+     * @param declaringType
+     * @return full qualified "bytecode formatted" type
+     * @throws JavaModelException
+     */
+    private static String getResolvedType(String typeToResolve,
+        IType declaringType) throws JavaModelException {
+        StringBuffer sb = new StringBuffer();
+        int arrayCount = Signature.getArrayCount(typeToResolve);
+        // test which letter is following - Q or L are for reference types
+        boolean isPrimitive = isPrimitiveType(typeToResolve.charAt(arrayCount));
+        if (isPrimitive) {
+            // simply add whole string (probably with array chars like [[I etc.)
+            sb.append(typeToResolve);
+        } else {
+            // we need resolved types
+            String resolved = getResolvedTypeName(typeToResolve, declaringType);
+
+            while (arrayCount > 0) {
+                sb.append(Signature.C_ARRAY);
+                arrayCount--;
+            }
+            sb.append(Signature.C_RESOLVED);
+            sb.append(resolved);
+            sb.append(Signature.C_SEMICOLON);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Copied and modified from JavaModelUtil. Resolves a type name in the context of the
+     * declaring type.
+     * @param refTypeSig the type name in signature notation (for example 'QVector') this
+     * can also be an array type, but dimensions will be ignored.
+     * @param declaringType the context for resolving (type where the reference was made
+     * in)
+     * @return returns the fully qualified <b>bytecode </b> type name or build-in-type
+     * name. if a unresoved type couldn't be resolved null is returned
+     */
+    private static String getResolvedTypeName(String refTypeSig,
+        IType declaringType) throws JavaModelException {
+        int arrayCount = Signature.getArrayCount(refTypeSig);
+        char type = refTypeSig.charAt(arrayCount);
+        if (type == Signature.C_UNRESOLVED) {
+            int semi = refTypeSig
+                .indexOf(Signature.C_SEMICOLON, arrayCount + 1);
+            if (semi == -1) {
+                throw new IllegalArgumentException();
+            }
+            String name = refTypeSig.substring(arrayCount + 1, semi);
+
+            String[][] resolvedNames = declaringType.resolveType(name);
+            if (resolvedNames != null && resolvedNames.length > 0) {
+                char innerPrefix = '$';// JdtUtils.getInnerPrefix(declaringType);
+                return concatenateName(
+                    resolvedNames[0][0], resolvedNames[0][1], innerPrefix);
+            }
+            return null;
+        }
+        return Signature.toString(refTypeSig.substring(arrayCount));
+    }
+
+    /**
+     * Concatenates package and Class name Both strings can be empty or <code>null</code>.
+     */
+    private static String concatenateName(String packageName, String className,
+        char innerPrefix) {
+        StringBuffer buf = new StringBuffer();
+        if (packageName != null && packageName.length() > 0) {
+            packageName = packageName.replace(Signature.C_DOT, '/');
+            buf.append(packageName);
+        }
+        if (className != null && className.length() > 0) {
+            if (buf.length() > 0) {
+                buf.append('/');
+            }
+            className = className.replace(Signature.C_DOT, innerPrefix);
+            buf.append(className);
+        }
+        return buf.toString();
+    }
+
+    /**
+     * Test which letter is following - Q or L are for reference types
+     * @param first
+     * @return true, if character is not a simbol for reference types
+     */
+    private static boolean isPrimitiveType(char first) {
+        return (first != Signature.C_RESOLVED && first != Signature.C_UNRESOLVED);
     }
 
     /**
@@ -86,7 +212,7 @@ public class JdtUtils {
             workingCopy = (ICompilationUnit) input;
         } else if (input instanceof IClassFile) {
             IClassFile iClass = (IClassFile) input;
-            //iClass.gets
+            // iClass.gets
             IJavaElement ref = getElementAt(selection.getOffset(), iClass);
             if (ref != null) {
                 return ref;
@@ -95,20 +221,20 @@ public class JdtUtils {
             return input;
             // if source offset is over given class file (e.g. another class in
             // same source file, then we try to made a new compilation unit)
-//            workingCopy = iClass.getWorkingCopy(
-//                (WorkingCopyOwner) null, (IProgressMonitor) null);
-//            fakedCU = true;
+            // workingCopy = iClass.getWorkingCopy(
+            // (WorkingCopyOwner) null, (IProgressMonitor) null);
+            // fakedCU = true;
         }
-        if(!fakedCU){
-            JavaModelUtil.reconcile(workingCopy);            
+        if (!fakedCU) {
+            JavaModelUtil.reconcile(workingCopy);
         }
         IJavaElement ref = workingCopy.getElementAt(selection.getOffset());
         if (ref == null) {
             return input;
         }
         return ref;
-    }    
-    
+    }
+
     /**
      * Copied from ClassFile - for usage only with external class files
      * @param position
@@ -116,7 +242,7 @@ public class JdtUtils {
      * @return
      * @throws JavaModelException
      */
-    protected static IJavaElement getElementAt(int position, IClassFile iClass) 
+    protected static IJavaElement getElementAt(int position, IClassFile iClass)
         throws JavaModelException {
         SourceMapper mapper = getSourceMapper(iClass);
         if (mapper == null) {
@@ -127,12 +253,12 @@ public class JdtUtils {
 
         IType type = iClass.getType();
         IJavaElement javaElt = findElement(type, position, mapper);
-        if(javaElt == null){
+        if (javaElt == null) {
             javaElt = type;
         }
-        return javaElt; 
-    }    
-    
+        return javaElt;
+    }
+
     private static SourceMapper getSourceMapper(IClassFile iClass) {
         IJavaElement parentElement = iClass.getParent();
         while (parentElement.getElementType() != IJavaElement.PACKAGE_FRAGMENT_ROOT) {
@@ -171,9 +297,8 @@ public class JdtUtils {
             }
         }
         return elt;
-    }    
-    
-    
+    }
+
     /**
      * Cite: jdk1.1.8/docs/guide/innerclasses/spec/innerclasses.doc10.html: For the sake
      * of tools, there are some additional requirements on the naming of an inaccessible
@@ -203,10 +328,9 @@ public class JdtUtils {
 
         if (name.endsWith(".java")) { //$NON-NLS-1$
             name = name.substring(0, name.lastIndexOf(".java")); //$NON-NLS-1$
-        } else
-        if (name.endsWith(".class")) { //$NON-NLS-1$
+        } else if (name.endsWith(".class")) { //$NON-NLS-1$
             name = name.substring(0, name.lastIndexOf(".class")); //$NON-NLS-1$
-        }        
+        }
         return name;
     }
 
@@ -244,8 +368,8 @@ public class JdtUtils {
 
     /**
      * @param javaElement
-     * @return distance to given ancestor, 0 if it is the same, -1 if ancestor
-     * with type IJavaElement.TYPE does not exist
+     * @return distance to given ancestor, 0 if it is the same, -1 if ancestor with type
+     * IJavaElement.TYPE does not exist
      */
     static int getTopAncestorDistance(IJavaElement javaElement,
         IJavaElement topAncestor) {
@@ -300,7 +424,7 @@ public class JdtUtils {
         IPath path = project.getOutputLocation();
 
         IResource resource = javaElement.getUnderlyingResource();
-        if(resource == null){
+        if (resource == null) {
             return dir;
         }
         // resolve multiple output locations here
@@ -310,22 +434,22 @@ public class JdtUtils {
                 IClasspathEntry classpathEntry = entries[i];
                 if (classpathEntry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
                     IPath outputPath = classpathEntry.getOutputLocation();
-                    if (outputPath != null && classpathEntry.getPath().isPrefixOf(
+                    if (outputPath != null
+                        && classpathEntry.getPath().isPrefixOf(
                             resource.getFullPath())) {
-                            path = outputPath;
+                        path = outputPath;
                         break;
                     }
                 }
             }
         }
 
-        if (path == null) {            
+        if (path == null) {
             return dir;
         }
 
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
 
-        
         if (!project.getPath().equals(path)) {
             IFolder outputFolder = workspace.getRoot().getFolder(path);
             if (outputFolder != null) {
@@ -334,20 +458,20 @@ public class JdtUtils {
                 if (rawPath != null) {
                     path = rawPath;
                 }
-            }            
-        } else {            
+            }
+        } else {
             path = project.getProject().getLocation();
-        }            
-        
+        }
+
         // here we should resolve path variables,
         // probably existing at first place of path
         IPathVariableManager pathManager = workspace.getPathVariableManager();
         path = pathManager.resolvePath(path);
-        
+
         if (path == null) {
             return dir;
-        }            
-        
+        }
+
         if (isPackageRoot(project, resource)) {
             dir = path.toOSString();
         } else {
@@ -388,7 +512,7 @@ public class JdtUtils {
     public static String getByteCodePath(IJavaElement javaElement) {
         if (javaElement == null) {
             return "";//$NON-NLS-1$
-        }        
+        }
         String packagePath = ""; //$NON-NLS-1$
         try {
             packagePath = getPackageOutputPath(javaElement);
@@ -405,9 +529,8 @@ public class JdtUtils {
 
     /**
      * @param javaElement
-     * @return new generated input stream for gicen element bytecode class file,
-     * or null if class file cannot be found or this element is not from java
-     * source path
+     * @return new generated input stream for gicen element bytecode class file, or null
+     * if class file cannot be found or this element is not from java source path
      */
     public static InputStream createInputStream(IJavaElement javaElement) {
         IClassFile classFile = (IClassFile) javaElement
@@ -450,8 +573,8 @@ public class JdtUtils {
      * Creates stream from external class file from Eclipse classpath (means, that this
      * class file is read-only)
      * @param classFile
-     * @return new generated input stream from external class file, or null, if
-     * class file for this element cannot be found
+     * @return new generated input stream from external class file, or null, if class file
+     * for this element cannot be found
      */
     private static InputStream createStreamFromClass(IClassFile classFile) {
         IResource underlyingResource = null;
@@ -460,12 +583,12 @@ public class JdtUtils {
             // are not working in a particular case. But it seems to be better
             // to use getResource() with non-java elements (not in model)
             // and getUnderlyingResource() with java elements.
-            if(classFile.exists()){
+            if (classFile.exists()) {
                 underlyingResource = classFile.getUnderlyingResource();
             } else {
                 // this is a class file that is not in java model
                 underlyingResource = classFile.getResource();
-            }                        
+            }
         } catch (JavaModelException e) {
             BytecodeOutlinePlugin.logError(e);
             return null;
@@ -488,9 +611,8 @@ public class JdtUtils {
      * Creates stream from external class file that is stored in jar file
      * @param classFile
      * @param javaElement
-     * @return new generated input stream from external class file that 
-     * is stored in jar file, or null, if class file for this element cannot 
-     * be found
+     * @return new generated input stream from external class file that is stored in jar
+     * file, or null, if class file for this element cannot be found
      */
     private static InputStream createStreamFromJar(IClassFile classFile) {
         IPath path = null;
@@ -537,32 +659,8 @@ public class JdtUtils {
         if (project != null) {
             boolean result = project.isOnClasspath(javaElement);
             return result;
-        } 
+        }
         return false;
-
-        
-        
-//        IPackageFragment ancestor = (IPackageFragment) javaElement
-//            .getAncestor(IJavaElement.PACKAGE_FRAGMENT);
-//        try {
-//            boolean hasJavaSources = ancestor.containsJavaResources();
-//            if (!hasJavaSources) {
-//                return false;
-//            }
-//            Object[] nonJavaResources = ancestor.getNonJavaResources();
-//
-//            for (int i = 0; i < nonJavaResources.length; i++) {
-//                if (javaElement.equals(nonJavaResources[i])) {
-//                    return false;
-//                }
-//            }
-//        } catch (JavaModelException e) {
-//            // java file in folder that is not java source folder -
-//            // then this one could not have generated bytecode!
-//            // BytecodeOutlinePlugin.logError(e);
-//            return false;
-//        }
-//        return true;
     }
 
     /**
@@ -571,17 +669,17 @@ public class JdtUtils {
      */
     public static String getFullBytecodeName(IClassFile classFile) {
         IPackageFragment packageFr = (IPackageFragment) classFile
-            .getAncestor(IJavaElement.PACKAGE_FRAGMENT);        
+            .getAncestor(IJavaElement.PACKAGE_FRAGMENT);
         if (packageFr == null) {
             return null;
         }
         String packageName = packageFr.getElementName();
         // switch to java bytecode naming conventions
         packageName = packageName.replace('.', '/');
-        
+
         String className = classFile.getElementName();
-        //className = className.replace('.', '$');
-        if(packageName != null && packageName.length() > 0){
+        // className = className.replace('.', '$');
+        if (packageName != null && packageName.length() > 0) {
             return packageName + '/' + className;
         }
         return className;
@@ -615,8 +713,8 @@ public class JdtUtils {
     }
 
     /**
-     * @param list all anonymous classes from given element will be stored in this 
-     * list, elements instanceof IJavaElement
+     * @param list all anonymous classes from given element will be stored in this list,
+     * elements instanceof IJavaElement
      * @param javaElement
      */
     private static void collectAllAnonymous(List list, IParent topElement) {
@@ -700,6 +798,7 @@ public class JdtUtils {
     }
 
     static class SourceOffsetComparator implements Comparator {
+
         /**
          * First source occurence win.
          * @param o1 should be IMember
@@ -732,6 +831,7 @@ public class JdtUtils {
     }
 
     static class AnonymClassComparator implements Comparator {
+
         private IType topAncestorType;
         private SourceOffsetComparator sourceComparator;
 

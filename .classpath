@@ -3,9 +3,10 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="externals/asm-1.5.1.jar"/>
-	<classpathentry kind="lib" path="externals/asm-attrs-1.5.1.jar"/>
-	<classpathentry kind="lib" path="externals/asm-tree-1.5.1.jar"/>
-	<classpathentry kind="lib" path="externals/asm-util-1.5.1.jar"/>
+	<classpathentry sourcepath="/asm 2.0/src" kind="lib" path="externals/asm-2.0_alpha.jar"/>
+	<classpathentry sourcepath="/asm 2.0/src" kind="lib" path="externals/asm-analysis-2.0_alpha.jar"/>
+	<classpathentry sourcepath="/asm 2.0/src" kind="lib" path="externals/asm-attrs-2.0_alpha.jar"/>
+	<classpathentry sourcepath="/asm 2.0/src" kind="lib" path="externals/asm-tree-2.0_alpha.jar"/>
+	<classpathentry sourcepath="/asm 2.0/src" kind="lib" path="externals/asm-util-2.0_alpha.jar"/>
 	<classpathentry kind="output" path="output/eclipse"/>
 </classpath>

@@ -47,7 +47,7 @@
       <fileset dir=".">
         <include name="externals/**/*"/>
         <include name="icons/**/*"/>
-        <include name="METAINF/**/*"/>
+        <include name="META-INF/**/*"/>
         <include name="plugin.xml"/>
         <include name="*.txt"/>
       </fileset>

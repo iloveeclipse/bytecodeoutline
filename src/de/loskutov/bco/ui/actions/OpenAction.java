@@ -1,11 +1,10 @@
-/*******************************************************************************
- * Copyright (c) 2004 Andrei Loskutov.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the BSD License
- * which accompanies this distribution, and is available at
- * http://www.opensource.org/licenses/bsd-license.php
- * Contributor:  Andrei Loskutov - initial API and implementation
- *******************************************************************************/
+/*****************************************************************************************
+ * Copyright (c) 2004 Andrei Loskutov. All rights reserved. This program and the
+ * accompanying materials are made available under the terms of the BSD License which
+ * accompanies this distribution, and is available at
+ * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrei Loskutov -
+ * initial API and implementation
+ ****************************************************************************************/
 package de.loskutov.bco.ui.actions;
 
 import org.eclipse.core.resources.IContainer;
@@ -27,8 +26,6 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
  */
 public class OpenAction extends BytecodeAction implements IObjectActionDelegate {
 
-
-
     /**
      * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
      */
@@ -38,7 +35,7 @@ public class OpenAction extends BytecodeAction implements IObjectActionDelegate 
 
         // select one from input dialog
         IJavaElement element2 = selectJavaElement();
-        if(element2 == null){
+        if (element2 == null) {
             return;
         }
         try {
@@ -55,7 +52,6 @@ public class OpenAction extends BytecodeAction implements IObjectActionDelegate 
         OpenClassFileDialog dialog = new OpenClassFileDialog(
             shell, input, IResource.FILE);
 
-
         int resultCode = dialog.open();
         if (resultCode != IDialogConstants.OK_ID) {
             return null;
@@ -66,17 +62,15 @@ public class OpenAction extends BytecodeAction implements IObjectActionDelegate 
             || !(result[0] instanceof IFile)) {
             return null;
         }
-        return JavaCore.create((IFile)result[0]);
+        return JavaCore.create((IFile) result[0]);
     }
 
     /**
-     *
      * @author Andrei
      */
     public class OpenClassFileDialog extends ResourceListSelectionDialog {
 
         /**
-         *
          * @param parentShell
          * @param container
          * @param typesMask
@@ -93,14 +87,13 @@ public class OpenAction extends BytecodeAction implements IObjectActionDelegate 
          * @since 3.0
          */
         protected boolean select(IResource resource) {
-            if(resource == null){
+            if (resource == null) {
                 return false;
             }
             String fileExtension = resource.getFileExtension();
-
-            return super.select(resource) 
-                && (fileExtension != null &&
-            (fileExtension.equals("java") || fileExtension.equals("class"))); //$NON-NLS-1$ //$NON-NLS-2$
+            return super.select(resource)
+                && ("java".equals(fileExtension) || "class"
+                    .equals(fileExtension));
         }
     }
 
