@@ -32,6 +32,8 @@ public class DecompilerClassVisitor extends ClassAdapter {
 
     private List methods;
 
+    private AnnotationVisitor dummyAnnVisitor;
+
     public DecompilerClassVisitor(final ClassVisitor cv, final String field,
         final String method, final boolean verify) {
         super(cv);
@@ -60,22 +62,22 @@ public class DecompilerClassVisitor extends ClassAdapter {
         } else {
             cv = new CommentedClassVisitor(raw);
         }
-        DecompilerClassVisitor dcv;
-        dcv = new DecompilerClassVisitor(cv, field, method, verify);
+        DecompilerClassVisitor dcv = new DecompilerClassVisitor(
+            cv, field, method, verify);
         cr.accept(dcv, false);
         return dcv.getResult(cl);
     }
 
     public DecompiledClass getResult(final ClassLoader cl) {
         List text = new ArrayList();
-        formatText(((AbstractVisitor) cv).getText(), "", text, cl);
+        formatText(((AbstractVisitor) cv).getText(), new StringBuffer(), text, cl);
         while (text.size() > 0 && text.get(0).equals("\n")) {
             text.remove(0);
         }
         return new DecompiledClass(text);
     }
 
-    private void formatText(final List input, String line, final List result,
+    private void formatText(final List input, StringBuffer line, final List result,
         final ClassLoader cl) {
         for (int i = 0; i < input.size(); ++i) {
             Object o = input.get(i);
@@ -89,11 +91,11 @@ public class DecompilerClassVisitor extends ClassAdapter {
                 do {
                     p = s.indexOf('\n');
                     if (p == -1) {
-                        line = line + s;
+                        line.append(s);
                     } else {
-                        result.add(line + s.substring(0, p + 1));
+                        result.add(line.toString() + s.substring(0, p + 1));
                         s = s.substring(p + 1);
-                        line = "";
+                        line.setLength(0);
                     }
                 } while (p != -1);
             }
@@ -128,7 +130,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
         if (methodFilter == null && fieldFilter == null) {
             return super.visitAnnotation(desc, visible);
         }
-        return null;
+        return getDummyAnnotationVisitor();
     }
 
     public void visitAttribute(final Attribute attr) {
@@ -154,7 +156,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
         }
         return super.visitField(access, name1, desc, signature, value);
     }
-    
+
     public MethodVisitor visitMethod(final int access, final String name1,
         final String desc, final String signature, final String[] exceptions) {
         if (fieldFilter != null) {
@@ -185,5 +187,28 @@ public class DecompilerClassVisitor extends ClassAdapter {
         if (methodFilter == null && fieldFilter == null) {
             super.visitEnd();
         }
+    }
+
+    private AnnotationVisitor getDummyAnnotationVisitor(){
+        if (dummyAnnVisitor == null) {
+            dummyAnnVisitor = new AnnotationVisitor() {
+                public void visit(String n, Object value) { 
+                    /* empty */
+                }
+                public void visitEnum(String n, String desc, String value) { 
+                    /* empty */
+                }
+                public AnnotationVisitor visitAnnotation(String n, String desc) {
+                    return this;
+                }
+                public AnnotationVisitor visitArray(String n) {
+                    return this;
+                }
+                public void visitEnd() { 
+                    /* empty*/
+                }
+            };
+        }
+        return dummyAnnVisitor;
     }
 }

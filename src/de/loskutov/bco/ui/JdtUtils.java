@@ -12,6 +12,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -57,7 +60,7 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
 public class JdtUtils {
 
     /**
-     * 
+     *
      */
     private JdtUtils() {
         // don't call
@@ -80,13 +83,13 @@ public class JdtUtils {
         }
 
         sb.append('(');
-
         IType declaringType = iMethod.getDeclaringType();
         String[] parameterTypes = iMethod.getParameterTypes();
         for (int i = 0; i < parameterTypes.length; i++) {
             sb.append(getResolvedType(parameterTypes[i], declaringType));
         }
         sb.append(')');
+
         // continue here with adding resolved return type
         String returnType = iMethod.getReturnType();
         sb.append(getResolvedType(returnType, declaringType));
@@ -112,7 +115,7 @@ public class JdtUtils {
         } else {
             // we need resolved types
             String resolved = getResolvedTypeName(typeToResolve, declaringType);
-
+            
             while (arrayCount > 0) {
                 sb.append(Signature.C_ARRAY);
                 arrayCount--;
@@ -136,21 +139,29 @@ public class JdtUtils {
      */
     private static String getResolvedTypeName(String refTypeSig,
         IType declaringType) throws JavaModelException {
-        int arrayCount = Signature.getArrayCount(refTypeSig);
-        char type = refTypeSig.charAt(arrayCount);
-        if (type == Signature.C_UNRESOLVED) {
-            int semi = refTypeSig
-                .indexOf(Signature.C_SEMICOLON, arrayCount + 1);
-            if (semi == -1) {
-                throw new IllegalArgumentException();
-            }
-            String name = refTypeSig.substring(arrayCount + 1, semi);
 
-            String[][] resolvedNames = declaringType.resolveType(name);
+        /* the whole method is copied from JavaModelUtil.getResolvedTypeName(...).
+         * The problem is, that JavaModelUtil uses '.' to separate package
+         * names, but we need '/' -> see JavaModelUtil.concatenateName() vs
+         * JdtUtils.concatenateName()
+         */
+        int arrayCount = Signature.getArrayCount(refTypeSig);
+        char type= refTypeSig.charAt(arrayCount);
+        if (type == Signature.C_UNRESOLVED) {
+            String name= ""; //$NON-NLS-1$
+            int bracket= refTypeSig.indexOf(Signature.C_GENERIC_START, arrayCount + 1);
+            if (bracket > 0) {
+                name= refTypeSig.substring(arrayCount + 1, bracket);
+            } else {
+                int semi= refTypeSig.indexOf(Signature.C_SEMICOLON, arrayCount + 1);
+                if (semi == -1) {
+                    throw new IllegalArgumentException();
+                }
+                name= refTypeSig.substring(arrayCount + 1, semi);
+            }
+            String[][] resolvedNames= declaringType.resolveType(name);
             if (resolvedNames != null && resolvedNames.length > 0) {
-                char innerPrefix = '$';// JdtUtils.getInnerPrefix(declaringType);
-                return concatenateName(
-                    resolvedNames[0][0], resolvedNames[0][1], innerPrefix);
+                return concatenateName(resolvedNames[0][0], resolvedNames[0][1]);
             }
             return null;
         }
@@ -160,8 +171,7 @@ public class JdtUtils {
     /**
      * Concatenates package and Class name Both strings can be empty or <code>null</code>.
      */
-    private static String concatenateName(String packageName, String className,
-        char innerPrefix) {
+    private static String concatenateName(String packageName, String className) {
         StringBuffer buf = new StringBuffer();
         if (packageName != null && packageName.length() > 0) {
             packageName = packageName.replace(Signature.C_DOT, '/');
@@ -171,7 +181,7 @@ public class JdtUtils {
             if (buf.length() > 0) {
                 buf.append('/');
             }
-            className = className.replace(Signature.C_DOT, innerPrefix);
+            className = className.replace(Signature.C_DOT, '$');
             buf.append(className);
         }
         return buf.toString();
@@ -795,6 +805,68 @@ public class JdtUtils {
             return 5; // regular anonyme classes
         }
         return 6; // from inner from main type
+    }
+
+    /**
+     * @param type
+     * @return
+     */
+    public static ClassLoader getClassLoader(IJavaElement type) {
+        ClassLoader cl;
+    
+        IJavaProject javaProject = type.getJavaProject();
+        IPath projectPath = javaProject.getProject().getLocation();
+        IClasspathEntry[] paths = null;
+        IPath defaultOutputLocation = null;
+        try {
+            paths = javaProject.getResolvedClasspath(true);
+            defaultOutputLocation = javaProject.getOutputLocation();
+        } catch (JavaModelException e) {
+            // don't show message to user
+            BytecodeOutlinePlugin.logError(e);
+        }
+        if (paths == null) {
+            return JdtUtils.class.getClassLoader();
+        }
+        List urls = new ArrayList();
+        for (int i = 0; i < paths.length; ++i) {
+            IClasspathEntry cpEntry = paths[i];
+            IPath p = null;
+            if (cpEntry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+                // filter out source container - there are unused for class search -
+                // add bytecode output location instead
+                p = cpEntry.getOutputLocation();
+                if (p == null) {
+                    // default output used:
+                    p = defaultOutputLocation;
+                }
+            } else {
+                p = cpEntry.getPath();
+            }
+    
+            if (p == null) {
+                continue;
+            }
+            if (!p.toFile().exists()) {
+                // removeFirstSegments: remove project from relative path
+                p = projectPath.append(p.removeFirstSegments(1));
+                if (!p.toFile().exists()) {
+                    continue;
+                }
+            }
+            try {
+                urls.add(p.toFile().toURL());
+            } catch (MalformedURLException e) {
+                // don't show message to user
+                BytecodeOutlinePlugin.logError(e);
+            }
+        }
+        if (urls.isEmpty()) {
+            cl = JdtUtils.class.getClassLoader();
+        } else {
+            cl = new URLClassLoader((URL[]) urls.toArray(new URL[urls.size()]));
+        }
+        return cl;
     }
 
     static class SourceOffsetComparator implements Comparator {

@@ -71,9 +71,16 @@ public class CommentedClassVisitor extends TraceClassVisitor {
                         }
                         buf1.append(getSimpleName(args[i]));
                     }
-                    buf1.append(')');
+                    buf1.append(") : ");
                     buf1.append(getSimpleName(res));
                     break;
+                case METHOD_SIGNATURE :
+                    // TODO implement raw/not raw view of signature - 
+                    // remove package names like here:
+                    // ()Ljava/util/List<Lde/loskutov/xml/impl/DummyForXml;>;
+                    // to ()List<DummyForXml>
+                    // (Ljava/util/Map<Ljava/lang/String;Ljava/lang/String;>;)V
+                    // to (Map<String,String>)void
                 default :
                     buf1.append(desc);
             }
@@ -113,19 +120,60 @@ public class CommentedClassVisitor extends TraceClassVisitor {
     }
 
     class CommentedMethodVisitor extends TraceMethodVisitor {
-
+        
+        private Index getIndex(Label label){
+            Index index;
+            for (int i = 0; i < text.size(); i++) {
+                Object o = text.get(i);
+                if(o  instanceof Index){
+                    index = (Index)o;
+                    if(index.label == label){
+                        return index;
+                    }
+                }
+            }
+            return null;
+        }
+        
+        public void visitMethodInsn (
+            final int opcode,
+            final String owner,
+            final String name,
+            final String desc)
+          {
+            buf.setLength(0);
+            buf.append(tab2).append(OPCODES[opcode]).append(' ');
+            appendDescriptor(INTERNAL_NAME, owner);
+            buf.append(' ').append(name);
+            appendDescriptor(METHOD_DESCRIPTOR, desc);
+            buf.append('\n');
+            text.add(buf.toString());
+          }        
+        
         public void visitVarInsn(final int opcode, final int var) {
             text.add(tab2 + OPCODES[opcode] + " " + var);
             if (!raw) {
-                text.add(new Integer(var));
+                text.add(Integer.valueOf(var));
             }
             text.add("\n");
         }
 
+        public void visitLabel(Label label) {
+            buf.setLength(0);
+            buf.append(ltab);
+            appendLabel(label);
+            Index index = getIndex(label);
+            if(index != null){
+                buf.append(" (").append(index.insn).append(")");
+            }
+            buf.append('\n');
+            text.add(buf.toString());
+        }
+        
         public void visitIincInsn(final int var, final int increment) {
             text.add(tab2 + "IINC " + var);
             if (!raw) {
-                text.add(new Integer(var));
+                text.add(Integer.valueOf(var));
             }
             text.add(" " + increment + "\n");
         }
@@ -159,4 +207,6 @@ public class CommentedClassVisitor extends TraceClassVisitor {
             CommentedClassVisitor.this.appendDescriptor(buf, type, desc, raw);
         }
     }
+    
+
 }

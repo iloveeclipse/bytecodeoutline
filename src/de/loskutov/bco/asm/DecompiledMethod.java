@@ -45,7 +45,7 @@ public class DecompiledMethod {
 
     private int errorInsn;
 
-    public DecompiledMethod(final String owner, final List text,
+    public DecompiledMethod(final String owner, final List inputText,
         final Map lineNumbers, final List localVariables,
         final MethodNode meth, final ClassLoader cl) {
         this.text = new ArrayList();
@@ -54,46 +54,55 @@ public class DecompiledMethod {
         this.decompiledLines = new HashMap();
         this.insns = new HashMap();
         this.insnLines = new HashMap();
-        
+
         this.meth = meth;
 
-        formatText(text, new HashMap(), "", this.text);
+        formatText(inputText, new HashMap(), new StringBuffer(), this.text);
         computeMaps(lineNumbers);
 
         if (meth != null) {
-            Analyzer a = new Analyzer(new SimpleVerifier() {
-
-                protected Class getClass(final Type t) {
-                    try {
-                        if (t.getSort() == Type.ARRAY) {
-                            return cl.loadClass(t.getDescriptor().replace(
-                                '/', '.'));
-                        }
-                        return cl.loadClass(t.getClassName());
-                    } catch (ClassNotFoundException e) {
-                        throw new RuntimeException(e.toString(), e);
-                    }
-                }
-            });
-            try {
-                a.analyze(owner, meth);
-            } catch (AnalyzerException e) {                
-                error = e.getMessage();                
-                if (error.startsWith("Error at instruction ")) {
-                    error = error.substring("Error at instruction ".length());
-                    errorInsn = Integer.parseInt(error.substring(0, error
-                        .indexOf(':')));
-                    error = error.substring(error.indexOf(':') + 2);
-                } else {
-                    BytecodeOutlinePlugin.logError(e);
-                    error = null;
-                }
-            }
-            frames = a.getFrames();
+            analyzeMethod(owner, cl);
         }
     }
 
-    private void formatText(final List input, final Map locals, String line,
+    /**
+     * @param owner
+     * @param meth
+     * @param cl
+     */
+    private void analyzeMethod(final String owner, final ClassLoader cl) {
+        Analyzer a = new Analyzer(new SimpleVerifier() {
+
+            protected Class getClass(final Type t) {
+                try {
+                    if (t.getSort() == Type.ARRAY) {
+                        return cl.loadClass(t.getDescriptor().replace(
+                            '/', '.'));
+                    }
+                    return cl.loadClass(t.getClassName());
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e.toString(), e);
+                }
+            }
+        });
+        try {
+            a.analyze(owner, meth);
+        } catch (AnalyzerException e) {
+            error = e.getMessage();
+            if (error.startsWith("Error at instruction ")) {
+                error = error.substring("Error at instruction ".length());
+                errorInsn = Integer.parseInt(error.substring(0, error
+                    .indexOf(':')));
+                error = error.substring(error.indexOf(':') + 2);
+            } else {
+                BytecodeOutlinePlugin.logError(e);
+                error = null;
+            }
+        }
+        frames = a.getFrames();
+    }
+
+    private void formatText(final List input, final Map locals, StringBuffer line,
         final List result) {
         for (int i = 0; i < input.size(); ++i) {
             Object o = input.get(i);
@@ -104,8 +113,15 @@ public class DecompiledMethod {
                 updateLocals((Index) o, locals);
             } else if (o instanceof Integer) {
                 String localVariableName = (String) locals.get(o);
-                if (localVariableName != null) {
-                    line = line + ": " + localVariableName;
+                if (localVariableName == null) {
+                    Index index = getNextIndex(input, i);
+                    if(index != null){
+                        updateLocals(index, locals);
+                        localVariableName = (String) locals.get(o);
+                    }
+                }
+                if(localVariableName != null) {
+                    line.append(": ").append(localVariableName);
                 }
             } else {
                 String s = o.toString();
@@ -113,24 +129,39 @@ public class DecompiledMethod {
                 do {
                     p = s.indexOf('\n');
                     if (p == -1) {
-                        line = line + s;
+                        line.append(s);
                     } else {
-                        result.add(line + s.substring(0, p + 1));
+                        result.add(line.toString() + s.substring(0, p + 1));
                         s = s.substring(p + 1);
-                        line = "";
+                        line.setLength(0);
                     }
                 } while (p != -1);
             }
         }
     }
 
+    /**
+     * @param i 
+     * @param input 
+     * @return
+     */
+    private Index getNextIndex(List input, int startOffset) {
+        for (int i = startOffset + 1; i < input.size(); i++) {
+            Object object = input.get(i);
+            if(object instanceof Index){
+                return (Index)object;
+            }
+        }
+        return null;
+    }
+
     private void updateLocals(final Index index, final Map locals) {
         for (int i = 0; i < localVariables.size(); ++i) {
-            LocalVariableNode lvn = (LocalVariableNode) localVariables.get(i);
-            if (lvn.start == index.label) {
-                locals.put(new Integer(lvn.index), lvn.name);
-            } else if (lvn.end == index.label) {
-                locals.remove(new Integer(lvn.index));
+            LocalVariableNode lvNode = (LocalVariableNode) localVariables.get(i);
+            if (lvNode.start == index.label) {
+                locals.put(Integer.valueOf(lvNode.index), lvNode.name);
+            } else if (lvNode.end == index.label) {
+                locals.remove(Integer.valueOf(lvNode.index));
             }
         }
     }
@@ -151,9 +182,9 @@ public class DecompiledMethod {
             } else {
                 ++currentDecompiledLine;
             }
-            Integer csl = new Integer(currentSourceLine);
-            Integer cdl = new Integer(currentDecompiledLine);
-            Integer ci = new Integer(currentInsn);
+            Integer csl = Integer.valueOf(currentSourceLine);
+            Integer cdl = Integer.valueOf(currentDecompiledLine);
+            Integer ci = Integer.valueOf(currentInsn);
             sourceLines.put(cdl, csl);
             if (decompiledLines.get(csl) == null) {
                 decompiledLines.put(csl, cdl);
@@ -215,7 +246,7 @@ public class DecompiledMethod {
         if (error == null) {
             return -1;
         }
-        Integer i = (Integer) insnLines.get(new Integer(errorInsn));
+        Integer i = (Integer) insnLines.get(Integer.valueOf(errorInsn));
         return i == null
             ? -1
             : i.intValue();
@@ -244,14 +275,14 @@ public class DecompiledMethod {
     }
 
     public int getSourceLine(final int decompiledLine) {
-        Integer i = (Integer) sourceLines.get(new Integer(decompiledLine));
+        Integer i = (Integer) sourceLines.get(Integer.valueOf(decompiledLine));
         return i == null
             ? -1
             : i.intValue();
     }
 
     public String getFrame(final int decompiledLine) {
-        Integer insn = (Integer) insns.get(new Integer(decompiledLine));
+        Integer insn = (Integer) insns.get(Integer.valueOf(decompiledLine));
         if (error != null && insn != null && insn.intValue() == errorInsn) {
             return error;
         }
@@ -280,7 +311,7 @@ public class DecompiledMethod {
     }
 
     public int getDecompiledLine(final int sourceLine) {
-        Integer i = (Integer) decompiledLines.get(new Integer(sourceLine));
+        Integer i = (Integer) decompiledLines.get(Integer.valueOf(sourceLine));
         return i == null
             ? -1
             : i.intValue();

@@ -9,19 +9,12 @@ package de.loskutov.bco.views;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.filebuffers.FileBuffers;
-import org.eclipse.core.runtime.IPath;
 import org.eclipse.jdt.core.Flags;
-import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
@@ -785,7 +778,7 @@ public class BytecodeOutlineView extends ViewPart {
 
         ClassLoader cl = null;
         if (verifyCode) {
-            cl = getClassLoader(type);
+            cl = JdtUtils.getClassLoader(type);
         }
         
         String fieldName = null;
@@ -844,68 +837,6 @@ public class BytecodeOutlineView extends ViewPart {
             }
         }
         return decompiledClass;
-    }
-
-    /**
-     * @param type
-     * @return
-     */
-    private ClassLoader getClassLoader(IJavaElement type) {
-        ClassLoader cl;
-
-        IJavaProject javaProject = type.getJavaProject();
-        IPath projectPath = javaProject.getProject().getLocation();
-        IClasspathEntry[] paths = null;
-        IPath defaultOutputLocation = null;
-        try {
-            paths = javaProject.getResolvedClasspath(true);
-            defaultOutputLocation = javaProject.getOutputLocation();
-        } catch (JavaModelException e) {
-            // don't show message to user
-            BytecodeOutlinePlugin.logError(e);
-        }
-        if (paths == null) {
-            return getClass().getClassLoader();
-        }
-        List urls = new ArrayList();
-        for (int i = 0; i < paths.length; ++i) {
-            IClasspathEntry cpEntry = paths[i];
-            IPath p = null;
-            if (cpEntry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
-                // filter out source container - there are unused for class search -
-                // add bytecode output location instead
-                p = cpEntry.getOutputLocation();
-                if (p == null) {
-                    // default output used:
-                    p = defaultOutputLocation;
-                }
-            } else {
-                p = cpEntry.getPath();
-            }
-
-            if (p == null) {
-                continue;
-            }
-            if (!p.toFile().exists()) {
-                // removeFirstSegments: remove project from relative path
-                p = projectPath.append(p.removeFirstSegments(1));
-                if (!p.toFile().exists()) {
-                    continue;
-                }
-            }
-            try {
-                urls.add(p.toFile().toURL());
-            } catch (MalformedURLException e) {
-                // don't show message to user
-                BytecodeOutlinePlugin.logError(e);
-            }
-        }
-        if (urls.isEmpty()) {
-            cl = getClass().getClassLoader();
-        } else {
-            cl = new URLClassLoader((URL[]) urls.toArray(new URL[urls.size()]));
-        }
-        return cl;
     }
 
     private void setItems(String[][] items) {
