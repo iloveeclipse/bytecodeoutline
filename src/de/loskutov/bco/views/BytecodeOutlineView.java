@@ -150,7 +150,7 @@ public class BytecodeOutlineView extends ViewPart {
     };
 
     // see org.eclipse.ui.console.TextConsolePage for the reason to do this ;)
-    private ISelectionChangedListener selectionChangedListener = 
+    private ISelectionChangedListener selectionChangedListener =
         new ISelectionChangedListener() {
         public void selectionChanged(SelectionChangedEvent event) {
             updateSelectionDependentActions();
@@ -189,12 +189,12 @@ public class BytecodeOutlineView extends ViewPart {
         if (tableControl != null && !tableControl.isDisposed()) {
             tableControl.setEnabled(on);
         }
-        if(stackControl != null && !stackControl.isDisposed()){            
+        if(stackControl != null && !stackControl.isDisposed()){
             stackControl.setEnabled(on);
         }
         if(lvtControl != null && !lvtControl.isDisposed()){
             lvtControl.setEnabled(on);
-        }           
+        }
         showSelectedOnlyAction.setEnabled(on);
         linkWithEditorAction.setEnabled(on);
         selectionChangedAction.setEnabled(on);
@@ -294,7 +294,7 @@ public class BytecodeOutlineView extends ViewPart {
 
 // init text viewer ans some related actions -----------------------------------
 // TODO make init code clear
-        
+
         textViewer = new TextViewer(stackComposite, SWT.H_SCROLL
             | SWT.V_SCROLL);
         textViewer.setEditable(false);
@@ -334,27 +334,27 @@ public class BytecodeOutlineView extends ViewPart {
         new TableColumn(tableControl, SWT.LEFT);
         new TableColumn(tableControl, SWT.LEFT);
         tableControl.setLinesVisible(false);
-        tableControl.setHeaderVisible(false);        
-        
-        
+        tableControl.setHeaderVisible(false);
+
+
         SashForm stackAndLvt = new SashForm(verifyControl, SWT.HORIZONTAL);
 
         lvtControl = new StyledText(stackAndLvt, SWT.H_SCROLL
                 | SWT.V_SCROLL);
         lvtControl.setEditable(false);
         lvtControl.setToolTipText(BytecodeOutlinePlugin
-                .getResourceString("BytecodeOutlineView.lvt_tooltip"));        
-        
+                .getResourceString("BytecodeOutlineView.lvt_tooltip"));
+
         stackControl = new StyledText(stackAndLvt, SWT.H_SCROLL
             | SWT.V_SCROLL);
         stackControl.setEditable(false);
         stackControl.setToolTipText(BytecodeOutlinePlugin
-                .getResourceString("BytecodeOutlineView.stack_tooltip"));        
-        
+                .getResourceString("BytecodeOutlineView.stack_tooltip"));
+
         stackAndLvt.setWeights(new int[]{50, 50});
-        
-        
-        
+
+
+
         ((SashForm) verifyControl).setWeights(new int[]{75, 25});
 
         ((StackLayout) stackComposite.getLayout()).topControl = textControl;
@@ -729,11 +729,11 @@ public class BytecodeOutlineView extends ViewPart {
             setItems(null);
         }
         if(stackControl != null && !stackControl.isDisposed()){
-            stackControl.setText("");            
+            stackControl.setText("");
         }
         if(lvtControl != null && !lvtControl.isDisposed()){
             lvtControl.setText("");
-        }        
+        }
         currentSelection = null;
         lastDecompiledResult = null;
         lastDecompiledElement = null;
@@ -824,7 +824,7 @@ public class BytecodeOutlineView extends ViewPart {
 
         if (decompiledLine > 0) {
             try {
-                if (verifyCode) {                    
+                if (verifyCode) {
                     String [] frame = lastDecompiledResult
                         .getFrame(decompiledLine, showQualifiedNames);
                     if (frame != null) {
@@ -833,7 +833,7 @@ public class BytecodeOutlineView extends ViewPart {
                     }
                     tableControl.setSelection(decompiledLine);
                 } else {
-                    
+
                     int offsetAtLine = textControl
                         .getOffsetAtLine(decompiledLine);
                     int offsetEnd = textControl.getText().indexOf(
@@ -877,7 +877,7 @@ public class BytecodeOutlineView extends ViewPart {
                 String [] frame = lastDecompiledResult.getFrame(decompiledLine, showQualifiedNames);
                 if (frame != null) {
                     lvtControl.setText(frame[0]);
-                    stackControl.setText(frame[1]);                    
+                    stackControl.setText(frame[1]);
                 }
             }
         } catch (Exception e) {
@@ -1042,6 +1042,9 @@ public class BytecodeOutlineView extends ViewPart {
         if (Widget.class.equals(adapter)) {
             return textViewer.getTextWidget();
         }
+        if (TextViewer.class.equals(adapter)) {
+            return textViewer;
+        }
         return super.getAdapter(adapter);
     }
     /**
@@ -1083,36 +1086,36 @@ public class BytecodeOutlineView extends ViewPart {
         IActionBars actionBars = getViewSite().getActionBars();
         TextViewerAction action = new TextViewerAction(
             textViewer, ITextOperationTarget.SELECT_ALL);
-        
+
         // TODO XXX remove dependency to ConsoleMessages/console bundle
         // use own bundle/keys
         action
             .configureAction(
-                ConsoleMessages.getString("IOConsolePage.0"), 
-                ConsoleMessages.getString("IOConsolePage.1"), 
+                ConsoleMessages.getString("IOConsolePage.0"),
+                ConsoleMessages.getString("IOConsolePage.1"),
                 ConsoleMessages.getString("IOConsolePage.2"));
         setGlobalAction(actionBars, ActionFactory.SELECT_ALL.getId(), action);
-    
+
         action = new TextViewerAction(textViewer, ITextOperationTarget.COPY);
         action
             .configureAction(
-                ConsoleMessages.getString("IOConsolePage.6"), 
-                ConsoleMessages.getString("IOConsolePage.7"), 
+                ConsoleMessages.getString("IOConsolePage.6"),
+                ConsoleMessages.getString("IOConsolePage.7"),
                 ConsoleMessages.getString("IOConsolePage.8"));
         action.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages()
             .getImageDescriptor(ISharedImages.IMG_TOOL_COPY));
         action.setActionDefinitionId(IWorkbenchActionDefinitionIds.COPY);
         setGlobalAction(actionBars, ActionFactory.COPY.getId(), action);
-    
+
         ResourceBundle bundle = ResourceBundle
             .getBundle("org.eclipse.ui.internal.console.ConsoleMessages"); //$NON-NLS-1$
         setGlobalAction(
             actionBars, ActionFactory.FIND.getId(), new FindReplaceAction(
                 bundle, "find_replace_action.", this)); //$NON-NLS-1$
-    
+
         selectionActions.add(ActionFactory.COPY.getId());
         selectionActions.add(ActionFactory.FIND.getId());
-    
+
         actionBars.updateActionBars();
     }
 
