@@ -14,7 +14,6 @@
 
   <target name="init">
     <path id="classpath">
-      <fileset dir="${externals}" includes="**/*.jar"/>
       <fileset dir="${eclipse.home}" includes="plugins/**/*.jar"/>
     </path>
   </target>
