@@ -133,10 +133,6 @@ public class BytecodeOutlineView extends ViewPart {
 
     private void setEnabled(boolean on) {
         this.isEnabled = on;
-        /*
-         * if (textControl != null && !textControl.isDisposed()) {
-         * textControl.setEnabled(on); }
-         */
         if (tableControl != null && !tableControl.isDisposed()) {
             tableControl.setEnabled(on);
         }
@@ -194,11 +190,24 @@ public class BytecodeOutlineView extends ViewPart {
         setBytecodeChanged(true);
     }
 
-    private void updateSelection(ITextSelection sel) {
-        if (sel != null && sel.equals(currentSelection)) {
-            return;
+    private boolean updateSelection(ITextSelection sel) {
+        if (sel != null
+            && (sel.equals(currentSelection)
+                || (currentSelection != null &&
+                 sel.getStartLine() == currentSelection
+                .getStartLine() && sel.getEndLine() == currentSelection
+                .getEndLine()))) {
+            
+            /* getStartLine/getEndLine is probably not sensitive enough - but
+             * in case of java classes/methods which fits in one selection but
+             * not in the other, then I think we can ignore them here - this is
+             * not the 99% of use cases.
+             */
+            return false;
         }
+
         currentSelection = sel;
+        return true;
     }
 
     // ------------------------------------------------------------------------
@@ -245,7 +254,6 @@ public class BytecodeOutlineView extends ViewPart {
         errorColor = new Color(parent.getDisplay(), 255, 0, 0);
 
         textControl.addMouseListener(new MouseAdapter() {
-
             public void mouseDown(MouseEvent e) {
                 if (isLinkedWithEditor()) {
                     selectionChangedAction.run();
@@ -254,7 +262,6 @@ public class BytecodeOutlineView extends ViewPart {
         });
 
         tableControl.addSelectionListener(new SelectionAdapter() {
-
             public void widgetSelected(SelectionEvent e) {
                 if (isLinkedWithEditor()) {
                     selectionChangedAction.run();
@@ -263,7 +270,6 @@ public class BytecodeOutlineView extends ViewPart {
         });
 
         selectionChangedAction = new Action() {
-
             public void run() {
                 Point selection = textControl.getSelection();
                 setSelectionInJavaEditor(selection);
@@ -271,7 +277,6 @@ public class BytecodeOutlineView extends ViewPart {
         };
 
         linkWithEditorAction = new AbstractToggleLinkingAction() {
-
             public void run() {
                 doLinkWithEditor = linkWithEditorAction.isChecked();
                 if (doLinkWithEditor) {
@@ -289,17 +294,18 @@ public class BytecodeOutlineView extends ViewPart {
                 }
             }
         };
-        // TODO get preference from store
+
         linkWithEditorAction.setText(BytecodeOutlinePlugin
             .getResourceString("BytecodeOutlineView.linkWithEditor_text"));
         linkWithEditorAction
             .setToolTipText(BytecodeOutlinePlugin
                 .getResourceString("BytecodeOutlineView.linkWithEditorText_tooltip"));
+        
+        // TODO get preference from store        
         linkWithEditorAction.setChecked(true);
         doLinkWithEditor = true;
 
         showSelectedOnlyAction = new Action() {
-
             public void run() {
                 selectedOnly = showSelectedOnlyAction.isChecked();
                 selectionScopeChanged = true;
@@ -308,17 +314,17 @@ public class BytecodeOutlineView extends ViewPart {
         };
         JavaPluginImages.setToolImageDescriptors(
             showSelectedOnlyAction, "segment_edit.gif");
-        // TODO get preference from store
         showSelectedOnlyAction.setText(BytecodeOutlinePlugin
             .getResourceString("BytecodeOutlineView.showOnlySelection_text"));
         showSelectedOnlyAction
             .setToolTipText(BytecodeOutlinePlugin
                 .getResourceString("BytecodeOutlineView.showOnlySelection_tooltip"));
+        
+        // TODO get preference from store
         showSelectedOnlyAction.setChecked(true);
         selectedOnly = true;
 
         setRawModeAction = new Action() {
-
             public void run() {
                 showQualifiedNames = setRawModeAction.isChecked();
                 selectionScopeChanged = true;
@@ -326,18 +332,17 @@ public class BytecodeOutlineView extends ViewPart {
             }
         };
         setRawModeAction.setImageDescriptor(JavaPluginImages.DESC_OBJS_PACKAGE);
-        // TODO get preference from store
         setRawModeAction.setText(BytecodeOutlinePlugin
             .getResourceString("BytecodeOutlineView.enableRawMode_text"));
         setRawModeAction.setToolTipText(BytecodeOutlinePlugin
             .getResourceString("BytecodeOutlineView.enableRawMode_tooltip"));
+        // TODO get preference from store
         setRawModeAction.setChecked(false);
         showQualifiedNames = false;
 
         toggleASMifierModeAction = new ToggleASMifierModeAction();
         toggleASMifierModeAction
             .addPropertyChangeListener(new IPropertyChangeListener() {
-
                 public void propertyChange(PropertyChangeEvent event) {
                     if (IAction.CHECKED.equals(event.getProperty())) {
                         toggleASMifierMode(Boolean.TRUE == event.getNewValue());
@@ -349,7 +354,6 @@ public class BytecodeOutlineView extends ViewPart {
         isASMifierMode = false;
 
         toggleVerifierAction = new Action() {
-
             public void run() {
                 verifyCode = toggleVerifierAction.isChecked();
                 if (verifyCode) {
@@ -362,10 +366,12 @@ public class BytecodeOutlineView extends ViewPart {
                 refreshView();
             }
         };
-        // TODO get preference from store
+
         toggleVerifierAction.setImageDescriptor(AbstractUIPlugin
             .imageDescriptorFromPlugin(BytecodeOutlinePlugin.getDefault()
                 .getBundle().getSymbolicName(), "icons/verify.gif"));
+        
+        // TODO get preference from store
         toggleVerifierAction.setChecked(false);
         toggleVerifierAction.setText(BytecodeOutlinePlugin
             .getResourceString("BytecodeOutlineView.enableVerifier_text"));
@@ -532,7 +538,9 @@ public class BytecodeOutlineView extends ViewPart {
         if (part != javaEditor) {
             setInput((JavaEditor) part);
         } else {
-            updateSelection((ITextSelection) selection);
+            if( ! updateSelection((ITextSelection) selection)){
+                return;
+            }
         }
         refreshView();
     }
@@ -593,27 +601,9 @@ public class BytecodeOutlineView extends ViewPart {
             deActivateView();
             return;
         }
-        IJavaElement childEl = null;
-        try {
-            childEl = JdtUtils.getElementAtOffset(javaInput, currentSelection);
-            if (childEl != null) {
-                switch (childEl.getElementType()) {
-                    case IJavaElement.METHOD :
-                    case IJavaElement.FIELD :
-                    case IJavaElement.INITIALIZER :
-                        break;
-                    case IJavaElement.LOCAL_VARIABLE :
-                        childEl = childEl.getAncestor(IJavaElement.METHOD);
-                        break;
-                    default :
-                        childEl = null;
-                        break;
-                }
-            }
-        } catch (JavaModelException e) {
-            BytecodeOutlinePlugin.error(null, e);
-        }
-        if (isJavaStructureChanged(childEl) || scopeChanged) {
+        IJavaElement childEl = getCurrentJavaElement();
+        
+        if (scopeChanged || isJavaStructureChanged(childEl)) {
             bytecodeChanged = false;
             lastChildElement = childEl;
             DecompiledClass result = decompileBytecode(childEl);
@@ -638,6 +628,33 @@ public class BytecodeOutlineView extends ViewPart {
             lastDecompiledResult = result;
         }
         setSelectionInBytecodeView();
+    }
+
+    /**
+     * @return IJavaElement which fits in the current selection in java editor
+     */
+    private IJavaElement getCurrentJavaElement() {
+        IJavaElement childEl = null;
+        try {
+            childEl = JdtUtils.getElementAtOffset(javaInput, currentSelection);
+            if (childEl != null) {
+                switch (childEl.getElementType()) {
+                    case IJavaElement.METHOD :
+                    case IJavaElement.FIELD :
+                    case IJavaElement.INITIALIZER :
+                        break;
+                    case IJavaElement.LOCAL_VARIABLE :
+                        childEl = childEl.getAncestor(IJavaElement.METHOD);
+                        break;
+                    default :
+                        childEl = null;
+                        break;
+                }
+            }
+        } catch (JavaModelException e) {
+            BytecodeOutlinePlugin.error(null, e);
+        }
+        return childEl;
     }
 
     private void setSelectionInBytecodeView() {
@@ -691,11 +708,11 @@ public class BytecodeOutlineView extends ViewPart {
 
         try {
             if (sourceLine > 0) {
-                IRegion lineInformation1 = javaEditor.getViewer().getDocument()
+                IRegion lineInfo = javaEditor.getViewer().getDocument()
                     .getLineInformation(sourceLine - 1);
 
-                EclipseUtils.selectInEditor(javaEditor, lineInformation1
-                    .getOffset(), lineInformation1.getLength());
+                EclipseUtils.selectInEditor(javaEditor, lineInfo
+                    .getOffset(), lineInfo.getLength());
             }
             if (verifyCode) {
                 String frame = lastDecompiledResult.getFrame(decompiledLine);
@@ -780,7 +797,7 @@ public class BytecodeOutlineView extends ViewPart {
         if (verifyCode) {
             cl = JdtUtils.getClassLoader(type);
         }
-        
+
         String fieldName = null;
         String methodName = null;
 
@@ -799,7 +816,7 @@ public class BytecodeOutlineView extends ViewPart {
                         methodName = "<init>()";
                     }
                 } catch (JavaModelException e) {
-                    // this is compilation problem - don't show message
+                    // this is compilation problem - don't show the message
                     BytecodeOutlinePlugin.logError(e);
                 }
             } else if (childEl.getElementType() == IJavaElement.METHOD) {
@@ -807,12 +824,12 @@ public class BytecodeOutlineView extends ViewPart {
                 try {
                     methodName = JdtUtils.createMethodSignature(iMethod);
                 } catch (JavaModelException e) {
-                    // this is compilation problem - don't show message
+                    // this is compilation problem - don't show the message
                     BytecodeOutlinePlugin.logError(e);
                 }
             }
         }
-        
+
         DecompiledClass decompiledClass = null;
         try {
             decompiledClass = DecompilerClassVisitor.getDecompiledClass(
@@ -820,12 +837,12 @@ public class BytecodeOutlineView extends ViewPart {
                 verifyCode, cl);
         } catch (IOException e) {
             try {
-                // check if compilation unit is ok - then this is user problem
+                // check if compilation unit is ok - then this is the user problem
                 if (type != null && type.isStructureKnown()) {
                     BytecodeOutlinePlugin.error(null, e);
                 }
             } catch (JavaModelException e1) {
-                // this is compilation problem - don't show message
+                // this is compilation problem - don't show the message
                 BytecodeOutlinePlugin.logError(e);
                 BytecodeOutlinePlugin.logError(e1);
             }
