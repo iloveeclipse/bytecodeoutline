@@ -336,6 +336,54 @@ public class DecompiledMethod {
         return null;
     }
 
+    public String[][][] getFrameTables(final int decompiledLine, boolean useQualifiedNames) {
+      Integer insn = (Integer) insns.get(new Integer(decompiledLine));
+      if (error != null && insn != null && insn.intValue() == errorInsn) {
+          return null;
+      }
+      if (frames != null && insn != null) {
+        Frame f = frames[insn.intValue()];
+        if (f == null) {
+            return null;
+        }
+
+        try {
+            ArrayList locals = new ArrayList();
+            for (int i = 0; i < f.getLocals(); ++i) {
+                String varName = "";
+                for (Iterator it = localVariables.iterator(); it.hasNext();) {
+                    LocalVariableNode lvnode = (LocalVariableNode) it.next();
+                    int n = lvnode.index;
+                    if( n==i) {
+                      varName = lvnode.name;
+                      // TODO take into account variable scope!
+                      break;
+                    }
+                }
+
+                locals.add( new String[] {
+                    ""+i,
+                    getTypeName( useQualifiedNames, f.getLocal(i).toString()),
+                    varName});
+            }
+
+            ArrayList stack = new ArrayList();
+            for (int i = 0; i < f.getStackSize(); ++i) {
+                stack.add( new String[] {
+                    ""+i,
+                    getTypeName( useQualifiedNames, f.getStack(i).toString())});
+            }
+            return new String[][][] {
+                (String[][]) locals.toArray( new String[ 3][]),
+                (String[][]) stack.toArray( new String[ 2][])};
+        } catch (AnalyzerException e) {
+            BytecodeOutlinePlugin.logError(e);
+        }
+      }
+      return null;
+    }
+
+
     /**
      * Appends full type name or only simply name, depends on boolean flag.
      *
@@ -359,6 +407,17 @@ public class DecompiledMethod {
         } else {
             buf.append(s);
         }
+    }
+
+    private String getTypeName( final boolean useQualifiedNames, String s) {
+      if(!useQualifiedNames) {
+          int idx = s.lastIndexOf('/');
+          if(idx > 0){
+              // from "Ljava/lang/Object;" to "Object"
+              return s.substring(idx + 1, s.length() - 1);
+          }
+      }
+      return "Lnull;".equals(s) ? "null" : s;
     }
 
     public int getDecompiledLine(final int sourceLine) {

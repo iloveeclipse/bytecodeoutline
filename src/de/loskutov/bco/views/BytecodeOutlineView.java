@@ -133,8 +133,10 @@ public class BytecodeOutlineView extends ViewPart {
     protected SashForm verifyControl;
     protected SashForm stackAndLvt;
     protected Table tableControl;
-    protected StyledText stackControl;
-    protected StyledText lvtControl;
+    // protected StyledText stackControl;
+    // protected StyledText lvtControl;
+    protected Table stackTable;
+    protected Table lvtTable;
 
     protected JavaEditor javaEditor;
     protected IJavaElement javaInput;
@@ -211,11 +213,11 @@ public class BytecodeOutlineView extends ViewPart {
         if (tableControl != null && !tableControl.isDisposed()) {
             tableControl.setEnabled(on);
         }
-        if(stackControl != null && !stackControl.isDisposed()){
-            stackControl.setEnabled(on);
+        if(stackTable != null && !stackTable.isDisposed()){
+            stackTable.setEnabled(on);
         }
-        if(lvtControl != null && !lvtControl.isDisposed()){
-            lvtControl.setEnabled(on);
+        if(lvtTable != null && !lvtTable.isDisposed()){
+            lvtTable.setEnabled(on);
         }
         showSelectedOnlyAction.setEnabled(on);
         linkWithEditorAction.setEnabled(on);
@@ -372,6 +374,7 @@ public class BytecodeOutlineView extends ViewPart {
 
         stackAndLvt = new SashForm(verifyControl, SWT.HORIZONTAL);
 
+        /*
         lvtControl = new StyledText(stackAndLvt, SWT.H_SCROLL
                 | SWT.V_SCROLL);
         lvtControl.setEditable(false);
@@ -383,6 +386,20 @@ public class BytecodeOutlineView extends ViewPart {
         stackControl.setEditable(false);
         stackControl.setToolTipText(BytecodeOutlinePlugin
                 .getResourceString(NLS_PREFIX + "stack.tooltip"));
+        */
+
+        lvtTable = new Table( stackAndLvt, SWT.SINGLE | SWT.FULL_SELECTION);
+        lvtTable.setLinesVisible(false);
+        lvtTable.setHeaderVisible(true);
+        new TableColumn( lvtTable, SWT.LEFT).setText( "#");
+        new TableColumn( lvtTable, SWT.LEFT).setText( "Var Type");
+        new TableColumn( lvtTable, SWT.LEFT).setText( "Name");
+
+        stackTable = new Table( stackAndLvt, SWT.SINGLE | SWT.FULL_SELECTION);
+        stackTable.setLinesVisible(false);
+        stackTable.setHeaderVisible(true);
+        new TableColumn( stackTable, SWT.LEFT).setText( "#");
+        new TableColumn( stackTable, SWT.LEFT).setText( "Stack Type");
 
         stackAndLvt.setWeights(new int[]{50, 50});
 
@@ -583,8 +600,10 @@ public class BytecodeOutlineView extends ViewPart {
             verifyControl.dispose();
             verifyControl = null;
             tableControl = null;
-            stackControl = null;
-            lvtControl = null;
+            // stackControl = null;
+            // lvtControl = null;
+            stackTable = null;
+            lvtTable = null;
         }
         if (errorColor != null) {
             errorColor.dispose();
@@ -770,12 +789,21 @@ public class BytecodeOutlineView extends ViewPart {
         if (tableControl != null && !tableControl.isDisposed()) {
             setItems(null);
         }
+        /*
         if(stackControl != null && !stackControl.isDisposed()){
             stackControl.setText("");
         }
         if(lvtControl != null && !lvtControl.isDisposed()){
             lvtControl.setText("");
         }
+        */
+        if(stackTable != null && !stackTable.isDisposed()){
+          stackTable.removeAll();
+        }
+        if(lvtTable != null && !lvtTable.isDisposed()){
+          lvtTable.removeAll();
+        }
+
         currentSelection = null;
         lastDecompiledResult = null;
         lastDecompiledElement = null;
@@ -867,16 +895,7 @@ public class BytecodeOutlineView extends ViewPart {
         if (decompiledLine > 0) {
             try {
                 if (verifyCode) {
-                    String [] frame = lastDecompiledResult
-                        .getFrame(decompiledLine, showQualifiedNames);
-                    if (frame != null) {
-                        lvtControl.setText(frame[0]);
-                        stackControl.setText(frame[1]);
-                    } else {
-                        lvtControl.setText("");
-                        stackControl.setText("");
-                    }
-                    tableControl.setSelection(decompiledLine);
+                    updateVerifierControl( decompiledLine);
                 } else {
 
                     int offsetAtLine = textControl
@@ -889,10 +908,42 @@ public class BytecodeOutlineView extends ViewPart {
                 BytecodeOutlinePlugin.error(null, e);
             }
         } else if (verifyCode) {
-            lvtControl.setText("");
-            stackControl.setText("");
+            // lvtControl.setText("");
+            // stackControl.setText("");
+            lvtTable.removeAll();
+            stackTable.removeAll();
         }
     }
+
+    private void updateVerifierControl( int decompiledLine) {
+      lvtTable.removeAll();
+      stackTable.removeAll();
+      String[][][] frame = lastDecompiledResult.getFrameTables(decompiledLine, showQualifiedNames);
+      if (frame != null) {
+          for (int i = 0; i < frame[ 0].length; ++i) {
+              if( frame[ 0][ i]!=null) {
+                  new TableItem(lvtTable, SWT.NONE).setText( frame[ 0][ i]);
+              }
+          }
+          lvtTable.getColumn(0).pack();
+          lvtTable.getColumn(1).pack();
+          lvtTable.getColumn(2).pack();
+
+          for (int i = 0; i < frame[ 1].length; ++i) {
+              if( frame[ 1][ i]!=null) {
+                  new TableItem(stackTable, SWT.NONE).setText( frame[ 1][ i]);
+              }
+          }
+          stackTable.getColumn(0).pack();
+          stackTable.getColumn(1).pack();
+
+      } else {
+          // lvtControl.setText("");
+          // stackControl.setText("");
+      }
+      tableControl.setSelection(decompiledLine);
+    }
+
 
     protected void setSelectionInJavaEditor(Point selection) {
         if (javaEditor != null && javaEditor.getViewer() == null) {
@@ -922,15 +973,7 @@ public class BytecodeOutlineView extends ViewPart {
                     .getOffset(), lineInfo.getLength());
             }
             if (verifyCode) {
-                String[] frame = lastDecompiledResult.getFrame(
-                    decompiledLine, showQualifiedNames);
-                if (frame != null) {
-                    lvtControl.setText(frame[0]);
-                    stackControl.setText(frame[1]);
-                } else {
-                    lvtControl.setText("");
-                    stackControl.setText("");
-                }
+              updateVerifierControl( decompiledLine);
             }
         } catch (Exception e) {
             BytecodeOutlinePlugin.logError(e);
@@ -1175,7 +1218,7 @@ public class BytecodeOutlineView extends ViewPart {
     // orientation
 
   private void setOrientation(int orientation) {
-    if( verifyControl == null || verifyControl.isDisposed() || lvtControl==null || lvtControl.isDisposed()) {
+    if( verifyControl == null || verifyControl.isDisposed()) {
       return;
     }
 
