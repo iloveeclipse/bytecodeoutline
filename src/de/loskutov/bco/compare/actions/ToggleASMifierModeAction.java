@@ -1,6 +1,6 @@
 /*******************************************************************************
  * Copyright (c) 2004 Andrei Loskutov.
- * All rights reserved. This program and the accompanying materials 
+ * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the BSD License
  * which accompanies this distribution, and is available at
  * http://www.opensource.org/licenses/bsd-license.php
@@ -22,7 +22,7 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
 public class ToggleASMifierModeAction extends Action {
     private static final String TASM_ID = "tasm"; //$NON-NLS-1$
     private boolean isASMifierMode;
-    
+
     /**
      * Init action with image/text/tooltip
      */
@@ -33,9 +33,9 @@ public class ToggleASMifierModeAction extends Action {
             BytecodeOutlinePlugin.IMG_ASM));
 
         setText(BytecodeOutlinePlugin
-            .getResourceString("ToggleASMifierModeAction.toggleASMifierMode_text")); //$NON-NLS-1$
+            .getResourceString("ToggleASMifierModeAction.toggleASMifierMode.label")); //$NON-NLS-1$
         setToolTipText(BytecodeOutlinePlugin
-            .getResourceString("ToggleASMifierModeAction.toggleASMifierMode_tooltip")); //$NON-NLS-1$
+            .getResourceString("ToggleASMifierModeAction.toggleASMifierMode.tooltip")); //$NON-NLS-1$
     }
 
     /**
@@ -44,7 +44,7 @@ public class ToggleASMifierModeAction extends Action {
     public String getId() {
         return TASM_ID;
     }
-        
+
     /**
      * @see org.eclipse.jface.action.IAction#run()
      */

@@ -74,7 +74,6 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.console.actions.TextViewerAction;
-import org.eclipse.ui.internal.console.ConsoleMessages;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.texteditor.FindReplaceAction;
@@ -137,6 +136,8 @@ public class BytecodeOutlineView extends ViewPart {
     protected Map globalActions = new HashMap();
     protected List selectionActions = new ArrayList();
     private MenuManager contextMenuManager;
+
+    private static final String NLS_PREFIX = "BytecodeOutlineView.";
 
     // updates the find replace action if the document length is > 0
     private ITextListener textListener = new ITextListener() {
@@ -343,13 +344,13 @@ public class BytecodeOutlineView extends ViewPart {
                 | SWT.V_SCROLL);
         lvtControl.setEditable(false);
         lvtControl.setToolTipText(BytecodeOutlinePlugin
-                .getResourceString("BytecodeOutlineView.lvt_tooltip"));
+                .getResourceString(NLS_PREFIX + "lvt.tooltip"));
 
         stackControl = new StyledText(stackAndLvt, SWT.H_SCROLL
             | SWT.V_SCROLL);
         stackControl.setEditable(false);
         stackControl.setToolTipText(BytecodeOutlinePlugin
-                .getResourceString("BytecodeOutlineView.stack_tooltip"));
+                .getResourceString(NLS_PREFIX + "stack.tooltip"));
 
         stackAndLvt.setWeights(new int[]{50, 50});
 
@@ -404,10 +405,10 @@ public class BytecodeOutlineView extends ViewPart {
         };
 
         linkWithEditorAction.setText(BytecodeOutlinePlugin
-            .getResourceString("BytecodeOutlineView.linkWithEditor_text"));
+            .getResourceString(NLS_PREFIX + "linkWithEditor.label"));
         linkWithEditorAction
             .setToolTipText(BytecodeOutlinePlugin
-                .getResourceString("BytecodeOutlineView.linkWithEditorText_tooltip"));
+                .getResourceString(NLS_PREFIX + "linkWithEditorText.tooltip"));
 
         // TODO get preference from store
         linkWithEditorAction.setChecked(true);
@@ -423,10 +424,10 @@ public class BytecodeOutlineView extends ViewPart {
         JavaPluginImages.setToolImageDescriptors(
             showSelectedOnlyAction, "segment_edit.gif");
         showSelectedOnlyAction.setText(BytecodeOutlinePlugin
-            .getResourceString("BytecodeOutlineView.showOnlySelection_text"));
+            .getResourceString(NLS_PREFIX + "showOnlySelection.label"));
         showSelectedOnlyAction
             .setToolTipText(BytecodeOutlinePlugin
-                .getResourceString("BytecodeOutlineView.showOnlySelection_tooltip"));
+                .getResourceString(NLS_PREFIX + "showOnlySelection.tooltip"));
 
         // TODO get preference from store
         showSelectedOnlyAction.setChecked(true);
@@ -441,9 +442,9 @@ public class BytecodeOutlineView extends ViewPart {
         };
         setRawModeAction.setImageDescriptor(JavaPluginImages.DESC_OBJS_PACKAGE);
         setRawModeAction.setText(BytecodeOutlinePlugin
-            .getResourceString("BytecodeOutlineView.enableRawMode_text"));
+            .getResourceString(NLS_PREFIX + "enableRawMode.label"));
         setRawModeAction.setToolTipText(BytecodeOutlinePlugin
-            .getResourceString("BytecodeOutlineView.enableRawMode_tooltip"));
+            .getResourceString(NLS_PREFIX + "enableRawMode.tooltip"));
         // TODO get preference from store
         setRawModeAction.setChecked(false);
         showQualifiedNames = false;
@@ -482,9 +483,9 @@ public class BytecodeOutlineView extends ViewPart {
         // TODO get preference from store
         toggleVerifierAction.setChecked(false);
         toggleVerifierAction.setText(BytecodeOutlinePlugin
-            .getResourceString("BytecodeOutlineView.enableVerifier_text"));
+            .getResourceString(NLS_PREFIX + "enableVerifier.label"));
         toggleVerifierAction.setToolTipText(BytecodeOutlinePlugin
-            .getResourceString("BytecodeOutlineView.enableVerifier_tooltip"));
+            .getResourceString(NLS_PREFIX + "enableVerifier.tooltip"));
         verifyCode = false;
 
         IActionBars bars = getViewSite().getActionBars();
@@ -880,7 +881,8 @@ public class BytecodeOutlineView extends ViewPart {
                     .getOffset(), lineInfo.getLength());
             }
             if (verifyCode) {
-                String [] frame = lastDecompiledResult.getFrame(decompiledLine, showQualifiedNames);
+                String[] frame = lastDecompiledResult.getFrame(
+                    decompiledLine, showQualifiedNames);
                 if (frame != null) {
                     lvtControl.setText(frame[0]);
                     stackControl.setText(frame[1]);
@@ -1096,31 +1098,31 @@ public class BytecodeOutlineView extends ViewPart {
         TextViewerAction action = new TextViewerAction(
             textViewer, ITextOperationTarget.SELECT_ALL);
 
-        // TODO XXX remove dependency to ConsoleMessages/console bundle
-        // use own bundle/keys
-        action
-            .configureAction(
-                ConsoleMessages.getString("IOConsolePage.0"),
-                ConsoleMessages.getString("IOConsolePage.1"),
-                ConsoleMessages.getString("IOConsolePage.2"));
+        action.configureAction(
+            BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
+                + "select_all.label"), BytecodeOutlinePlugin
+                .getResourceString(NLS_PREFIX + "select_all.tooltip"),
+            BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
+                + "select_all.description"));
         setGlobalAction(actionBars, ActionFactory.SELECT_ALL.getId(), action);
 
         action = new TextViewerAction(textViewer, ITextOperationTarget.COPY);
-        action
-            .configureAction(
-                ConsoleMessages.getString("IOConsolePage.6"),
-                ConsoleMessages.getString("IOConsolePage.7"),
-                ConsoleMessages.getString("IOConsolePage.8"));
+        action.configureAction(
+            BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "copy.label"),
+            BytecodeOutlinePlugin
+                .getResourceString(NLS_PREFIX + "copy.tooltip"),
+            BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
+                + "copy.description"));
         action.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages()
             .getImageDescriptor(ISharedImages.IMG_TOOL_COPY));
         action.setActionDefinitionId(IWorkbenchActionDefinitionIds.COPY);
         setGlobalAction(actionBars, ActionFactory.COPY.getId(), action);
 
-        ResourceBundle bundle = ResourceBundle
-            .getBundle("org.eclipse.ui.internal.console.ConsoleMessages"); //$NON-NLS-1$
+        ResourceBundle bundle = BytecodeOutlinePlugin.getDefault().getResourceBundle();
+
         setGlobalAction(
             actionBars, ActionFactory.FIND.getId(), new FindReplaceAction(
-                bundle, "find_replace_action.", this)); //$NON-NLS-1$
+                bundle, NLS_PREFIX + "find_replace.", this)); //$NON-NLS-1$
 
         selectionActions.add(ActionFactory.COPY.getId());
         selectionActions.add(ActionFactory.FIND.getId());
