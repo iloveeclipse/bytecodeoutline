@@ -2,15 +2,15 @@
 <?eclipse version="3.0"?>
 <plugin>
    <extension
-         point="org.eclipse.ui.views">      
+         point="org.eclipse.ui.views">
       <view
             name="Bytecode"
             icon="icons/bytecodeview.gif"
             category="org.eclipse.jdt.ui.java"
-            class="de.loskutov.bco.views.BytecodeOutlineView"            
+            class="de.loskutov.bco.views.BytecodeOutlineView"
             id="de.loskutov.bco.views.BytecodeOutlineView"/>
    </extension>
-   
+
    <extension
          point="org.eclipse.ui.editors">
       <editor
@@ -22,20 +22,20 @@
             extensions="class,java">
       </editor>
    </extension>
-   
-   
+
+
    <extension
          point="org.eclipse.ui.popupMenus">
       <objectContribution
             objectClass="org.eclipse.jdt.core.IOpenable"
             id="de.loskutov.bco.CompareBytecodeActionContribution1">
- 
+
          <visibility>
             <or>
                <objectClass name="org.eclipse.jdt.core.IClassFile"/>
                <objectClass name="org.eclipse.jdt.core.ICompilationUnit"/>
             </or>
-         </visibility>    
+         </visibility>
          <menu
                label="Compare With ..."
                path="additions"
@@ -43,8 +43,8 @@
             <separator
                   name="compareWithGroup">
             </separator>
-         </menu>         
-       
+         </menu>
+
          <action
                enablesFor="1"
                label="Another Class Bytecode"
@@ -52,7 +52,7 @@
                class="de.loskutov.bco.ui.actions.OpenAction"
                menubarPath="compareWithMenu/compareWithGroup"
                id="de.loskutov.bco.CompareBytecodeAction">
-         </action>         
+         </action>
          <action
                enablesFor="2"
                label="Each Other Bytecode"
@@ -61,7 +61,7 @@
                menubarPath="compareWithMenu/compareWithGroup"
                id="de.loskutov.bco.OpenAction">
          </action>
-       </objectContribution>       
+       </objectContribution>
 
       <objectContribution
             objectClass="org.eclipse.core.resources.IFile"
@@ -69,13 +69,13 @@
             id="de.loskutov.bco.CompareBytecodeActionContribution2">
 
          <visibility>
-          	<not>
-	           <or>
-               		<objectClass name="org.eclipse.jdt.core.IClassFile"/>
-               		<objectClass name="org.eclipse.jdt.core.ICompilationUnit"/>
+            <not>
+             <or>
+                   <objectClass name="org.eclipse.jdt.core.IClassFile"/>
+                   <objectClass name="org.eclipse.jdt.core.ICompilationUnit"/>
                </or>
             </not>
-         </visibility>    
+         </visibility>
          <menu
                label="Compare With ..."
                path="additions"
@@ -83,8 +83,8 @@
             <separator
                   name="compareWithGroup">
             </separator>
-         </menu>         
-       
+         </menu>
+
          <action
                enablesFor="1"
                label="Another Class Bytecode"
@@ -92,7 +92,7 @@
                class="de.loskutov.bco.ui.actions.OpenAction"
                menubarPath="compareWithMenu/compareWithGroup"
                id="de.loskutov.bco.CompareBytecodeAction">
-         </action>         
+         </action>
          <action
                enablesFor="2"
                label="Each Other Bytecode"
@@ -101,7 +101,24 @@
                menubarPath="compareWithMenu/compareWithGroup"
                id="de.loskutov.bco.OpenAction">
          </action>
-       </objectContribution>   
-       
-   </extension>   
+       </objectContribution>
+
+   </extension>
+
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+          targetID="org.eclipse.jdt.ui.JavaPerspective">
+         <view
+               relative="org.eclipse.ui.views.ContentOutline"
+               visible="false"
+               id="de.loskutov.bco.views.BytecodeOutlineView"
+               relationship="stack">
+         </view>
+         <viewShortcut id="de.loskutov.bco.views.BytecodeOutlineView"/>
+      </perspectiveExtension>
+
+   </extension>
+
+
 </plugin>
