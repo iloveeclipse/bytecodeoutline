@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.runtime.IStatus;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodNode;
@@ -62,8 +63,11 @@ public class DecompiledMethod {
         formatText(inputText, new HashMap(), new StringBuffer(), this.text);
         computeMaps(lineNumbers);
 
-        if (meth != null) {
+        if (meth != null &&
+            (meth.access & Opcodes.ACC_ABSTRACT)==0) {
             analyzeMethod(owner, cl);
+        } else {
+//            System.out.println("\nabstr:" + (meth.access & Opcodes.ACC_ABSTRACT));
         }
     }
 

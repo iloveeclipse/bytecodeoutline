@@ -919,6 +919,53 @@ public class JdtUtils {
         return cl;
     }
 
+    /**
+     * Check if java element is an interface or abstract method or a method from
+     * interface.
+     */
+    public static boolean isAbstractOrInterface(IJavaElement javaEl) {
+        if (javaEl == null) {
+            return true;
+        }
+        boolean abstractOrInterface = false;
+        try {
+            switch (javaEl.getElementType()) {
+                case IJavaElement.CLASS_FILE :
+                    abstractOrInterface = ((IClassFile) javaEl).isInterface();
+                    break;
+                case IJavaElement.COMPILATION_UNIT :
+                    ICompilationUnit cUnit = (ICompilationUnit) javaEl;
+                    IType type = cUnit.findPrimaryType();
+                    abstractOrInterface = type != null && type.isInterface();
+                    break;
+                case IJavaElement.TYPE :
+                    abstractOrInterface = ((IType) javaEl).isInterface();
+                    break;
+                case IJavaElement.METHOD :
+                    // test for "abstract" flag on method in a class
+                    abstractOrInterface = Flags.isAbstract(((IMethod) javaEl)
+                        .getFlags());
+                    // "abstract" flags could be not exist on interface methods
+                    if (!abstractOrInterface) {
+                        IType ancestor = (IType) javaEl
+                            .getAncestor(IJavaElement.TYPE);
+                        abstractOrInterface = ancestor != null
+                            && ancestor.isInterface();
+                    }
+                    break;
+                default :
+                    IType ancestor1 = (IType) javaEl
+                        .getAncestor(IJavaElement.TYPE);
+                    abstractOrInterface = ancestor1 != null
+                        && ancestor1.isInterface();
+                    break;
+            }
+        } catch (JavaModelException e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+        }
+        return abstractOrInterface;
+    }
+
     static class SourceOffsetComparator implements Comparator {
 
         /**

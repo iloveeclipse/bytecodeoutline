@@ -270,6 +270,8 @@ public class BytecodeOutlineView extends ViewPart {
     private void setInput(JavaEditor editor) {
         javaEditor = null;
         javaInput = null;
+        lastDecompiledResult = null;
+        lastDecompiledElement = null;
         if (editor != null) {
             IJavaElement javaElem = EclipseUtils.getJavaInput(editor);
             if (javaElem == null) {
@@ -277,11 +279,28 @@ public class BytecodeOutlineView extends ViewPart {
             }
             javaInput = javaElem;
             javaEditor = editor;
+
+            checkVerifyAction(javaInput);
+
             updateSelection(EclipseUtils.getSelection(javaEditor
                 .getSelectionProvider()));
             setBufferIsDirty(editor.isDirty());
+
         }
         setBytecodeChanged(true);
+    }
+
+    /**
+     * @param javaElement
+     * @return true if verify mode could be enabled
+     */
+    private boolean checkVerifyAction(IJavaElement javaElement) {
+        boolean aoi = JdtUtils.isAbstractOrInterface(javaElement);
+        // deactivate, but only if not in verify mode
+        if(!toggleVerifierAction.isChecked()){
+            toggleVerifierAction.setEnabled(!aoi);
+        }
+        return !aoi;
     }
 
     private boolean updateSelection(ITextSelection sel) {
@@ -325,13 +344,13 @@ public class BytecodeOutlineView extends ViewPart {
     public void createPartControl(Composite parent1) {
         this.parent = parent1;
         parent1.addControlListener(new ControlListener() {
-              public void controlMoved(ControlEvent e) {
+            public void controlMoved(ControlEvent e) {
                 //
-              }
-              public void controlResized(ControlEvent e) {
+            }
+            public void controlResized(ControlEvent e) {
                 computeOrientation();
-              }
-            });
+            }
+        });
 
         Composite mainComposite = new Composite(parent1, SWT.NONE);
         TrimLayout tLayout = new TrimLayout();
@@ -358,10 +377,16 @@ public class BytecodeOutlineView extends ViewPart {
         IDocument document= new Document("");
         textViewer.setDocument(document);
 
-        //JFaceResources.getFontRegistry().addListener(this);
+        textViewer.getSelectionProvider().addSelectionChangedListener(
+            selectionChangedListener);
+        textViewer.addTextListener(textListener);
 
+        createActions();
+
+        /*
+         * create/register context menu on text control
+         */
         String id = "de.loskutov.bco.views.BytecodeOutlineView#ContextMenu"; //$NON-NLS-1$
-
         contextMenuManager= new MenuManager("#ContextMenu", id);  //$NON-NLS-1$//$NON-NLS-2$
         contextMenuManager.setRemoveAllWhenShown(true);
         contextMenuManager.addMenuListener(new IMenuListener() {
@@ -372,14 +397,8 @@ public class BytecodeOutlineView extends ViewPart {
         Menu menu = contextMenuManager.createContextMenu(textControl);
         textControl.setMenu(menu);
 
-        createActions();
-
         getSite().registerContextMenu(id, contextMenuManager, textViewer); //$NON-NLS-1$
         getSite().setSelectionProvider(textViewer);
-
-        textViewer.getSelectionProvider().addSelectionChangedListener(
-            selectionChangedListener);
-        textViewer.addTextListener(textListener);
 
 //----------------------------------------
 
@@ -394,20 +413,6 @@ public class BytecodeOutlineView extends ViewPart {
 
 
         stackAndLvt = new SashForm(verifyControl, SWT.HORIZONTAL);
-
-        /*
-        lvtControl = new StyledText(stackAndLvt, SWT.H_SCROLL
-                | SWT.V_SCROLL);
-        lvtControl.setEditable(false);
-        lvtControl.setToolTipText(BytecodeOutlinePlugin
-                .getResourceString(NLS_PREFIX + "lvt.tooltip"));
-
-        stackControl = new StyledText(stackAndLvt, SWT.H_SCROLL
-            | SWT.V_SCROLL);
-        stackControl.setEditable(false);
-        stackControl.setToolTipText(BytecodeOutlinePlugin
-                .getResourceString(NLS_PREFIX + "stack.tooltip"));
-        */
 
         lvtTable = new Table( stackAndLvt, SWT.SINGLE | SWT.FULL_SELECTION);
         lvtTable.setLinesVisible(false);
@@ -424,7 +429,6 @@ public class BytecodeOutlineView extends ViewPart {
         new TableColumn( stackTable, SWT.LEFT).setText( "Stack Type");
 
         stackAndLvt.setWeights(new int[]{50, 50});
-
 
 
         verifyControl.setWeights(new int[]{75, 25});
@@ -585,8 +589,9 @@ public class BytecodeOutlineView extends ViewPart {
             new ToggleOrientationAction(this, VIEW_ORIENTATION_VERTICAL),
             new ToggleOrientationAction(this, VIEW_ORIENTATION_HORIZONTAL),
             new ToggleOrientationAction(this, VIEW_ORIENTATION_AUTOMATIC)};
-        for (int i = 0; i < toggleOrientationActions.length; ++i)
-          mmanager.add(toggleOrientationActions[i]);
+        for (int i = 0; i < toggleOrientationActions.length; ++i) {
+            mmanager.add(toggleOrientationActions[i]);
+        }
 
         IToolBarManager tmanager = bars.getToolBarManager();
         tmanager.add(linkWithEditorAction);
@@ -610,9 +615,6 @@ public class BytecodeOutlineView extends ViewPart {
             editorListener = null;
         }
 
-
-//        JFaceResources.getFontRegistry().removeListener(this);
-
         if (contextMenuManager != null) {
             contextMenuManager.dispose();
         }
@@ -633,8 +635,6 @@ public class BytecodeOutlineView extends ViewPart {
             verifyControl.dispose();
             verifyControl = null;
             tableControl = null;
-            // stackControl = null;
-            // lvtControl = null;
             stackTable = null;
             lvtTable = null;
         }
@@ -710,6 +710,7 @@ public class BytecodeOutlineView extends ViewPart {
                 // because corresponding type is not more exist in model
                 if(javaInput == null){
                     setInput(javaEditor);
+                    refreshView();
                 }
             } else {
                 // first time - set the flag only - cause
@@ -828,7 +829,7 @@ public class BytecodeOutlineView extends ViewPart {
             textViewer.setDocument(document);
         }
         if (tableControl != null && !tableControl.isDisposed()) {
-            setItems(null);
+            setVerifyTableItems(null);
         }
         /*
         if(stackControl != null && !stackControl.isDisposed()){
@@ -868,19 +869,35 @@ public class BytecodeOutlineView extends ViewPart {
             return;
         }
         IJavaElement childEl = getCurrentJavaElement();
+        if(childEl == null && javaInput == null){
+            setInput(javaEditor);
+            childEl = javaInput;
+        }
         boolean clearOutput = false;
+
+        /*
+         * TODO the followed code is crappy and should be overwritten
+         * I can't understand some logic because this is not more clear at all.
+         */
         if (scopeChanged || isJavaStructureChanged(childEl)) {
             bytecodeChanged = false;
-            lastChildElement = childEl;
+
             DecompiledClass result = decompileBytecode(childEl);
             if (result != null) {
-
-                if (!verifyCode) {
+                boolean verifyPossible = checkVerifyAction(childEl == null
+                    ? javaInput
+                    : childEl);
+                if (!verifyCode || !verifyPossible) {
                     IDocument document= new Document(result.getText());
                     textViewer.setDocument(document);
+                    // we are in verify mode but we can't show content because
+                    // current element is abstract, so we clean table content
+                    if(verifyCode){
+                        setVerifyTableItems(null);
+                    }
                     hasAnalyzerError = false;
                 } else {
-                    setItems(result.getTextTable());
+                    setVerifyTableItems(result.getTextTable());
                     List errors = result.getErrorLines();
                     if(errors.size() > 0){
                         // TODO this only changes color of status line -
@@ -898,15 +915,18 @@ public class BytecodeOutlineView extends ViewPart {
             }
             lastDecompiledResult = result;
         } else {
-            clearOutput = true;
+            if(childEl == null && selectedOnly) {
+                clearOutput = true;
+            }
         }
+        lastChildElement = childEl;
         if(clearOutput){
             if (!verifyCode) {
                 // textControl.setText("");
                 IDocument document= new Document("");
                 textViewer.setDocument(document);
             } else {
-                setItems(null);
+                setVerifyTableItems(null);
             }
         }
         setSelectionInBytecodeView();
@@ -982,12 +1002,14 @@ public class BytecodeOutlineView extends ViewPart {
                 if (verifyCode) {
                     updateVerifierControl( decompiledLine);
                 } else {
-
-                    int offsetAtLine = textControl
-                        .getOffsetAtLine(decompiledLine);
-                    int offsetEnd = textControl.getText().indexOf(
-                        '\n', offsetAtLine);
-                    textControl.setSelection(offsetAtLine, offsetEnd);
+                    int lineCount = textControl.getLineCount();
+                    if(decompiledLine < lineCount){
+                        int offsetAtLine = textControl
+                            .getOffsetAtLine(decompiledLine);
+                        int offsetEnd = textControl.getText().indexOf(
+                            '\n', offsetAtLine);
+                        textControl.setSelection(offsetAtLine, offsetEnd);
+                    }
                 }
             } catch (IllegalArgumentException e) {
                 BytecodeOutlinePlugin.error(null, e);
@@ -1002,33 +1024,42 @@ public class BytecodeOutlineView extends ViewPart {
         updateStatus(lastDecompiledResult, bytecodeOffest);
     }
 
-    private void updateVerifierControl( int decompiledLine) {
-      lvtTable.removeAll();
-      stackTable.removeAll();
-      String[][][] frame = lastDecompiledResult.getFrameTables(decompiledLine, showQualifiedNames);
-      if (frame != null) {
-          for (int i = 0; i < frame[ 0].length; ++i) {
-              if( frame[ 0][ i]!=null) {
-                  new TableItem(lvtTable, SWT.NONE).setText( frame[ 0][ i]);
-              }
-          }
-          lvtTable.getColumn(0).pack();
-          lvtTable.getColumn(1).pack();
-          lvtTable.getColumn(2).pack();
+    private void updateVerifierControl(int decompiledLine) {
+        lvtTable.removeAll();
+        stackTable.removeAll();
+        String[][][] frame = lastDecompiledResult.getFrameTables(
+            decompiledLine, showQualifiedNames);
+        if (frame != null) {
+            for (int i = 0; i < frame[0].length; ++i) {
+                if (frame[0][i] != null) {
+                    new TableItem(lvtTable, SWT.NONE).setText(frame[0][i]);
+                }
+            }
+            for (int i = 0; i < frame[1].length; ++i) {
+                if (frame[1][i] != null) {
+                    new TableItem(stackTable, SWT.NONE).setText(frame[1][i]);
+                }
+            }
 
-          for (int i = 0; i < frame[ 1].length; ++i) {
-              if( frame[ 1][ i]!=null) {
-                  new TableItem(stackTable, SWT.NONE).setText( frame[ 1][ i]);
-              }
-          }
-          stackTable.getColumn(0).pack();
-          stackTable.getColumn(1).pack();
+            try {
+                lvtTable.getColumn(0).pack();
+                lvtTable.getColumn(1).pack();
+                lvtTable.getColumn(2).pack();
+            } catch (Exception e) {
+                // TODO fix for Eclipse bug 84609, should be fixed in M5 "final"
+            }
+            try {
+                stackTable.getColumn(0).pack();
+                stackTable.getColumn(1).pack();
+            } catch (Exception e) {
+                // TODO fix for Eclipse bug 84609, should be fixed in M5 "final"
+            }
 
-      } else {
-          // lvtControl.setText("");
-          // stackControl.setText("");
-      }
-      tableControl.setSelection(decompiledLine);
+        } else {
+            // lvtControl.setText("");
+            // stackControl.setText("");
+        }
+        tableControl.setSelection(decompiledLine);
     }
 
 
@@ -1108,6 +1139,12 @@ public class BytecodeOutlineView extends ViewPart {
      * @return true if either bytecode was rewritten or selection was changed
      */
     private boolean isJavaStructureChanged(IJavaElement childEl) {
+
+        /*
+         * TODO the whole code is crappy and should be overwritten
+         * I can't understand some logic because this is not more clear at all.
+         */
+
         if (bytecodeChanged || lastDecompiledElement == null) {
             return true;
         }
@@ -1116,10 +1153,26 @@ public class BytecodeOutlineView extends ViewPart {
             return false;
         } else if(childEl == null && selectedOnly){
             return false;
-        } else if (lastChildElement != null && !lastChildElement.equals(childEl)){
-            return true;
         }
-        return true;
+        if(selectedOnly){
+            if (lastChildElement == null ||
+                (lastChildElement != null && !lastChildElement.equals(childEl))){
+                return true;
+            }
+        } else {
+            if(lastChildElement == null && childEl != null){
+                return true;
+            }
+            if( childEl != null && lastChildElement != null
+                && !childEl.equals(lastChildElement)){
+                IJavaElement ancestor = childEl.getAncestor(IJavaElement.TYPE);
+                if(ancestor != null
+                    && !ancestor.equals(lastChildElement.getAncestor(IJavaElement.TYPE))){
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -1210,7 +1263,7 @@ public class BytecodeOutlineView extends ViewPart {
         return decompiledClass;
     }
 
-    private void setItems(String[][] items) {
+    private void setVerifyTableItems(String[][] items) {
         tableControl.removeAll();
         if (items != null) {
             for (int i = 0; i < items.length; ++i) {
@@ -1223,9 +1276,13 @@ public class BytecodeOutlineView extends ViewPart {
                     item.setText(j, s);
                 }
             }
-            tableControl.getColumn(0).pack();
-            tableControl.getColumn(1).pack();
-            tableControl.getColumn(2).pack();
+            try{
+                tableControl.getColumn(0).pack();
+                tableControl.getColumn(1).pack();
+                tableControl.getColumn(2).pack();
+            } catch (Exception e) {
+                // TODO fix for Eclipse bug 84609, should be fixed in M5 "final"
+            }
         }
     }
 

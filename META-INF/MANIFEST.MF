@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-Name: Bytecode Outline Plug-in
 Bundle-SymbolicName: de.loskutov.BytecodeOutline;singleton=true
-Bundle-Version: 2.0.0
+Bundle-Version: 2.0.1
 Bundle-ClassPath: BytecodeOutline.jar
 Bundle-Activator: de.loskutov.bco.BytecodeOutlinePlugin
 Bundle-Vendor: Andrei Loskutov
