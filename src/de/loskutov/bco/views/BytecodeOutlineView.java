@@ -817,7 +817,8 @@ public class BytecodeOutlineView extends ViewPart {
                 editorListener);
 
         }
-        if (textViewer != null && !textViewer.getTextWidget().isDisposed()) {
+        if (textViewer != null && textViewer.getTextWidget() != null
+            && !textViewer.getTextWidget().isDisposed()) {
             IDocument document= new Document("");
             textViewer.setDocument(document);
         }
@@ -833,12 +834,14 @@ public class BytecodeOutlineView extends ViewPart {
         }
         */
         if(stackTable != null && !stackTable.isDisposed()){
-          stackTable.removeAll();
+            stackTable.removeAll();
         }
         if(lvtTable != null && !lvtTable.isDisposed()){
-          lvtTable.removeAll();
+            lvtTable.removeAll();
         }
-
+        if(statusControl != null && !statusControl.isDisposed() ){
+            updateStatus(null, -1);
+        }
         currentSelection = null;
         lastDecompiledResult = null;
         lastDecompiledElement = null;
@@ -910,8 +913,12 @@ public class BytecodeOutlineView extends ViewPart {
     private void updateStatus(DecompiledClass result, int bytecodeOffset) {
         // clear error messages, if any
         statusLineManager.setErrorMessage(null);
-        currentStatusMessage = "Java:" + result.getAttribute("java.version")
-        + " | class size:" + result.getAttribute("class.size");
+        if(result != null){
+            currentStatusMessage = "Java:" + result.getAttribute("java.version")
+            + " | class size:" + result.getAttribute("class.size");
+        } else {
+            currentStatusMessage = "";
+        }
         String selectionInfo = "";
         if(bytecodeOffset >= 0){
             selectionInfo = " | offset:" + bytecodeOffset;
