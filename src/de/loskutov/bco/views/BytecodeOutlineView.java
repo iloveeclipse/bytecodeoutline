@@ -9,7 +9,12 @@ package de.loskutov.bco.views;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.ResourceBundle;
 
 import org.eclipse.core.filebuffers.FileBuffers;
 import org.eclipse.jdt.core.Flags;
@@ -22,13 +27,25 @@ import org.eclipse.jdt.internal.ui.actions.AbstractToggleLinkingAction;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.text.Document;
+import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.IFindReplaceTarget;
 import org.eclipse.jface.text.IRegion;
+import org.eclipse.jface.text.ITextListener;
+import org.eclipse.jface.text.ITextOperationTarget;
 import org.eclipse.jface.text.ITextSelection;
+import org.eclipse.jface.text.TextEvent;
+import org.eclipse.jface.text.TextViewer;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.StackLayout;
@@ -41,17 +58,28 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.Widget;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.ISelectionService;
+import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IViewSite;
+import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.actions.ActionFactory;
+import org.eclipse.ui.console.actions.TextViewerAction;
+import org.eclipse.ui.internal.console.ConsoleMessages;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.eclipse.ui.texteditor.FindReplaceAction;
+import org.eclipse.ui.texteditor.IUpdate;
+import org.eclipse.ui.texteditor.IWorkbenchActionDefinitionIds;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
@@ -82,6 +110,7 @@ public class BytecodeOutlineView extends ViewPart {
 
     protected Composite stackComposite;
     protected StyledText textControl;
+    protected TextViewer textViewer;
     protected Composite verifyControl;
     protected Table tableControl;
     protected StyledText stackControl;
@@ -103,6 +132,29 @@ public class BytecodeOutlineView extends ViewPart {
     protected Color errorColor;
 
     private DecompiledClass lastDecompiledResult;
+
+    protected Map globalActions = new HashMap();
+    protected List selectionActions = new ArrayList();
+    private MenuManager contextMenuManager;
+
+    // updates the find replace action if the document length is > 0
+    private ITextListener textListener = new ITextListener() {
+        public void textChanged(TextEvent event) {
+            IUpdate findReplace = (IUpdate) globalActions
+                .get(ActionFactory.FIND.getId());
+            if (findReplace != null) {
+                findReplace.update();
+            }
+        }
+    };
+
+    // see org.eclipse.ui.console.TextConsolePage for the reason to do this ;)
+    private ISelectionChangedListener selectionChangedListener = 
+        new ISelectionChangedListener() {
+        public void selectionChanged(SelectionChangedEvent event) {
+            updateSelectionDependentActions();
+        }
+    };
 
     // ------------------------------------------------------------------------
 
@@ -197,7 +249,7 @@ public class BytecodeOutlineView extends ViewPart {
                  sel.getStartLine() == currentSelection
                 .getStartLine() && sel.getEndLine() == currentSelection
                 .getEndLine()))) {
-            
+
             /* getStartLine/getEndLine is probably not sensitive enough - but
              * in case of java classes/methods which fits in one selection but
              * not in the other, then I think we can ignore them here - this is
@@ -233,9 +285,41 @@ public class BytecodeOutlineView extends ViewPart {
         stackComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
         stackComposite.setLayout(new StackLayout());
 
-        textControl = new StyledText(stackComposite, SWT.H_SCROLL
+// init text viewer ans some related actions -----------------------------------
+// TODO make init code clear
+        
+        textViewer = new TextViewer(stackComposite, SWT.H_SCROLL
             | SWT.V_SCROLL);
-        textControl.setEditable(false);
+        textViewer.setEditable(false);
+
+        textControl = textViewer.getTextWidget();
+        IDocument document= new Document("");
+        textViewer.setDocument(document);
+
+        //JFaceResources.getFontRegistry().addListener(this);
+
+        String id = "de.loskutov.bco.views.BytecodeOutlineView#ContextMenu"; //$NON-NLS-1$
+
+        contextMenuManager= new MenuManager("#ContextMenu", id);  //$NON-NLS-1$//$NON-NLS-2$
+        contextMenuManager.setRemoveAllWhenShown(true);
+        contextMenuManager.addMenuListener(new IMenuListener() {
+            public void menuAboutToShow(IMenuManager m) {
+                contextMenuAboutToShow(m);
+            }
+        });
+        Menu menu = contextMenuManager.createContextMenu(textControl);
+        textControl.setMenu(menu);
+
+        createActions();
+
+        getSite().registerContextMenu(id, contextMenuManager, textViewer); //$NON-NLS-1$
+        getSite().setSelectionProvider(textViewer);
+
+        textViewer.getSelectionProvider().addSelectionChangedListener(
+            selectionChangedListener);
+        textViewer.addTextListener(textListener);
+
+//----------------------------------------
 
         verifyControl = new SashForm(stackComposite, SWT.VERTICAL);
         tableControl = new Table(verifyControl, SWT.SINGLE | SWT.FULL_SELECTION);
@@ -300,8 +384,8 @@ public class BytecodeOutlineView extends ViewPart {
         linkWithEditorAction
             .setToolTipText(BytecodeOutlinePlugin
                 .getResourceString("BytecodeOutlineView.linkWithEditorText_tooltip"));
-        
-        // TODO get preference from store        
+
+        // TODO get preference from store
         linkWithEditorAction.setChecked(true);
         doLinkWithEditor = true;
 
@@ -319,7 +403,7 @@ public class BytecodeOutlineView extends ViewPart {
         showSelectedOnlyAction
             .setToolTipText(BytecodeOutlinePlugin
                 .getResourceString("BytecodeOutlineView.showOnlySelection_tooltip"));
-        
+
         // TODO get preference from store
         showSelectedOnlyAction.setChecked(true);
         selectedOnly = true;
@@ -370,7 +454,7 @@ public class BytecodeOutlineView extends ViewPart {
         toggleVerifierAction.setImageDescriptor(AbstractUIPlugin
             .imageDescriptorFromPlugin(BytecodeOutlinePlugin.getDefault()
                 .getBundle().getSymbolicName(), "icons/verify.gif"));
-        
+
         // TODO get preference from store
         toggleVerifierAction.setChecked(false);
         toggleVerifierAction.setText(BytecodeOutlinePlugin
@@ -409,6 +493,22 @@ public class BytecodeOutlineView extends ViewPart {
             editorListener.dispose();
             editorListener = null;
         }
+
+
+//        JFaceResources.getFontRegistry().removeListener(this);
+
+        if (contextMenuManager != null) {
+            contextMenuManager.dispose();
+        }
+
+        selectionActions.clear();
+        globalActions.clear();
+
+        textViewer.getSelectionProvider().removeSelectionChangedListener(
+            selectionChangedListener);
+        textViewer.removeTextListener(textListener);
+        textViewer = null;
+
         if (textControl != null) {
             textControl.dispose();
             textControl = null;
@@ -437,6 +537,27 @@ public class BytecodeOutlineView extends ViewPart {
         super.dispose();
     }
 
+
+    /**
+     * Fill the context menu
+     *
+     * @param menuManager menu
+     */
+    protected void contextMenuAboutToShow(IMenuManager menuManager) {
+        IDocument doc= textViewer.getDocument();
+        if (doc == null) {
+            return;
+        }
+
+        menuManager.add((IAction)globalActions.get(ActionFactory.COPY.getId()));
+        menuManager.add((IAction)globalActions.get(ActionFactory.SELECT_ALL.getId()));
+
+        menuManager.add(new Separator("FIND")); //$NON-NLS-1$
+        menuManager.add((IAction)globalActions.get(ActionFactory.FIND.getId()));
+
+        menuManager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
+    }
+
     // -----------------------------------------------------------------------
 
     /**
@@ -444,8 +565,8 @@ public class BytecodeOutlineView extends ViewPart {
      */
     public void setFocus() {
         if (!verifyCode) {
-            if (textControl != null) {
-                textControl.setFocus();
+            if (textViewer != null) {
+                textViewer.getTextWidget().setFocus();
             }
         } else {
             if (tableControl != null) {
@@ -575,8 +696,9 @@ public class BytecodeOutlineView extends ViewPart {
                 editorListener);
 
         }
-        if (textControl != null && !textControl.isDisposed()) {
-            textControl.setText("");
+        if (textViewer != null && !textViewer.getTextWidget().isDisposed()) {
+            IDocument document= new Document("");
+            textViewer.setDocument(document);
         }
         if (tableControl != null && !tableControl.isDisposed()) {
             setItems(null);
@@ -602,14 +724,16 @@ public class BytecodeOutlineView extends ViewPart {
             return;
         }
         IJavaElement childEl = getCurrentJavaElement();
-        
+
         if (scopeChanged || isJavaStructureChanged(childEl)) {
             bytecodeChanged = false;
             lastChildElement = childEl;
             DecompiledClass result = decompileBytecode(childEl);
             if (result != null) {
                 if (!verifyCode) {
-                    textControl.setText(result.getText());
+                    IDocument document= new Document(result.getText());
+                    textViewer.setDocument(document);
+                    //textControl.setText(result.getText());
                 } else {
                     setItems(result.getTextTable());
                     List errors = result.getErrorLines();
@@ -620,7 +744,9 @@ public class BytecodeOutlineView extends ViewPart {
                 }
             } else {
                 if (!verifyCode) {
-                    textControl.setText("");
+                    // textControl.setText("");
+                    IDocument document= new Document("");
+                    textViewer.setDocument(document);
                 } else {
                     setItems(null);
                 }
@@ -675,6 +801,7 @@ public class BytecodeOutlineView extends ViewPart {
                         stackControl.setText(frame);
                     }
                 } else {
+                    
                     int offsetAtLine = textControl
                         .getOffsetAtLine(decompiledLine);
                     int offsetEnd = textControl.getText().indexOf(
@@ -874,4 +1001,86 @@ public class BytecodeOutlineView extends ViewPart {
         tableControl.getColumn(1).pack();
         tableControl.getColumn(2).pack();
     }
+
+    public Object getAdapter(Class adapter) {
+        if (IFindReplaceTarget.class.equals(adapter)) {
+            return textViewer.getFindReplaceTarget();
+        }
+        if (Widget.class.equals(adapter)) {
+            return textViewer.getTextWidget();
+        }
+        return super.getAdapter(adapter);
+    }
+    /**
+     * Configures an action for key bindings.
+     *
+     * @param actionBars action bars for this page
+     * @param actionID action definition id
+     * @param action associated action
+     */
+    protected void setGlobalAction(IActionBars actionBars, String actionID,
+        IAction action) {
+        globalActions.put(actionID, action);
+        actionBars.setGlobalActionHandler(actionID, action);
+    }
+
+    /**
+     * Updates selection dependent actions.
+     */
+    protected void updateSelectionDependentActions() {
+        Iterator iterator= selectionActions.iterator();
+        while (iterator.hasNext()) {
+            updateAction((String)iterator.next());
+        }
+    }
+
+    /**
+     * Updates the global action with the given id
+     *
+     * @param actionId action definition id
+     */
+    protected void updateAction(String actionId) {
+        IAction action= (IAction)globalActions.get(actionId);
+        if (action instanceof IUpdate) {
+            ((IUpdate) action).update();
+        }
+    }
+
+    protected void createActions() {
+        IActionBars actionBars = getViewSite().getActionBars();
+        TextViewerAction action = new TextViewerAction(
+            textViewer, ITextOperationTarget.SELECT_ALL);
+        
+        // TODO XXX remove dependency to ConsoleMessages/console bundle
+        // use own bundle/keys
+        action
+            .configureAction(
+                ConsoleMessages.getString("IOConsolePage.0"), 
+                ConsoleMessages.getString("IOConsolePage.1"), 
+                ConsoleMessages.getString("IOConsolePage.2"));
+        setGlobalAction(actionBars, ActionFactory.SELECT_ALL.getId(), action);
+
+        action = new TextViewerAction(textViewer, ITextOperationTarget.COPY);
+        action
+            .configureAction(
+                ConsoleMessages.getString("IOConsolePage.6"), 
+                ConsoleMessages.getString("IOConsolePage.7"), 
+                ConsoleMessages.getString("IOConsolePage.8"));
+        action.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages()
+            .getImageDescriptor(ISharedImages.IMG_TOOL_COPY));
+        action.setActionDefinitionId(IWorkbenchActionDefinitionIds.COPY);
+        setGlobalAction(actionBars, ActionFactory.COPY.getId(), action);
+
+        ResourceBundle bundle = ResourceBundle
+            .getBundle("org.eclipse.ui.internal.console.ConsoleMessages"); //$NON-NLS-1$
+        setGlobalAction(
+            actionBars, ActionFactory.FIND.getId(), new FindReplaceAction(
+                bundle, "find_replace_action.", this)); //$NON-NLS-1$
+
+        selectionActions.add(ActionFactory.COPY.getId());
+        selectionActions.add(ActionFactory.FIND.getId());
+
+        actionBars.updateActionBars();
+    }
+
 }
