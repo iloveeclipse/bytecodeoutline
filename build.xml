@@ -1,21 +1,21 @@
 <project name="BytecodeOutline" default="plugin">
 
-  <property file="build.config"/>
+  <property file="${user.home}/asm-build.properties"/>
+  <property file="build.properties"/>
 
-  <property name="src"                value="${basedir}/src"/>
-  <property name="externals"          value="${basedir}/externals"/>
-  <property name="out"                value="${basedir}/output"/>
-  <property name="out.build"          value="${out}/build"/>
-  <property name="out.plugin"         value="${out}/plugin"/>
+  <property name="src"          value="${basedir}/src"/>
+  <property name="externals"    value="${basedir}/externals"/>
+  <property name="out"          value="${basedir}/output"/>
+  <property name="out.build"    value="${out}/build"/>
+
+  <property name="plugin.jar"   value="${plugin.id}_${plugin.version}.jar"/>
+  <property name="feature.jar"  value="${plugin.id}.feature_${plugin.version}.jar"/>
+  
 
   <target name="init">
     <path id="classpath">
-      <fileset dir="${externals}">
-        <include name="**/*.jar"/>
-      </fileset>
-      <fileset dir="${eclipse}">
-        <include name="plugins/**/*.jar"/>
-      </fileset>
+      <fileset dir="${externals}" includes="**/*.jar"/>
+      <fileset dir="${eclipse.home}" includes="plugins/**/*.jar"/>
     </path>
   </target>
 
@@ -29,36 +29,63 @@
   </target>
 
   <target name="jars" depends="compile">
-    <mkdir dir="${out.plugin}"/>
-    <jar jarfile="${out.plugin}/BytecodeOutline.jar" basedir="${out.build}">
+    <jar jarfile="${out}/BytecodeOutline.jar" basedir="${out.build}">
       <include name="**/*"/>
       <manifest>
         <attribute name="Implementation-Title" value="BytecodeOutline"/>
         <attribute name="Implementation-Version" value="${plugin.version}"/>
       </manifest>
     </jar>
-    <zip zipfile="${out.plugin}/BytecodeOutlinesrc.zip" basedir="${src}">
-      <include name="**/*"/>
+    
+    <zip zipfile="${out}/BytecodeOutlinesrc.zip">
+      <zipfileset dir="${src}" includes="**/*" prefix="src"/>
+      <fileset dir=".">
+        <include name="icons/*"/>
+        <include name="plugin.xml"/>
+        <include name="build.properties"/>
+        <include name="META-INF/*"/>
+        <include name="feature.xml"/>
+        <include name="site.xml"/>
+        <include name="build.xml"/>
+        <include name="build.config"/>
+        <include name=".project"/>
+        <include name=".classpath"/>
+        <include name="README.txt"/>
+        <include name="LICENSE.txt"/>
+      </fileset>
     </zip>
   </target>
 
   <target name="plugin" depends="jars">
-    <copy todir="${out.plugin}">
+    <jar zipfile="${out}/${plugin.jar}" manifest="META-INF/MANIFEST.MF">
+      <zipfileset dir="${out}" includes="BytecodeOutline.jar"/>
       <fileset dir=".">
-        <include name="externals/**/*"/>
+        <include name="externals/*.jar"/>
         <include name="icons/**/*"/>
-        <include name="META-INF/**/*"/>
         <include name="plugin.xml"/>
         <include name="*.txt"/>
       </fileset>
-    </copy>
-    <zip zipfile="${out}/${plugin.id}_${plugin.version}.zip" basedir="${out.plugin}">
-      <include name="**/*"/>
+    </jar>
+  </target>
+  
+  <target name="feature" depends="plugin">
+    <jar zipfile="${out}/${feature.jar}">
+      <fileset dir="." includes="feature.xml"/>
+    </jar>
+  </target>
+  
+  <target name="site" depends="feature">
+    <zip zipfile="${out}/${plugin.id}.update_${plugin.version}.zip">
+      <zipfileset dir="." includes="site.xml"/>
+      <zipfileset dir="${out}" includes="${feature.jar}" prefix="features"/>
+      <zipfileset dir="${out}" includes="${plugin.jar}"  prefix="plugins"/>
     </zip>
   </target>
   
   <target name="clean">
-    <delete dir="${out}"/>
+    <delete failonerror="false" includeEmptyDirs="true">
+      <fileset dir="${out}" includes="**/*"/>
+    </delete>
   </target>
 
 </project>

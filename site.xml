@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+
+   <description url="http://asm.objectweb.org/eclipse.html">
+      Bytecode Outline Plugin Update Site
+   </description>
+   
+   <feature url="features/de.loskutov.ByteCodeOutline.feature_2.0.0.jar" id="de.loskutov.ByteCodeOutline.feature" version="2.0.0">
+      <category name="bytecode-outline"/>
+   </feature>
+
+   <category-def name="bytecode-outline" label="Bytecode Outline"/>
+
+</site>

@@ -12,11 +12,11 @@ Bundle-Activator: de.loskutov.bco.BytecodeOutlinePlugin
 Bundle-Vendor: Andrei Loskutov
 Bundle-Localization: plugin
 Require-Bundle: org.eclipse.ui,
+ org.eclipse.ui.editors,
  org.eclipse.core.runtime,
  org.eclipse.jface.text,
  org.eclipse.core.filebuffers,
  org.eclipse.jdt.core,
- org.eclipse.ui.editors,
  org.eclipse.ui.workbench.texteditor,
  org.eclipse.jdt.ui,
  org.eclipse.core.resources,
