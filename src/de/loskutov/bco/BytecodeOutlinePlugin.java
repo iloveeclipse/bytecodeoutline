@@ -84,11 +84,11 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
             return key;
         }
     }
-
+    
     /**
      * Returns the plugin's resource bundle,
      */
-    private ResourceBundle getResourceBundle() {
+    public ResourceBundle getResourceBundle() {
         return resourceBundle;
     }
 

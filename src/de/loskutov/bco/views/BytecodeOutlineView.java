@@ -114,6 +114,7 @@ public class BytecodeOutlineView extends ViewPart {
     protected Composite verifyControl;
     protected Table tableControl;
     protected StyledText stackControl;
+    protected StyledText lvtControl;
 
     protected JavaEditor javaEditor;
     protected IJavaElement javaInput;
@@ -188,6 +189,12 @@ public class BytecodeOutlineView extends ViewPart {
         if (tableControl != null && !tableControl.isDisposed()) {
             tableControl.setEnabled(on);
         }
+        if(stackControl != null && !stackControl.isDisposed()){            
+            stackControl.setEnabled(on);
+        }
+        if(lvtControl != null && !lvtControl.isDisposed()){
+            lvtControl.setEnabled(on);
+        }           
         showSelectedOnlyAction.setEnabled(on);
         linkWithEditorAction.setEnabled(on);
         selectionChangedAction.setEnabled(on);
@@ -327,10 +334,27 @@ public class BytecodeOutlineView extends ViewPart {
         new TableColumn(tableControl, SWT.LEFT);
         new TableColumn(tableControl, SWT.LEFT);
         tableControl.setLinesVisible(false);
-        tableControl.setHeaderVisible(false);
-        stackControl = new StyledText(verifyControl, SWT.H_SCROLL
+        tableControl.setHeaderVisible(false);        
+        
+        
+        SashForm stackAndLvt = new SashForm(verifyControl, SWT.HORIZONTAL);
+
+        lvtControl = new StyledText(stackAndLvt, SWT.H_SCROLL
+                | SWT.V_SCROLL);
+        lvtControl.setEditable(false);
+        lvtControl.setToolTipText(BytecodeOutlinePlugin
+                .getResourceString("BytecodeOutlineView.lvt_tooltip"));        
+        
+        stackControl = new StyledText(stackAndLvt, SWT.H_SCROLL
             | SWT.V_SCROLL);
         stackControl.setEditable(false);
+        stackControl.setToolTipText(BytecodeOutlinePlugin
+                .getResourceString("BytecodeOutlineView.stack_tooltip"));        
+        
+        stackAndLvt.setWeights(new int[]{50, 50});
+        
+        
+        
         ((SashForm) verifyControl).setWeights(new int[]{75, 25});
 
         ((StackLayout) stackComposite.getLayout()).topControl = textControl;
@@ -518,6 +542,7 @@ public class BytecodeOutlineView extends ViewPart {
             verifyControl = null;
             tableControl = null;
             stackControl = null;
+            lvtControl = null;
         }
         if (errorColor != null) {
             errorColor.dispose();
@@ -703,6 +728,12 @@ public class BytecodeOutlineView extends ViewPart {
         if (tableControl != null && !tableControl.isDisposed()) {
             setItems(null);
         }
+        if(stackControl != null && !stackControl.isDisposed()){
+            stackControl.setText("");            
+        }
+        if(lvtControl != null && !lvtControl.isDisposed()){
+            lvtControl.setText("");
+        }        
         currentSelection = null;
         lastDecompiledResult = null;
         lastDecompiledElement = null;
@@ -793,13 +824,14 @@ public class BytecodeOutlineView extends ViewPart {
 
         if (decompiledLine > 0) {
             try {
-                if (verifyCode) {
-                    tableControl.select(decompiledLine);
-                    String frame = lastDecompiledResult
-                        .getFrame(decompiledLine);
+                if (verifyCode) {                    
+                    String [] frame = lastDecompiledResult
+                        .getFrame(decompiledLine, showQualifiedNames);
                     if (frame != null) {
-                        stackControl.setText(frame);
+                        lvtControl.setText(frame[0]);
+                        stackControl.setText(frame[1]);
                     }
+                    tableControl.setSelection(decompiledLine);
                 } else {
                     
                     int offsetAtLine = textControl
@@ -842,9 +874,10 @@ public class BytecodeOutlineView extends ViewPart {
                     .getOffset(), lineInfo.getLength());
             }
             if (verifyCode) {
-                String frame = lastDecompiledResult.getFrame(decompiledLine);
+                String [] frame = lastDecompiledResult.getFrame(decompiledLine, showQualifiedNames);
                 if (frame != null) {
-                    stackControl.setText(frame);
+                    lvtControl.setText(frame[0]);
+                    stackControl.setText(frame[1]);                    
                 }
             }
         } catch (Exception e) {
@@ -1059,7 +1092,7 @@ public class BytecodeOutlineView extends ViewPart {
                 ConsoleMessages.getString("IOConsolePage.1"), 
                 ConsoleMessages.getString("IOConsolePage.2"));
         setGlobalAction(actionBars, ActionFactory.SELECT_ALL.getId(), action);
-
+    
         action = new TextViewerAction(textViewer, ITextOperationTarget.COPY);
         action
             .configureAction(
@@ -1070,16 +1103,16 @@ public class BytecodeOutlineView extends ViewPart {
             .getImageDescriptor(ISharedImages.IMG_TOOL_COPY));
         action.setActionDefinitionId(IWorkbenchActionDefinitionIds.COPY);
         setGlobalAction(actionBars, ActionFactory.COPY.getId(), action);
-
+    
         ResourceBundle bundle = ResourceBundle
             .getBundle("org.eclipse.ui.internal.console.ConsoleMessages"); //$NON-NLS-1$
         setGlobalAction(
             actionBars, ActionFactory.FIND.getId(), new FindReplaceAction(
                 bundle, "find_replace_action.", this)); //$NON-NLS-1$
-
+    
         selectionActions.add(ActionFactory.COPY.getId());
         selectionActions.add(ActionFactory.FIND.getId());
-
+    
         actionBars.updateActionBars();
     }
 

@@ -218,14 +218,20 @@ public class DecompiledMethod {
                     frame = frames[((Index) o).insn];
                 }
             } else {
-                String locals = "";
-                String stack = "";
+                String locals = " ";
+                String stack = " ";
                 if (frame != null) {
                     StringBuffer buf = new StringBuffer();
                     appendFrame(buf, frame);
                     int p = buf.indexOf(" ");
                     locals = buf.substring(0, p);
+                    if("".equals(locals)){
+                        locals = " ";
+                    }
                     stack = buf.substring(p + 1);
+                    if("".equals(stack)){
+                        stack = " ";
+                    }
                 }
                 lines.add(new String[]{locals, stack, o.toString()});
                 frame = null;
@@ -262,7 +268,7 @@ public class DecompiledMethod {
                 appendValue(buf, f.getStack(i));
             }
         } catch (AnalyzerException e) {
-            e.printStackTrace();
+            BytecodeOutlinePlugin.logError(e);
         }
     }
 
@@ -281,10 +287,16 @@ public class DecompiledMethod {
             : i.intValue();
     }
 
-    public String getFrame(final int decompiledLine) {
+    /**
+     * 
+     * @param decompiledLine
+     * @return array with two elements, first is the local variables table, 
+     * second is the operands stack content. "null" value could be returned too.
+     */
+    public String[] getFrame(final int decompiledLine, final boolean useQualifiedNames) {
         Integer insn = (Integer) insns.get(new Integer(decompiledLine));
         if (error != null && insn != null && insn.intValue() == errorInsn) {
-            return error;
+            return new String [] {error,error};
         }
         if (frames != null && insn != null) {
             Frame f = frames[insn.intValue()];
@@ -293,21 +305,48 @@ public class DecompiledMethod {
             }
 
             try {
-                StringBuffer buf = new StringBuffer();
+                StringBuffer localsBuf = new StringBuffer();                
                 for (int i = 0; i < f.getLocals(); ++i) {
-                    buf.append(f.getLocal(i)).append('\n');
+                    String s = f.getLocal(i).toString();
+                    appendTypeName(useQualifiedNames, localsBuf, s);
+                    localsBuf.append('\n');
                 }
-                buf.append('\n');
+                StringBuffer stackBuf = new StringBuffer();
                 for (int i = 0; i < f.getStackSize(); ++i) {
-                    buf.append(f.getStack(i)).append('\n');
+                    String s = f.getStack(i).toString();
+                    appendTypeName(useQualifiedNames, stackBuf, s);
+                    stackBuf.append('\n');                    
                 }
-                return buf.toString();
+                return new String[] {localsBuf.toString(), stackBuf.toString()};
             } catch (AnalyzerException e) {
-                e.printStackTrace();
+                BytecodeOutlinePlugin.logError(e);
             }
-
         }
         return null;
+    }
+
+    /**
+     * Appends full type name or only simply name, depends on boolean flag.
+     * 
+     * @param useQualifiedNames if false, then e.g. "Object" will be appended to 
+     * buffer instead of "Ljava/lang/Object;" etc
+     * @param buf buffer to append
+     * @param s string with bytecode type name, like "Ljava/lang/Object;"
+     */
+    private void appendTypeName(final boolean useQualifiedNames, StringBuffer buf, String s) {
+        if(!useQualifiedNames) {
+            int idx = s.lastIndexOf('/');
+            if(idx > 0){
+                // from "Ljava/lang/Object;" to "Object" 
+                buf.append(s.substring(idx + 1, s.length() - 1));
+                return;
+            }                     
+        }
+        if("Lnull;".equals(s)){
+            buf.append("null");
+        } else {
+            buf.append(s);
+        }            
     }
 
     public int getDecompiledLine(final int sourceLine) {

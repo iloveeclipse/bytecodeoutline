@@ -67,14 +67,20 @@ public class DecompiledClass {
         return -1;
     }
 
-    public String getFrame(final int decompiledLine) {
+    /**
+     * 
+     * @param decompiledLine
+     * @return array with two elements, first is the local variables table, 
+     * second is the operands stack content. "null" value could be returned too.
+     */
+    public String [] getFrame(final int decompiledLine, final boolean showQualifiedNames) {
         int currentDecompiledLine = 0;
         for (int i = 0; i < text.size(); ++i) {
             Object o = text.get(i);
             if (o instanceof DecompiledMethod) {
                 DecompiledMethod m = (DecompiledMethod) o;
-                String frame = m.getFrame(decompiledLine
-                    - currentDecompiledLine);
+                String [] frame = m.getFrame(decompiledLine
+                    - currentDecompiledLine, showQualifiedNames);
                 if (frame != null) {
                     return frame;
                 }
