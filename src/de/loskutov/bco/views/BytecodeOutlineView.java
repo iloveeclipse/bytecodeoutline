@@ -33,6 +33,7 @@ import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.action.StatusLineManager;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IFindReplaceTarget;
@@ -53,6 +54,8 @@ import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -61,6 +64,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
@@ -77,6 +81,7 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.console.actions.TextViewerAction;
+import org.eclipse.ui.internal.layout.TrimLayout;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.texteditor.FindReplaceAction;
@@ -152,6 +157,7 @@ public class BytecodeOutlineView extends ViewPart {
     protected Action setRawModeAction;
     protected Action toggleASMifierModeAction;
     protected Action toggleVerifierAction;
+    protected StatusLineManager statusLineManager;
 
     protected Color errorColor;
 
@@ -160,6 +166,9 @@ public class BytecodeOutlineView extends ViewPart {
     protected Map globalActions = new HashMap();
     protected List selectionActions = new ArrayList();
     private MenuManager contextMenuManager;
+    /** global class info, without current selection status */
+    protected String currentStatusMessage;
+    protected boolean hasAnalyzerError;
 
     private static final String NLS_PREFIX = "BytecodeOutlineView.";
 
@@ -181,6 +190,7 @@ public class BytecodeOutlineView extends ViewPart {
             updateSelectionDependentActions();
         }
     };
+    private Control statusControl;
 
     // ------------------------------------------------------------------------
 
@@ -323,16 +333,26 @@ public class BytecodeOutlineView extends ViewPart {
               }
             });
 
-        stackComposite = new Composite(parent1, SWT.NONE);
+        Composite mainComposite = new Composite(parent1, SWT.NONE);
+        TrimLayout tLayout = new TrimLayout();
+        mainComposite.setLayout(tLayout);
+
+        stackComposite = new Composite(mainComposite, SWT.NONE);
+        tLayout.setCenterControl(stackComposite);
         stackComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
         stackComposite.setLayout(new StackLayout());
+
+        statusLineManager = new StatusLineManager();
+        statusControl = statusLineManager.createControl(mainComposite, SWT.NONE);
+        tLayout.addTrim(statusControl, SWT.BOTTOM);
+        //statusLineManager.setErrorMessage("hallo!");
 
 // init text viewer ans some related actions -----------------------------------
 // TODO make init code clear
 
-        textViewer = new TextViewer(stackComposite, SWT.H_SCROLL
-            | SWT.V_SCROLL);
+        textViewer = new TextViewer(stackComposite, SWT.H_SCROLL  | SWT.V_SCROLL);
         textViewer.setEditable(false);
+        //textViewer.setHoverControlCreator(null)
 
         textControl = textViewer.getTextWidget();
         IDocument document= new Document("");
@@ -392,8 +412,6 @@ public class BytecodeOutlineView extends ViewPart {
         lvtTable = new Table( stackAndLvt, SWT.SINGLE | SWT.FULL_SELECTION);
         lvtTable.setLinesVisible(false);
         lvtTable.setHeaderVisible(true);
-        lvtTable.setToolTipText(BytecodeOutlinePlugin
-            .getResourceString(NLS_PREFIX + "lvt.tooltip"));
 
         new TableColumn( lvtTable, SWT.LEFT).setText( "#");
         new TableColumn( lvtTable, SWT.LEFT).setText( "Var Type");
@@ -402,8 +420,6 @@ public class BytecodeOutlineView extends ViewPart {
         stackTable = new Table( stackAndLvt, SWT.SINGLE | SWT.FULL_SELECTION);
         stackTable.setLinesVisible(false);
         stackTable.setHeaderVisible(true);
-        stackTable.setToolTipText(BytecodeOutlinePlugin
-            .getResourceString(NLS_PREFIX + "stack.tooltip"));
         new TableColumn( stackTable, SWT.LEFT).setText( "#");
         new TableColumn( stackTable, SWT.LEFT).setText( "Stack Type");
 
@@ -419,6 +435,17 @@ public class BytecodeOutlineView extends ViewPart {
 
         textControl.addMouseListener(new MouseAdapter() {
             public void mouseDown(MouseEvent e) {
+                if (isLinkedWithEditor()) {
+                    selectionChangedAction.run();
+                }
+            }
+        });
+
+        textControl.addKeyListener(new KeyListener(){
+            public void keyPressed(KeyEvent e) {
+                // ignored
+            }
+            public void keyReleased(KeyEvent e) {
                 if (isLinkedWithEditor()) {
                     selectionChangedAction.run();
                 }
@@ -833,36 +860,67 @@ public class BytecodeOutlineView extends ViewPart {
             return;
         }
         IJavaElement childEl = getCurrentJavaElement();
-
+        boolean clearOutput = false;
         if (scopeChanged || isJavaStructureChanged(childEl)) {
             bytecodeChanged = false;
             lastChildElement = childEl;
             DecompiledClass result = decompileBytecode(childEl);
             if (result != null) {
+
                 if (!verifyCode) {
                     IDocument document= new Document(result.getText());
                     textViewer.setDocument(document);
-                    //textControl.setText(result.getText());
+                    hasAnalyzerError = false;
                 } else {
                     setItems(result.getTextTable());
                     List errors = result.getErrorLines();
+                    if(errors.size() > 0){
+                        // TODO this only changes color of status line -
+                        // but it is possible also to provide useful info here...
+                        hasAnalyzerError = true;
+                        //currentErrorMessage = ...
+                    }
                     for (int i = 0; i < errors.size(); ++i) {
                         int l = ((Integer) errors.get(i)).intValue();
                         tableControl.getItem(l).setForeground(errorColor);
                     }
                 }
             } else {
-                if (!verifyCode) {
-                    // textControl.setText("");
-                    IDocument document= new Document("");
-                    textViewer.setDocument(document);
-                } else {
-                    setItems(null);
-                }
+                clearOutput = true;
             }
             lastDecompiledResult = result;
+        } else {
+            clearOutput = true;
+        }
+        if(clearOutput){
+            if (!verifyCode) {
+                // textControl.setText("");
+                IDocument document= new Document("");
+                textViewer.setDocument(document);
+            } else {
+                setItems(null);
+            }
         }
         setSelectionInBytecodeView();
+    }
+
+    /**
+     * @param result
+     */
+    private void updateStatus(DecompiledClass result, int bytecodeOffset) {
+        // clear error messages, if any
+        statusLineManager.setErrorMessage(null);
+        currentStatusMessage = "Java:" + result.getAttribute("java.version")
+        + " | class size:" + result.getAttribute("class.size");
+        String selectionInfo = "";
+        if(bytecodeOffset >= 0){
+            selectionInfo = " | offset:" + bytecodeOffset;
+        }
+        if(hasAnalyzerError){
+            statusLineManager.setErrorMessage(currentStatusMessage + selectionInfo);
+        } else {
+            statusLineManager.setMessage( currentStatusMessage + selectionInfo);
+        }
     }
 
     /**
@@ -921,6 +979,8 @@ public class BytecodeOutlineView extends ViewPart {
             lvtTable.removeAll();
             stackTable.removeAll();
         }
+        int bytecodeOffest = lastDecompiledResult.getBytecodeOffest(decompiledLine);
+        updateStatus(lastDecompiledResult, bytecodeOffest);
     }
 
     private void updateVerifierControl( int decompiledLine) {
@@ -986,6 +1046,9 @@ public class BytecodeOutlineView extends ViewPart {
         } catch (Exception e) {
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
+
+        int bytecodeOffest = lastDecompiledResult.getBytecodeOffest(decompiledLine);
+        updateStatus(lastDecompiledResult, bytecodeOffest);
     }
 
     // ------------------------------------------------------------------------
@@ -1032,8 +1095,9 @@ public class BytecodeOutlineView extends ViewPart {
         if (lastChildElement == null && childEl == null) {
             // no selected child - we stay by entire class bytecode
             return false;
-        } else if (lastChildElement == null
-            || !lastChildElement.equals(childEl)) {
+        } else if(childEl == null && selectedOnly){
+            return false;
+        } else if (lastChildElement != null && !lastChildElement.equals(childEl)){
             return true;
         }
         return true;
@@ -1094,7 +1158,9 @@ public class BytecodeOutlineView extends ViewPart {
         }
 
         DecompiledClass decompiledClass = null;
+        int available = 0;
         try {
+            available = is.available();
             decompiledClass = DecompilerClassVisitor.getDecompiledClass(
                 is, fieldName, methodName, showQualifiedNames, isASMifierMode,
                 verifyCode, cl);
@@ -1116,6 +1182,9 @@ public class BytecodeOutlineView extends ViewPart {
                 BytecodeOutlinePlugin.log(e, IStatus.WARNING);
             }
         }
+        if(decompiledClass != null){
+            decompiledClass.setAttribute("class.size", "" + available);
+        }
         return decompiledClass;
     }
 
@@ -1132,10 +1201,10 @@ public class BytecodeOutlineView extends ViewPart {
                     item.setText(j, s);
                 }
             }
+            tableControl.getColumn(0).pack();
+            tableControl.getColumn(1).pack();
+            tableControl.getColumn(2).pack();
         }
-        tableControl.getColumn(0).pack();
-        tableControl.getColumn(1).pack();
-        tableControl.getColumn(2).pack();
     }
 
     public Object getAdapter(Class adapter) {

@@ -34,6 +34,8 @@ public class DecompilerClassVisitor extends ClassAdapter {
 
     private AnnotationVisitor dummyAnnVisitor;
 
+    private String javaVersion;
+
     public DecompilerClassVisitor(final ClassVisitor cv, final String field,
         final String method, final boolean verify) {
         super(cv);
@@ -51,7 +53,6 @@ public class DecompilerClassVisitor extends ClassAdapter {
         ClassVisitor cv;
         if (asmify) {
             cv = new ASMifierClassVisitor(null) {
-
                 public void visitEnd() {
                     text.add("cw.visitEnd();\n\n");
                     text.add("return cw.toByteArray();\n");
@@ -59,12 +60,14 @@ public class DecompilerClassVisitor extends ClassAdapter {
                     text.add("}\n");
                 }
             };
+
         } else {
             cv = new CommentedClassVisitor(raw);
         }
         DecompilerClassVisitor dcv = new DecompilerClassVisitor(
             cv, field, method, verify);
         cr.accept(dcv, false);
+
         return dcv.getResult(cl);
     }
 
@@ -74,7 +77,9 @@ public class DecompilerClassVisitor extends ClassAdapter {
         while (text.size() > 0 && text.get(0).equals("\n")) {
             text.remove(0);
         }
-        return new DecompiledClass(text);
+        DecompiledClass dc = new DecompiledClass(text);
+        dc.setAttribute("java.version", javaVersion);
+        return dc;
     }
 
     private void formatText(final List input, StringBuffer line, final List result,
@@ -110,6 +115,13 @@ public class DecompilerClassVisitor extends ClassAdapter {
                 .visit(version, access, name1, signature, superName, interfaces);
         }
         this.name = name1;
+        int major = version & 0xFFFF;
+        //int minor = version >>> 16;
+        // 1.1 is 45, 1.2 is 46 etc.
+        int javaV = major % 44;
+        if (javaV > 0 && javaV < 10) {
+            javaVersion = "1." + javaV; //$NON-NLS-1$
+        }
     }
 
     public void visitSource(final String source, final String debug) {
@@ -192,10 +204,10 @@ public class DecompilerClassVisitor extends ClassAdapter {
     private AnnotationVisitor getDummyAnnotationVisitor(){
         if (dummyAnnVisitor == null) {
             dummyAnnVisitor = new AnnotationVisitor() {
-                public void visit(String n, Object value) { 
+                public void visit(String n, Object value) {
                     /* empty */
                 }
-                public void visitEnum(String n, String desc, String value) { 
+                public void visitEnum(String n, String desc, String value) {
                     /* empty */
                 }
                 public AnnotationVisitor visitAnnotation(String n, String desc) {
@@ -204,7 +216,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
                 public AnnotationVisitor visitArray(String n) {
                     return this;
                 }
-                public void visitEnd() { 
+                public void visitEnd() {
                     /* empty*/
                 }
             };

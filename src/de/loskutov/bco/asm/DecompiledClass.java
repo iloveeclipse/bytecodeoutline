@@ -1,7 +1,9 @@
 package de.loskutov.bco.asm;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Eric Bruneton
@@ -10,11 +12,22 @@ import java.util.List;
 public class DecompiledClass {
 
     private List text;
-
+    /**
+     * key is string, value is string
+     */
+    private Map classAttributesMap = new HashMap();
     private String value;
 
     public DecompiledClass(final List text) {
         this.text = text;
+    }
+
+    public void setAttribute(String key, String value){
+        classAttributesMap.put(key, value);
+    }
+
+    public String getAttribute(String key){
+        return (String)classAttributesMap.get(key);
     }
 
     public String getText() {
@@ -47,6 +60,24 @@ public class DecompiledClass {
             }
         }
         return (String[][]) lines.toArray(new String[lines.size()][]);
+    }
+
+    public int getBytecodeOffest(final int decompiledLine) {
+        int currentDecompiledLine = 0;
+        for (int i = 0; i < text.size(); ++i) {
+            Object o = text.get(i);
+            if (o instanceof DecompiledMethod) {
+                DecompiledMethod m = (DecompiledMethod) o;
+                Integer offset = m.getBytecodeOffset(decompiledLine - currentDecompiledLine);
+                if(offset != null){
+                    return offset.intValue();
+                }
+                currentDecompiledLine += m.getLineCount();
+            } else {
+                currentDecompiledLine++;
+            }
+        }
+        return -1;
     }
 
     public int getSourceLine(final int decompiledLine) {

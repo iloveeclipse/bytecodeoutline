@@ -297,7 +297,7 @@ public class DecompiledMethod {
      * second is the operands stack content. "null" value could be returned too.
      */
     public String[] getFrame(final int decompiledLine, final boolean useQualifiedNames) {
-        Integer insn = (Integer) insns.get(new Integer(decompiledLine));
+        Integer insn = getBytecodeOffset(decompiledLine);
         if (error != null && insn != null && insn.intValue() == errorInsn) {
             return new String [] {error,error};
         }
@@ -339,8 +339,17 @@ public class DecompiledMethod {
         return null;
     }
 
+    /**
+     * @param decompiledLine
+     * @return
+     */
+    public Integer getBytecodeOffset(final int decompiledLine) {
+        Integer insn = (Integer) insns.get(new Integer(decompiledLine));
+        return insn;
+    }
+
     public String[][][] getFrameTables(final int decompiledLine, boolean useQualifiedNames) {
-      Integer insn = (Integer) insns.get(new Integer(decompiledLine));
+      Integer insn = getBytecodeOffset(decompiledLine);
       if (error != null && insn != null && insn.intValue() == errorInsn) {
           return null;
       }
