@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="externals/asm-1.5.1.jar"/>
+	<classpathentry kind="lib" path="externals/asm-attrs-1.5.1.jar"/>
+	<classpathentry kind="lib" path="externals/asm-tree-1.5.1.jar"/>
+	<classpathentry kind="lib" path="externals/asm-util-1.5.1.jar"/>
+	<classpathentry kind="output" path="output/eclipse"/>
+</classpath>
