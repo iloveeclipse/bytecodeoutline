@@ -50,6 +50,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.events.ControlEvent;
+import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -92,6 +94,24 @@ import de.loskutov.bco.ui.JdtUtils;
  * @author Andrei
  */
 public class BytecodeOutlineView extends ViewPart {
+    // orientations
+    static final int VIEW_ORIENTATION_VERTICAL = 0;
+    static final int VIEW_ORIENTATION_HORIZONTAL = 1;
+    static final int VIEW_ORIENTATION_AUTOMATIC = 2;
+
+    /**
+     * The current orientation; either <code>VIEW_ORIENTATION_HORIZONTAL</code>
+     * <code>VIEW_ORIENTATION_VERTICAL</code>, or <code>VIEW_ORIENTATION_AUTOMATIC</code>.
+     */
+    int orientation = VIEW_ORIENTATION_AUTOMATIC;
+    /**
+     * The current orientation; either <code>VIEW_ORIENTATION_HORIZONTAL</code>
+     * <code>VIEW_ORIENTATION_VERTICAL</code>.
+     */
+    private int currentOrientation;
+
+    private ToggleOrientationAction[] toggleOrientationActions;
+    private Composite parent;
 
     protected boolean doLinkWithEditor;
     protected boolean selectedOnly;
@@ -110,7 +130,8 @@ public class BytecodeOutlineView extends ViewPart {
     protected Composite stackComposite;
     protected StyledText textControl;
     protected TextViewer textViewer;
-    protected Composite verifyControl;
+    protected SashForm verifyControl;
+    protected SashForm stackAndLvt;
     protected Table tableControl;
     protected StyledText stackControl;
     protected StyledText lvtControl;
@@ -289,6 +310,16 @@ public class BytecodeOutlineView extends ViewPart {
      * @param parent
      */
     public void createPartControl(Composite parent) {
+        this.parent = parent;
+        parent.addControlListener(new ControlListener() {
+              public void controlMoved(ControlEvent e) {
+                //
+              }
+              public void controlResized(ControlEvent e) {
+                computeOrientation();
+              }
+            });
+
         stackComposite = new Composite(parent, SWT.NONE);
         stackComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
         stackComposite.setLayout(new StackLayout());
@@ -330,15 +361,16 @@ public class BytecodeOutlineView extends ViewPart {
 //----------------------------------------
 
         verifyControl = new SashForm(stackComposite, SWT.VERTICAL);
+
         tableControl = new Table(verifyControl, SWT.SINGLE | SWT.FULL_SELECTION);
-        new TableColumn(tableControl, SWT.LEFT);
-        new TableColumn(tableControl, SWT.LEFT);
+        new TableColumn(tableControl, SWT.LEFT).setText( BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "lvt.header"));
+        new TableColumn(tableControl, SWT.LEFT).setText( BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "stack.header"));
         new TableColumn(tableControl, SWT.LEFT);
         tableControl.setLinesVisible(false);
-        tableControl.setHeaderVisible(false);
+        tableControl.setHeaderVisible(true);
 
 
-        SashForm stackAndLvt = new SashForm(verifyControl, SWT.HORIZONTAL);
+        stackAndLvt = new SashForm(verifyControl, SWT.HORIZONTAL);
 
         lvtControl = new StyledText(stackAndLvt, SWT.H_SCROLL
                 | SWT.V_SCROLL);
@@ -496,6 +528,15 @@ public class BytecodeOutlineView extends ViewPart {
         mmanager.add(setRawModeAction);
         mmanager.add(toggleASMifierModeAction);
         mmanager.add(toggleVerifierAction);
+
+        mmanager.add( new Separator());
+
+        toggleOrientationActions = new ToggleOrientationAction[] {
+            new ToggleOrientationAction(this, VIEW_ORIENTATION_VERTICAL),
+            new ToggleOrientationAction(this, VIEW_ORIENTATION_HORIZONTAL),
+            new ToggleOrientationAction(this, VIEW_ORIENTATION_AUTOMATIC)};
+        for (int i = 0; i < toggleOrientationActions.length; ++i)
+          mmanager.add(toggleOrientationActions[i]);
 
         IToolBarManager tmanager = bars.getToolBarManager();
         tmanager.add(linkWithEditorAction);
@@ -1129,5 +1170,72 @@ public class BytecodeOutlineView extends ViewPart {
 
         actionBars.updateActionBars();
     }
+
+
+    // orientation
+
+  private void setOrientation(int orientation) {
+    if( verifyControl == null || verifyControl.isDisposed() || lvtControl==null || lvtControl.isDisposed()) {
+      return;
+    }
+
+    boolean horizontal = orientation == VIEW_ORIENTATION_HORIZONTAL;
+    verifyControl.setOrientation(horizontal ? SWT.HORIZONTAL : SWT.VERTICAL);
+
+    for (int i = 0; i < toggleOrientationActions.length; ++i) {
+      toggleOrientationActions[i].setChecked(orientation == toggleOrientationActions[i].getOrientation());
+    }
+
+    currentOrientation = orientation;
+    // GridLayout layout= (GridLayout) fCounterComposite.getLayout();
+    // setCounterColumns(layout);
+    parent.layout();
+  }
+
+
+  void computeOrientation() {
+    if (orientation != VIEW_ORIENTATION_AUTOMATIC) {
+      currentOrientation= orientation;
+      setOrientation(currentOrientation);
+    } else {
+      Point size= parent.getSize();
+      if (size.x != 0 && size.y != 0) {
+        setOrientation( size.x > size.y ? VIEW_ORIENTATION_HORIZONTAL : VIEW_ORIENTATION_VERTICAL);
+      }
+    }
+  }
+
+  private class ToggleOrientationAction extends Action {
+    private final int actionOrientation;
+
+    public ToggleOrientationAction(BytecodeOutlineView v, int orientation) {
+      super("", AS_RADIO_BUTTON); //$NON-NLS-1$
+
+      String symbolicName = BytecodeOutlinePlugin.getDefault().getBundle().getSymbolicName();
+      if (orientation == VIEW_ORIENTATION_HORIZONTAL) {
+        setText( BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "toggle.horizontal.label")); //$NON-NLS-1$
+        setImageDescriptor( AbstractUIPlugin.imageDescriptorFromPlugin(symbolicName, "icons/th_horizontal.gif")); //$NON-NLS-1$
+      } else if (orientation == VIEW_ORIENTATION_VERTICAL) {
+        setText( BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "toggle.vertical.label")); //$NON-NLS-1$
+        setImageDescriptor( AbstractUIPlugin.imageDescriptorFromPlugin(symbolicName, "icons/th_vertical.gif")); //$NON-NLS-1$
+      } else if (orientation == VIEW_ORIENTATION_AUTOMATIC) {
+        setText( BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "toggle.automatic.label"));  //$NON-NLS-1$
+        setImageDescriptor( AbstractUIPlugin.imageDescriptorFromPlugin(symbolicName, "icons/th_automatic.gif")); //$NON-NLS-1$
+      }
+      actionOrientation= orientation;
+      // WorkbenchHelp.setHelp(this, IJUnitHelpContextIds.RESULTS_VIEW_TOGGLE_ORIENTATION_ACTION);
+    }
+
+    public int getOrientation() {
+      return actionOrientation;
+    }
+
+    public void run() {
+      if (isChecked()) {
+        orientation= actionOrientation;
+        computeOrientation();
+      }
+    }
+  }
 
 }
