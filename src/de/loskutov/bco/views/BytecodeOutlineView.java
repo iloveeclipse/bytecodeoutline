@@ -706,6 +706,11 @@ public class BytecodeOutlineView extends ViewPart {
                 // cause new bytecode should be written now
                 setBytecodeChanged(true);
                 refreshView();
+                // after refresh it is possible that java type is disappear
+                // because corresponding type is not more exist in model
+                if(javaInput == null){
+                    setInput(javaEditor);
+                }
             } else {
                 // first time - set the flag only - cause
                 // bytecode is not yet written
@@ -952,7 +957,14 @@ public class BytecodeOutlineView extends ViewPart {
                 }
             }
         } catch (JavaModelException e) {
-            BytecodeOutlinePlugin.error(null, e);
+            // the exception is mostly occured if java structure was
+            // changed and current element is not more exist in model
+            // e.g. on rename/delete/move operation.
+            // so it is not an error for user, but info for us
+            BytecodeOutlinePlugin.log(e, IStatus.INFO);
+            javaInput = null;
+            lastChildElement = null;
+            bytecodeChanged = true;
         }
         return childEl;
     }
@@ -1120,6 +1132,9 @@ public class BytecodeOutlineView extends ViewPart {
         IJavaElement type = JdtUtils.getEnclosingType(childEl);
         if (type == null) {
             type = javaInput;
+        }
+        if (type == null) {
+            return null;
         }
         InputStream is = JdtUtils.createInputStream(type);
         lastDecompiledElement = type;
