@@ -159,9 +159,9 @@ public class DecompiledMethod {
         for (int i = 0; i < localVariables.size(); ++i) {
             LocalVariableNode lvNode = (LocalVariableNode) localVariables.get(i);
             if (lvNode.start == index.label) {
-                locals.put(Integer.valueOf(lvNode.index), lvNode.name);
+                locals.put(new Integer(lvNode.index), lvNode.name);
             } else if (lvNode.end == index.label) {
-                locals.remove(Integer.valueOf(lvNode.index));
+                locals.remove(new Integer(lvNode.index));
             }
         }
     }
@@ -182,9 +182,9 @@ public class DecompiledMethod {
             } else {
                 ++currentDecompiledLine;
             }
-            Integer csl = Integer.valueOf(currentSourceLine);
-            Integer cdl = Integer.valueOf(currentDecompiledLine);
-            Integer ci = Integer.valueOf(currentInsn);
+            Integer csl = new Integer(currentSourceLine);
+            Integer cdl = new Integer(currentDecompiledLine);
+            Integer ci = new Integer(currentInsn);
             sourceLines.put(cdl, csl);
             if (decompiledLines.get(csl) == null) {
                 decompiledLines.put(csl, cdl);
@@ -246,7 +246,7 @@ public class DecompiledMethod {
         if (error == null) {
             return -1;
         }
-        Integer i = (Integer) insnLines.get(Integer.valueOf(errorInsn));
+        Integer i = (Integer) insnLines.get(new Integer(errorInsn));
         return i == null
             ? -1
             : i.intValue();
@@ -275,14 +275,14 @@ public class DecompiledMethod {
     }
 
     public int getSourceLine(final int decompiledLine) {
-        Integer i = (Integer) sourceLines.get(Integer.valueOf(decompiledLine));
+        Integer i = (Integer) sourceLines.get(new Integer(decompiledLine));
         return i == null
             ? -1
             : i.intValue();
     }
 
     public String getFrame(final int decompiledLine) {
-        Integer insn = (Integer) insns.get(Integer.valueOf(decompiledLine));
+        Integer insn = (Integer) insns.get(new Integer(decompiledLine));
         if (error != null && insn != null && insn.intValue() == errorInsn) {
             return error;
         }
@@ -311,7 +311,7 @@ public class DecompiledMethod {
     }
 
     public int getDecompiledLine(final int sourceLine) {
-        Integer i = (Integer) decompiledLines.get(Integer.valueOf(sourceLine));
+        Integer i = (Integer) decompiledLines.get(new Integer(sourceLine));
         return i == null
             ? -1
             : i.intValue();

@@ -153,7 +153,7 @@ public class CommentedClassVisitor extends TraceClassVisitor {
         public void visitVarInsn(final int opcode, final int var) {
             text.add(tab2 + OPCODES[opcode] + " " + var);
             if (!raw) {
-                text.add(Integer.valueOf(var));
+                text.add(new Integer(var));
             }
             text.add("\n");
         }
@@ -173,7 +173,7 @@ public class CommentedClassVisitor extends TraceClassVisitor {
         public void visitIincInsn(final int var, final int increment) {
             text.add(tab2 + "IINC " + var);
             if (!raw) {
-                text.add(Integer.valueOf(var));
+                text.add(new Integer(var));
             }
             text.add(" " + increment + "\n");
         }
