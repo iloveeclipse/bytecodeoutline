@@ -309,11 +309,11 @@ public class BytecodeOutlineView extends ViewPart {
 
     /**
      * This is a callback that will allow us to create the viewer and initialize it.
-     * @param parent
+     * @param parent1
      */
-    public void createPartControl(Composite parent) {
-        this.parent = parent;
-        parent.addControlListener(new ControlListener() {
+    public void createPartControl(Composite parent1) {
+        this.parent = parent1;
+        parent1.addControlListener(new ControlListener() {
               public void controlMoved(ControlEvent e) {
                 //
               }
@@ -322,7 +322,7 @@ public class BytecodeOutlineView extends ViewPart {
               }
             });
 
-        stackComposite = new Composite(parent, SWT.NONE);
+        stackComposite = new Composite(parent1, SWT.NONE);
         stackComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
         stackComposite.setLayout(new StackLayout());
 
@@ -391,6 +391,9 @@ public class BytecodeOutlineView extends ViewPart {
         lvtTable = new Table( stackAndLvt, SWT.SINGLE | SWT.FULL_SELECTION);
         lvtTable.setLinesVisible(false);
         lvtTable.setHeaderVisible(true);
+        lvtTable.setToolTipText(BytecodeOutlinePlugin
+            .getResourceString(NLS_PREFIX + "lvt.tooltip"));
+
         new TableColumn( lvtTable, SWT.LEFT).setText( "#");
         new TableColumn( lvtTable, SWT.LEFT).setText( "Var Type");
         new TableColumn( lvtTable, SWT.LEFT).setText( "Name");
@@ -398,6 +401,8 @@ public class BytecodeOutlineView extends ViewPart {
         stackTable = new Table( stackAndLvt, SWT.SINGLE | SWT.FULL_SELECTION);
         stackTable.setLinesVisible(false);
         stackTable.setHeaderVisible(true);
+        stackTable.setToolTipText(BytecodeOutlinePlugin
+            .getResourceString(NLS_PREFIX + "stack.tooltip"));
         new TableColumn( stackTable, SWT.LEFT).setText( "#");
         new TableColumn( stackTable, SWT.LEFT).setText( "Stack Type");
 
@@ -405,11 +410,11 @@ public class BytecodeOutlineView extends ViewPart {
 
 
 
-        ((SashForm) verifyControl).setWeights(new int[]{75, 25});
+        verifyControl.setWeights(new int[]{75, 25});
 
         ((StackLayout) stackComposite.getLayout()).topControl = textControl;
 
-        errorColor = new Color(parent.getDisplay(), 255, 0, 0);
+        errorColor = new Color(parent1.getDisplay(), 255, 0, 0);
 
         textControl.addMouseListener(new MouseAdapter() {
             public void mouseDown(MouseEvent e) {
@@ -777,7 +782,9 @@ public class BytecodeOutlineView extends ViewPart {
         if (editorListener != null) {
             ISelectionService service = getSite().getWorkbenchWindow()
                 .getSelectionService();
-            service.removePostSelectionListener(editorListener);
+            if(service != null){
+                service.removePostSelectionListener(editorListener);
+            }
             FileBuffers.getTextFileBufferManager().removeFileBufferListener(
                 editorListener);
 
