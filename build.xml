@@ -3,10 +3,10 @@
   <property file="${user.home}/asm-build.properties"/>
   <property file="build.properties"/>
 
-  <property name="src"          value="${basedir}/src"/>
-  <property name="externals"    value="${basedir}/externals"/>
-  <property name="out"          value="${basedir}/output"/>
-  <property name="out.build"    value="${out}/build"/>
+  <property name="src"                value="${basedir}/src"/>
+  <property name="externals"          value="${basedir}/externals"/>
+  <property name="out"                value="${basedir}/output"/>
+  <property name="out.build"          value="${out}/build"/>
 
   <property name="plugin.jar"   value="${plugin.id}_${plugin.version}.jar"/>
   <property name="feature.jar"  value="${plugin.id}.feature_${plugin.version}.jar"/>
@@ -21,14 +21,20 @@
 
   <target name="compile" depends="init">
     <mkdir dir="${out.build}"/>
-    <javac destdir="${out.build}" debug="on">
+    <!-- Eclipse requires JDK 1.4, also we can set both properties to 1.4 -->
+    <javac destdir="${out.build}" debug="on" source="1.4" target="1.4">
       <classpath refid="classpath"/>
       <src path="${src}"/>
       <include name="**/*.java"/>
-    </javac>
+    </javac>      
   </target>
 
   <target name="jars" depends="compile">
+    <copy todir="${out.build}">
+      <fileset dir="${src}">      
+        <include name="**/*.properties"/>
+      </fileset>
+    </copy>      
     <jar jarfile="${out}/BytecodeOutline.jar" basedir="${out.build}">
       <include name="**/*"/>
       <manifest>
@@ -58,7 +64,7 @@
 
   <target name="plugin" depends="jars">
     <jar zipfile="${out}/${plugin.jar}" manifest="META-INF/MANIFEST.MF">
-      <zipfileset dir="${out}" includes="BytecodeOutline.jar"/>
+      <zipfileset dir="${out}" includes="BytecodeOutline.jar,BytecodeOutlinesrc.zip"/>
       <fileset dir=".">
         <include name="externals/*.jar"/>
         <include name="icons/**/*"/>
