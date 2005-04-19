@@ -72,6 +72,10 @@
         <include name="externals/*.jar"/>
         <include name="icons/**/*"/>
         <include name="plugin.xml"/>
+        <include name="book.xml"/>
+        <include name="about.html"/>
+        <include name="opcodes.xml"/>
+        <include name="opcodes.xsl"/>
         <include name="*.txt"/>
       </fileset>
     </zip>

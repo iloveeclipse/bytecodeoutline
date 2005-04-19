@@ -120,5 +120,8 @@
 
    </extension>
 
+  <extension point="org.eclipse.help.toc">
+    <toc file="book.xml" primary="true" />
+  </extension>
 
 </plugin>
