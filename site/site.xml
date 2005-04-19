@@ -5,12 +5,12 @@
       Bytecode Outline Plugin Update Site
    </description>
    
-   <feature url="features/de.loskutov.ByteCodeOutline.feature_2.0.0.jar" id="de.loskutov.ByteCodeOutline.feature" version="2.0.0">
+   <feature url="features/de.loskutov.ByteCodeOutline.feature_2.0.1.jar" id="de.loskutov.ByteCodeOutline.feature" version="2.0.1">
       <category name="bytecode-outline"/>
    </feature>
 
    <category-def name="bytecode-outline" label="Bytecode Outline"/>
 
-   <archive path="plugins/de.loskutov.ByteCodeOutline_2.0.0.jar" url="http://download.forge.objectweb.org/asm/de.loskutov.ByteCodeOutline_2.0.0.jar"/>
+   <archive path="plugins/de.loskutov.ByteCodeOutline_2.0.1.jar" url="http://download.forge.objectweb.org/asm/de.loskutov.ByteCodeOutline_2.0.1.jar"/>
 
 </site>
