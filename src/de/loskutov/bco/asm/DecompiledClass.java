@@ -80,6 +80,24 @@ public class DecompiledClass {
         return -1;
     }
 
+    public int getBytecodeInsn(final int decompiledLine) {
+      int currentDecompiledLine = 0;
+      for (int i = 0; i < text.size(); ++i) {
+          Object o = text.get(i);
+          if (o instanceof DecompiledMethod) {
+              DecompiledMethod m = (DecompiledMethod) o;
+              Integer opcode = m.getBytecodeInsn(decompiledLine - currentDecompiledLine);
+              if(opcode != null){
+                  return opcode.intValue();
+              }
+              currentDecompiledLine += m.getLineCount();
+          } else {
+              currentDecompiledLine++;
+          }
+      }
+      return -1;
+  }
+
     public int getSourceLine(final int decompiledLine) {
         int currentDecompiledLine = 0;
         for (int i = 0; i < text.size(); ++i) {

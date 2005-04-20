@@ -8,6 +8,7 @@ import java.util.Map;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodAdapter;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.AbstractVisitor;
@@ -48,7 +49,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
     }
 
     public void visitInsn(final int opcode) {
-        addIndex();
+        addIndex(opcode);
         super.visitInsn(opcode);
         if (meth != null) {
             meth.visitInsn(opcode);
@@ -56,7 +57,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
     }
 
     public void visitIntInsn(final int opcode, final int operand) {
-        addIndex();
+        addIndex(opcode);
         super.visitIntInsn(opcode, operand);
         if (meth != null) {
             meth.visitIntInsn(opcode, operand);
@@ -64,7 +65,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
     }
 
     public void visitVarInsn(final int opcode, final int var) {
-        addIndex();
+        addIndex(opcode);
         super.visitVarInsn(opcode, var);
         if (meth != null) {
             meth.visitVarInsn(opcode, var);
@@ -72,7 +73,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
     }
 
     public void visitTypeInsn(final int opcode, final String desc) {
-        addIndex();
+        addIndex(opcode);
         super.visitTypeInsn(opcode, desc);
         if (meth != null) {
             meth.visitTypeInsn(opcode, desc);
@@ -81,7 +82,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
 
     public void visitFieldInsn(final int opcode, final String owner1,
         final String name, final String desc) {
-        addIndex();
+        addIndex(opcode);
         super.visitFieldInsn(opcode, owner1, name, desc);
         if (meth != null) {
             meth.visitFieldInsn(opcode, owner1, name, desc);
@@ -90,7 +91,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
 
     public void visitMethodInsn(final int opcode, final String owner1,
         final String name, final String desc) {
-        addIndex();
+        addIndex(opcode);
         super.visitMethodInsn(opcode, owner1, name, desc);
         if (meth != null) {
             meth.visitMethodInsn(opcode, owner1, name, desc);
@@ -98,7 +99,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
     }
 
     public void visitJumpInsn(final int opcode, final Label label) {
-        addIndex();
+        addIndex(opcode);
         super.visitJumpInsn(opcode, label);
         if (meth != null) {
             meth.visitJumpInsn(opcode, label);
@@ -107,7 +108,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
 
     public void visitLabel(final Label label) {
         currentLabel = label;
-        addIndex();
+        addIndex(-1);
         super.visitLabel(label);
         if (meth != null) {
             meth.visitLabel(label);
@@ -115,7 +116,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
     }
 
     public void visitLdcInsn(final Object cst) {
-        addIndex();
+        addIndex(Opcodes.LDC);
         super.visitLdcInsn(cst);
         if (meth != null) {
             meth.visitLdcInsn(cst);
@@ -123,7 +124,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
     }
 
     public void visitIincInsn(final int var, final int increment) {
-        addIndex();
+        addIndex(Opcodes.IINC);
         super.visitIincInsn(var, increment);
         if (meth != null) {
             meth.visitIincInsn(var, increment);
@@ -132,7 +133,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
 
     public void visitTableSwitchInsn(final int min, final int max,
         final Label dflt, final Label[] labels) {
-        addIndex();
+        addIndex(Opcodes.TABLESWITCH);
         super.visitTableSwitchInsn(min, max, dflt, labels);
         if (meth != null) {
             meth.visitTableSwitchInsn(min, max, dflt, labels);
@@ -141,7 +142,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
 
     public void visitLookupSwitchInsn(final Label dflt, final int[] keys,
         final Label[] labels) {
-        addIndex();
+        addIndex(Opcodes.LOOKUPSWITCH);
         super.visitLookupSwitchInsn(dflt, keys, labels);
         if (meth != null) {
             meth.visitLookupSwitchInsn(dflt, keys, labels);
@@ -149,7 +150,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
     }
 
     public void visitMultiANewArrayInsn(final String desc, final int dims) {
-        addIndex();
+        addIndex(Opcodes.MULTIANEWARRAY);
         super.visitMultiANewArrayInsn(desc, dims);
         if (meth != null) {
             meth.visitMultiANewArrayInsn(desc, dims);
@@ -190,7 +191,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
         }
     }
 
-    protected void addIndex() {
-        text.add(new Index(currentLabel, currentInsn++));
+    protected void addIndex(final int opcode) {
+        text.add(new Index(currentLabel, currentInsn++, opcode));
     }
 }

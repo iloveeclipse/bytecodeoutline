@@ -9,6 +9,12 @@
             category="org.eclipse.jdt.ui.java"
             class="de.loskutov.bco.views.BytecodeOutlineView"
             id="de.loskutov.bco.views.BytecodeOutlineView"/>
+      <view
+            name="Bytecode Reference"
+            icon="icons/bytecodeview.gif"
+            category="org.eclipse.jdt.ui.java"
+            class="de.loskutov.bco.views.BytecodeReferenceView"
+            id="de.loskutov.bco.views.BytecodeReferenceView"/>
    </extension>
 
    <extension

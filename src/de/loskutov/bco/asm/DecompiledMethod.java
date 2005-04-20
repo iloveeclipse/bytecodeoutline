@@ -36,6 +36,8 @@ public class DecompiledMethod {
 
     private Map insns; // decompiled line -> insn
 
+    private Map opcodes; // decompiled line -> opcode
+
     private Map insnLines; // insn -> decompile line
 
     private int lineCount;
@@ -56,6 +58,7 @@ public class DecompiledMethod {
         this.sourceLines = new HashMap();
         this.decompiledLines = new HashMap();
         this.insns = new HashMap();
+        this.opcodes = new HashMap();
         this.insnLines = new HashMap();
 
         this.meth = meth;
@@ -176,6 +179,7 @@ public class DecompiledMethod {
         int currentSourceLine = -1;
         int currentDecompiledLine = 0;
         int currentInsn = -1;
+        int currentOpcode = -1;
         for (int i = 0; i < text.size(); ++i) {
             Object o = text.get(i);
             if (o instanceof Index) {
@@ -185,17 +189,20 @@ public class DecompiledMethod {
                     currentSourceLine = sourceLine.intValue();
                 }
                 currentInsn = index.insn;
+                currentOpcode = index.opcode;
             } else {
                 ++currentDecompiledLine;
             }
             Integer csl = new Integer(currentSourceLine);
             Integer cdl = new Integer(currentDecompiledLine);
             Integer ci = new Integer(currentInsn);
+            Integer co = new Integer(currentOpcode);
             sourceLines.put(cdl, csl);
             if (decompiledLines.get(csl) == null) {
                 decompiledLines.put(csl, cdl);
             }
             insns.put(cdl, ci);
+            opcodes.put(cdl, co);
             if (insnLines.get(ci) == null) {
                 insnLines.put(ci, cdl);
             }
@@ -349,6 +356,15 @@ public class DecompiledMethod {
      */
     public Integer getBytecodeOffset(final int decompiledLine) {
         Integer insn = (Integer) insns.get(new Integer(decompiledLine));
+        return insn;
+    }
+
+    /**
+     * @param decompiledLine
+     * @return
+     */
+    public Integer getBytecodeInsn(final int decompiledLine) {
+        Integer insn = (Integer) opcodes.get(new Integer(decompiledLine));
         return insn;
     }
 

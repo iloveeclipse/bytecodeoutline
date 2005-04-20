@@ -954,6 +954,13 @@ public class BytecodeOutlineView extends ViewPart {
             statusLineManager.setMessage( currentStatusMessage + selectionInfo);
         }
     }
+    
+    public int getBytecodeInstructionAtLine (int line) {
+        if (lastDecompiledResult != null) {
+            return lastDecompiledResult.getBytecodeInsn(line);
+        }
+        return -1;
+    }
 
     /**
      * @return IJavaElement which fits in the current selection in java editor
