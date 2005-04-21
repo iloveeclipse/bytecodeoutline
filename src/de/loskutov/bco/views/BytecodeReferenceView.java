@@ -31,12 +31,12 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
 public class BytecodeReferenceView extends ViewPart implements IPartListener2, ISelectionListener {
 
     Browser browser;
-    
+
     public void createPartControl(Composite parent) {
         browser = new Browser(parent, SWT.NONE);
         getSite().getWorkbenchWindow().getPartService().addPartListener(this);
     }
-    
+
     public void dispose() {
         getSite().getWorkbenchWindow().getPartService().removePartListener(this);
         super.dispose();
@@ -63,7 +63,9 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
     }
 
     public void partOpened(IWorkbenchPartReference partRef) {
-        //
+        // WORKAROUND  - sometimes Eclipse does not invoke partVisible(),
+        // but only partOpened()...
+        partVisible(partRef);
     }
 
     public void partHidden(IWorkbenchPartReference partRef) {
@@ -104,7 +106,7 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
             }
         }
     }
-    
+
     private String getContent(URL url) {
       BufferedReader r = null;
         try {
@@ -134,7 +136,7 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
     private URL getHelpResource( String name) {
       String pluginId = BytecodeOutlinePlugin.getDefault().getBundle().getSymbolicName();
       Bundle bundle = Platform.getBundle(pluginId);
-      
+
       int state = bundle.getState();  // verify if bundle is ready
       if(( state & ( Bundle.RESOLVED | Bundle.STARTING | Bundle.ACTIVE | Bundle.STOPPING))==0) {
           return null;
