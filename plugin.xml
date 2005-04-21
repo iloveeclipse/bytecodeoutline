@@ -127,7 +127,7 @@
    </extension>
 
   <extension point="org.eclipse.help.toc">
-    <toc file="book.xml" primary="true" />
+    <toc file="toc.xml" primary="true" />
   </extension>
 
 </plugin>

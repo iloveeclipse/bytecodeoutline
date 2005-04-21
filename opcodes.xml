@@ -127,7 +127,7 @@ baload, caload, saload</see>
 <i>index</i> 0).</note>
 </opcode>
 <opcode>
-<name>fconst_&lt;f&gt;</name>
+<name>fconst_f</name>
 <short>push the single float 0.0, 1.0 or 2.0</short>
 <stack><table>
 <tr>
@@ -142,7 +142,7 @@ baload, caload, saload</see>
 <td></td>
 <td>...</td></tr>
 </table></stack>
-<desc>fconst_&lt;f&gt; represents the series of opcodes
+<desc>fconst_f represents the series of opcodes
 fconst_0, fconst_1, and fconst_2 that are used to
 push the constant single-precision floats 0.0, 1.0 and 2.0 onto the stack.
 
@@ -199,8 +199,8 @@ opcode = 0x0D (13)
 </table></bytecode>
 <see>bipush, sipush, ldc, ldc_w,
 ldc2_w, aconst_null, iconst_m1,
-lconst_&lt;l&gt; iconst_&lt;n&gt;, lconst_&lt;l&gt;,
-dconst_&lt;d&gt;</see>
+lconst_l iconst_n, lconst_l,
+dconst_d</see>
 </opcode>
 <opcode>
 <name>freturn</name>
@@ -245,7 +245,7 @@ opcode = 0xAE (174)
 return</see>
 </opcode>
 <opcode>
-<name>fstore_&lt;n&gt;</name>
+<name>fstore_n</name>
 <short>store float in local variable &lt;n&gt;</short>
 <stack><table>
 <tr>
@@ -264,7 +264,7 @@ return</see>
 it in local variable &lt;n&gt;, where &lt;n&gt; is 0, 1, 2 or 3. &lt;n&gt; must
 be a valid local variable number in the current frame.
 
-'fstore_&lt;n&gt;' is functionally equivalent to 'fstore
+'fstore_n' is functionally equivalent to 'fstore
 &lt;n&gt;', although it is typically more efficient and also takes fewer
 bytes in the bytecode.</desc>
 <example><pre>
@@ -586,7 +586,7 @@ baload, caload, saload</see>
 <i>index</i> 0).</note>
 </opcode>
 <opcode>
-<name>iconst_&lt;n&gt;</name>
+<name>iconst_n</name>
 <short>push the integer constant 0, 1, 2, 3, 4 or 5</short>
 <stack><table>
 <tr>
@@ -601,7 +601,7 @@ baload, caload, saload</see>
 <td></td>
 <td>...</td></tr>
 </table></stack>
-<desc>iconst_&lt;n&gt; represents the series of opcodes iconst_0,
+<desc>iconst_n represents the series of opcodes iconst_0,
 iconst_1, iconst_2, iconst_3, iconst_4 and iconst_5. These are used to push the
 constant ints 0 through 5 onto the stack. For example, to push the int zero
 onto the stack, use:
@@ -628,7 +628,7 @@ ldc 0 ; push 0 onto the stack
 </pre>
 although
 these instructions are typically less efficient than the equivalent
-iconst_&lt;n&gt; and also take up more bytes in the class file.</desc>
+iconst_n and also take up more bytes in the class file.</desc>
 <example><pre>
 
 iconst_0  ; push 0 onto the stack
@@ -690,8 +690,8 @@ opcode = 0x08 (8)
 </table></bytecode>
 <see>bipush, sipush, ldc, ldc_w,
 ldc2_w, aconst_null, iconst_m1,
-lconst_&lt;l&gt;, fconst_&lt;f&gt;,
-dconst_&lt;d&gt;</see>
+lconst_l, fconst_f,
+dconst_d</see>
 </opcode>
 <opcode>
 <name>iconst_m1</name>
@@ -725,9 +725,9 @@ opcode = 0x02 (2)
 </td></tr>
 </table></bytecode>
 <see>bipush, sipush, ldc, ldc_w,
-ldc2_w, aconst_null, iconst_&lt;n&gt;,
-lconst_&lt;l&gt;, fconst_&lt;f&gt;,
-dconst_&lt;d&gt;</see>
+ldc2_w, aconst_null, iconst_n,
+lconst_l, fconst_f,
+dconst_d</see>
 <note>You could also use bipush -1, sipush -1 or ldc
 -1 to achieve the same effect, although iconst_m1 is typically
 more efficient and uses fewer bytes in the bytecode.</note>
@@ -1168,7 +1168,7 @@ address 0 is the first byte in the bytecode of the currently executing
 method).</note>
 </opcode>
 <opcode>
-<name>astore_&lt;n&gt;</name>
+<name>astore_n</name>
 <short>store  object reference in local variable &lt;n&gt;</short>
 <stack><table>
 <tr>
@@ -1187,7 +1187,7 @@ method).</note>
 stores it in local variable &lt;n&gt;, where &lt;n&gt; is 0, 1, 2 or 3.
 &lt;n&gt; must be a valid local variable number in the current frame.
 
-'astore_&lt;n&gt;' is functionally equivalent to 'astore
+'astore_n' is functionally equivalent to 'astore
 &lt;n&gt;', although it is typically more efficient and also takes fewer
 bytes in the bytecode.</desc>
 <example><pre>
@@ -1914,7 +1914,7 @@ opcode = 0xAC (172)
 return</see>
 </opcode>
 <opcode>
-<name>istore_&lt;n&gt;</name>
+<name>istore_n</name>
 <short>store integer in local variable &lt;n&gt;</short>
 <stack><table>
 <tr>
@@ -1933,7 +1933,7 @@ return</see>
 where &lt;n&gt; is 0, 1, 2 or 3. &lt;n&gt; must be a valid local variable
 number in the current frame.
 
-'istore_&lt;n&gt;' is functionally equivalent to 'istore
+'istore_n' is functionally equivalent to 'istore
 &lt;n&gt;', although it is typically more efficient and also takes fewer
 bytes in the bytecode.</desc>
 <example><pre>
@@ -2035,7 +2035,7 @@ baload, caload, saload</see>
 <i>index</i> 0).</note>
 </opcode>
 <opcode>
-<name>lconst_&lt;l&gt;</name>
+<name>lconst_l</name>
 <short>push the long integer 0 or 1</short>
 <stack><table>
 <tr>
@@ -2053,7 +2053,7 @@ baload, caload, saload</see>
 <td></td>
 <td>...</td></tr>
 </table></stack>
-<desc>lconst_&lt;l&gt; represents the two opcodes lconst_0, lconst_1
+<desc>lconst_l represents the two opcodes lconst_0, lconst_1
 that are used to push the constant long integers 0 and 1 onto the stack. For
 example, to push the long integer zero onto the stack, use:
 
@@ -2100,8 +2100,8 @@ opcode = 0x0A (10)
 </table></bytecode>
 <see>bipush, sipush, ldc, ldc_w,
 ldc2_w, aconst_null, iconst_m1
-iconst_&lt;n&gt;, fconst_&lt;f&gt;,
-dconst_&lt;d&gt;</see>
+iconst_n, fconst_f,
+dconst_d</see>
 </opcode>
 <opcode>
 <name>bastore</name>
@@ -2167,7 +2167,7 @@ baload, caload, saload, newarray,</see>
 <i>index</i> 0).</note>
 </opcode>
 <opcode>
-<name>lload_&lt;n&gt;</name>
+<name>lload_n</name>
 <short>retrieve long integer from local variables &lt;n&gt; and
 &lt;n&gt; + 1</short>
 <stack><table>
@@ -2194,7 +2194,7 @@ together they must be holding a long.
 See the description of lload for more information on how longs are
 retrieved from local variables.   
 
-'lload_&lt;n&gt;' is functionally equivalent to 'lload
+'lload_n' is functionally equivalent to 'lload
 &lt;n&gt;', although it is typically more efficient and also takes fewer bytes
 in the bytecode.</desc>
 <example><pre>
@@ -2419,7 +2419,7 @@ opcode = 0xAD (173)
 return</see>
 </opcode>
 <opcode>
-<name>lstore_&lt;n&gt;</name>
+<name>lstore_n</name>
 <short>store long in local variables &lt;n&gt; and &lt;n&gt; +
 1</short>
 <stack><table>
@@ -2446,7 +2446,7 @@ together they must be holding a long.
 See the description of lstore for more information on how doubles are
 retrieved from local variables.   
 
-'lstore_&lt;n&gt;' is functionally equivalent to 'lstore
+'lstore_n' is functionally equivalent to 'lstore
 &lt;n&gt;', although it is typically more efficient and also takes fewer bytes
 in the bytecode.</desc>
 <example><pre>
@@ -3050,7 +3050,7 @@ baload, caload, saload</see>
 <i>index</i> 0).</note>
 </opcode>
 <opcode>
-<name>dconst_&lt;d&gt;</name>
+<name>dconst_d</name>
 <short>push the double 0.0 or 1.0</short>
 <stack><table>
 <tr>
@@ -3068,7 +3068,7 @@ baload, caload, saload</see>
 <td></td>
 <td>...</td></tr>
 </table></stack>
-<desc>dconst_&lt;d&gt; pushes the constant double precision floating
+<desc>dconst_d pushes the constant double precision floating
 point number &lt;d&gt; onto the stack, where &lt;d&gt; is either 0 or 1. For
 example, to push the double precision float 0.0 onto the stack, use:
 
@@ -3117,8 +3117,8 @@ opcode = 0x0F (15)
 </table></bytecode>
 <see>bipush, sipush, ldc, ldc_w,
 ldc2_w, aconst_null, iconst_m1,
-iconst_&lt;n&gt;, lconst_&lt;l&gt;,
-fconst_&lt;f&gt;,</see>
+iconst_n, lconst_l,
+fconst_f,</see>
 </opcode>
 <opcode>
 <name>aaload</name>
@@ -3281,9 +3281,9 @@ opcode = 0x01 (1)
 </td></tr>
 </table></bytecode>
 <see>bipush, sipush, ldc, ldc_w,
-ldc2_w, iconst_m1, iconst_&lt;n&gt;,
-lconst_&lt;l&gt;, fconst_&lt;f&gt;,
-dconst_&lt;d&gt;</see>
+ldc2_w, iconst_m1, iconst_n,
+lconst_l, fconst_f,
+dconst_d</see>
 </opcode>
 <opcode>
 <name>aload</name>
@@ -3365,7 +3365,7 @@ are to (1) use ret to return to that address, or (2) use one of the
 store instructions to store some other value in the local variable.</note>
 </opcode>
 <opcode>
-<name>aload_&lt;n&gt;</name>
+<name>aload_n</name>
 <short>retrieve object reference from local variable &lt;n&gt;</short>
 <stack><table>
 <tr>
@@ -3380,13 +3380,13 @@ store instructions to store some other value in the local variable.</note>
 <td></td>
 <td>...</td></tr>
 </table></stack>
-<desc>aload_&lt;n&gt; represents the series of opcodes
+<desc>aload_n represents the series of opcodes
 aload_0, aload_1, aload_2, and aload_3 that
 retrieve an object reference held in local variables 0, 1, 2 or 3 and push it
 onto the stack. &lt;n&gt; must be a valid local variable number in the current
 frame.
 
-'aload_&lt;n&gt;' is functionally equivalent to 'aload
+'aload_n' is functionally equivalent to 'aload
 &lt;n&gt;', although it is typically more efficient and also takes fewer
 bytes in the bytecode.</desc>
 <example><pre>
@@ -3432,7 +3432,7 @@ opcode = 0x2D (45)
 </table></bytecode>
 <see>fload, iload, lload, dload</see>
 <note>If you use astore to store a returnAddress in a local variable,
-you cannot then use aload_&lt;n&gt; to retrieve the value of that
+you cannot then use aload_n to retrieve the value of that
 local variable. Instead, if a local variable holds a returnAddress, your only
 choices are to (1) use ret to return to that address, or (2) use one
 of the store instructions to store some other value in the local variable.</note>
@@ -3901,7 +3901,7 @@ return, invokevirtual, invokespecial,
 invokestatic, invokeinterface</see>
 </opcode>
 <opcode>
-<name>fload_&lt;n&gt;</name>
+<name>fload_n</name>
 <short>retrieve float  from local variable &lt;n&gt;</short>
 <stack><table>
 <tr>
@@ -3916,13 +3916,13 @@ invokestatic, invokeinterface</see>
 <td></td>
 <td>...</td></tr>
 </table></stack>
-<desc>fload_&lt;n&gt; represents the series of opcodes
+<desc>fload_n represents the series of opcodes
 fload_0, fload_1, fload_2, and fload_3 that
 retrieve a single precision float in local variables 0, 1, 2 or 3 and push it
 onto the stack. &lt;n&gt; must be a valid local variable number in the current
 frame.
 
-'fload_&lt;n&gt;' is functionally equivalent to 'fload
+'fload_n' is functionally equivalent to 'fload
 &lt;n&gt;', although it is typically more efficient and also takes fewer
 bytes in the bytecode.</desc>
 <example><pre>
@@ -4508,7 +4508,7 @@ astore, fstore, lstore, dstore,
 istore</see>
 </opcode>
 <opcode>
-<name>iload_&lt;n&gt;</name>
+<name>iload_n</name>
 <short>push integer from local variable &lt;n&gt;</short>
 <stack><table>
 <tr>
@@ -4523,13 +4523,13 @@ istore</see>
 <td></td>
 <td>...</td></tr>
 </table></stack>
-<desc>iload_&lt;n&gt; represents the series of opcodes
+<desc>iload_n represents the series of opcodes
 iload_0, iload_1, iload_2, and iload_3 that
 retrieve a single precision float in local variables 0, 1, 2 or 3 and push it
 onto the stack. &lt;n&gt; must be a valid local variable number in the current
 frame.
 
-'iload_&lt;n&gt;' is functionally equivalent to 'iload
+'iload_n' is functionally equivalent to 'iload
 &lt;n&gt;', although it is typically more efficient and also takes fewer
 bytes in the bytecode.</desc>
 <example><pre>
@@ -4727,9 +4727,9 @@ u2
 <td>index</td></tr>
 </table></bytecode>
 <see>bipush, sipush, ldc, ldc_w,
-aconst_null, iconst_m1, iconst_&lt;n&gt;,
-lconst_&lt;l&gt;, fconst_&lt;f&gt;,
-dconst_&lt;d&gt;</see>
+aconst_null, iconst_m1, iconst_n,
+lconst_l, fconst_f,
+dconst_d</see>
 </opcode>
 <opcode>
 <name>lload</name>
@@ -5580,9 +5580,9 @@ s2
 <td>&lt;n&gt;</td></tr>
 </table></bytecode>
 <see>bipush, ldc, ldc_w, ldc2_w,
-aconst_null, iconst_m1, iconst_&lt;n&gt;,
-lconst_&lt;l&gt;, fconst_&lt;f&gt;,
-dconst_&lt;d&gt;</see>
+aconst_null, iconst_m1, iconst_n,
+lconst_l, fconst_f,
+dconst_d</see>
 </opcode>
 <opcode>
 <name>swap</name>
@@ -6025,9 +6025,9 @@ s1
 <td>&lt;n&gt;</td></tr>
 </table></bytecode>
 <see>sipush, ldc, ldc_w, ldc2_w,
-aconst_null, iconst_m1, iconst_&lt;n&gt;,
-lconst_&lt;l&gt;, fconst_&lt;f&gt;,
-dconst_&lt;d&gt;</see>
+aconst_null, iconst_m1, iconst_n,
+lconst_l, fconst_f,
+dconst_d</see>
 </opcode>
 <opcode>
 <name>d2f</name>
@@ -9224,9 +9224,9 @@ u1
 <td>index</td></tr>
 </table></bytecode>
 <see>bipush, sipush, ldc_w, ldc2_w,
-aconst_null, iconst_m1, iconst_&lt;n&gt;,
-lconst_&lt;l&gt;, fconst_&lt;f&gt;,
-dconst_&lt;d&gt;</see>
+aconst_null, iconst_m1, iconst_n,
+lconst_l, fconst_f,
+dconst_d</see>
 <note>1. Where possible, its more efficient to use one of bipush,
 sipush, or one of the const instructions instead of ldc.
 
@@ -9288,9 +9288,9 @@ u2
 <td>index</td></tr>
 </table></bytecode>
 <see>bipush, sipush, ldc, ldc2_w,
-aconst_null, iconst_m1, iconst_&lt;n&gt;,
-lconst_&lt;l&gt;, fconst_&lt;f&gt;,
-dconst_&lt;d&gt;</see>
+aconst_null, iconst_m1, iconst_n,
+lconst_l, fconst_f,
+dconst_d</see>
 <note>1. Where possible, its more efficient to use one of bipush,
 sipush, or one of the const instructions instead of ldc_w.
 
@@ -9953,7 +9953,7 @@ will cause a verification error).
 sipush, one of the</note>
 </opcode>
 <opcode>
-<name>dload_&lt;n&gt;</name>
+<name>dload_n</name>
 <short>retrieve double from local variables &lt;n&gt; and &lt;n&gt;
 + 1</short>
 <stack><table>
@@ -9980,7 +9980,7 @@ together they must be holding a double.
 See the description of dload for more information on how doubles are
 retrieved from local variables.   
 
-'dload_&lt;n&gt;' is functionally equivalent to 'dload
+'dload_n' is functionally equivalent to 'dload
 &lt;n&gt;', although it is typically more efficient and also takes fewer bytes
 in the bytecode.</desc>
 <example><pre>
@@ -10028,7 +10028,7 @@ opcode = 0x29 (41)
 lload</see>
 </opcode>
 <opcode>
-<name>dstore_&lt;n&gt;</name>
+<name>dstore_n</name>
 <short>store double in local variables &lt;n&gt; and &lt;n&gt; +
 1</short>
 <stack><table>
@@ -10054,7 +10054,7 @@ the local variables &lt;n&gt; and &lt;n&gt; + 1. Both &lt;n&gt; and &lt;n&gt; +
 See the description of dstore for more information on how doubles are
 stored in local variables.   
 
-'dstore_&lt;n&gt;' is functionally equivalent to 'dstore
+'dstore_n' is functionally equivalent to 'dstore
 &lt;n&gt;', although it is typically more efficient and also takes fewer bytes
 in the bytecode.</desc>
 <example><pre>

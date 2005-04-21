@@ -1,36 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xsl:stylesheet version="1.0" 
+<xsl:stylesheet version="2.0" 
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
-    xmlns:fo="http://www.w3.org/1999/XSL/Format" 
+    xmlns:fo="http://www.w3.org/1999/XSL/Format"
+    xmlns="http://www.w3.org/1999/xhtml" 
     exclude-result-prefixes="xsl fo">
   
-<xsl:output method="html" indent="no" omit-xml-declaration="yes" encoding="UTF-8"/>
+<xsl:output method="html" indent="no" omit-xml-declaration="yes" encoding="UTF-8" name="html"/>
+<xsl:output method="xml" indent="yes" encoding="UTF-8" name="xml"/>
 
 <xsl:template match="opcodes">
-<html>
-<xsl:comment>
-</xsl:comment>
-<body>
+
 
 <!-- TOC -->
+<xsl:result-document format="xml" href="toc.xml">
+
+<toc label="JVM Instruction Reference" topic="about.html">
+
 <xsl:for-each select='opcode'>
   <xsl:sort/>
-  <xsl:variable name='nm' select='name/text()'/>
-  <a><xsl:attribute name='href'>#<xsl:value-of select="name/text()"/></xsl:attribute><xsl:value-of select="name/text()"/></a>
-  <xsl:value-of select="string( ' ')"/>
+  <topic label="aaload" href="opcodes.html#aaload">
+    <xsl:attribute name='label'><xsl:value-of select="name/text()"/></xsl:attribute>
+    <xsl:attribute name='href'>doc/ref-<xsl:value-of select="name/text()"/>.html</xsl:attribute>
+  </topic>
 </xsl:for-each>
-<hr/>
+
+</toc>
+</xsl:result-document>
+
 
 <!-- Details -->
 <xsl:apply-templates select="*">
   <xsl:sort/>
 </xsl:apply-templates>
-</body>
-</html>
 
 </xsl:template>
 
 <xsl:template match="opcode">
+
+<xsl:variable name="filename" select="concat('ref-', name, '.html')"/>
+<xsl:result-document format="html" href="{$filename}">
+
+<html>
+<body>
+
 <dl>
 <dt>
   <a><xsl:attribute name='name'><xsl:value-of select="name"/></xsl:attribute></a>
@@ -45,7 +57,11 @@
 <xsl:apply-templates select="stack"/>
 <xsl:apply-templates select="bytecode"/>
 </dl>
-<hr/>
+
+</body>
+</html>
+
+</xsl:result-document>
 
 </xsl:template>
 
@@ -124,7 +140,7 @@
   <xsl:choose>      
     <xsl:when test="contains($string, ',')">
       <a>
-        <xsl:attribute name="href">#<xsl:value-of select="normalize-space(substring-before($string, ','))"/></xsl:attribute>
+        <xsl:attribute name="href">ref-<xsl:value-of select="normalize-space(substring-before($string, ','))"/>.html</xsl:attribute>
         <xsl:value-of select="normalize-space(substring-before($string, ','))"/>
       </a>
       <xsl:value-of select="string( ' ')"/>
@@ -134,7 +150,7 @@
     </xsl:when>      
     <xsl:otherwise>
       <a>
-        <xsl:attribute name="href">#<xsl:value-of select="normalize-space($string)"/></xsl:attribute>
+        <xsl:attribute name="href">ref-<xsl:value-of select="normalize-space($string)"/>.html</xsl:attribute>
         <xsl:value-of select="normalize-space($string)"/>
       </a>
     </xsl:otherwise>
