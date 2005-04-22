@@ -74,8 +74,7 @@
         <include name="about.html"/>
         <include name="*.txt"/>
       </fileset>
-      <fileset dir="${out}/doc" includes="toc.xml"/>
-      <zipfileset dir="${out}/doc" includes="*.html" prefix="doc"/>
+      <zipfileset dir="${out}/doc" includes="toc.xml,ref-*.html" prefix="doc"/>
     </zip>
   </target>
   
