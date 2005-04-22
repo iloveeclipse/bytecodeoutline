@@ -18,7 +18,7 @@
 
 <xsl:for-each select='opcode'>
   <xsl:sort/>
-  <topic label="aaload" href="opcodes.html#aaload">
+  <topic>
     <xsl:attribute name='label'><xsl:value-of select="name/text()"/></xsl:attribute>
     <xsl:attribute name='href'>doc/ref-<xsl:value-of select="name/text()"/>.html</xsl:attribute>
   </topic>
@@ -41,14 +41,41 @@
 <xsl:result-document format="html" href="{$filename}">
 
 <html>
+<head>
+<style type="text/css">
+dt {
+  font-style: italic;
+  margin-top: 15px;
+  margin-bottom: 3px;
+  margin-left: 0px;
+  border-bottom: 1px dotted black;
+}
+dd {
+  margin-left: 10px;
+}
+table {
+  border-collapse:collapse;
+  border: 1px solid black;
+  margin-top: 7px;
+}
+th {
+  border: 1px solid black;
+  padding: 3 7 3 7;
+}
+td {
+  border: 1px solid black;
+  padding: 3 7 3 7;
+}
+</style>  
+</head>
 <body>
 
-<dl>
-<dt>
+<p>
   <a><xsl:attribute name='name'><xsl:value-of select="name"/></xsl:attribute></a>
   <b><xsl:value-of select="name"/></b> : 
   <xsl:apply-templates select="short/text()"/>
-  </dt>
+</p>
+<dl>
 <xsl:apply-templates select="desc"/>
 <xsl:apply-templates select="exceptions"/>
 <xsl:apply-templates select="example"/>
@@ -69,53 +96,68 @@
 <!-- Sections -->
 
 <xsl:template match="stack">
-<dt><i>Stack</i></dt>
+<dt>Stack</dt>
 <dd><xsl:apply-templates select="*|text()"/></dd>
 </xsl:template>
 
 <xsl:template match="desc">
-<dt><i>Description</i></dt>
+<dt>Description</dt>
 <dd><xsl:apply-templates select="*|text()"/></dd>
 </xsl:template>
 
 <xsl:template match="bytecode">
-<dt><i>Bytecode</i></dt>
+<dt>Bytecode</dt>
 <dd><xsl:apply-templates select="*|text()"/></dd>
 </xsl:template>
 
 <xsl:template match="example">
-<dt><i>Example</i></dt>
+<dt>Example</dt>
 <dd><xsl:apply-templates select="*|text()"/></dd>
 </xsl:template>
 
 <xsl:template match="note">
-<dt><i>Notes</i></dt>
+<dt>Notes</dt>
 <dd><xsl:apply-templates select="*|text()"/></dd>
 </xsl:template>
 
 <xsl:template match="see">
-<dt><i>See also</i></dt>
+<dt>See also</dt>
 <dd>
   <xsl:call-template name="seeFormat"><xsl:with-param name="string" select="text()"/></xsl:call-template>
   </dd>
 </xsl:template>
 
 <xsl:template match="exceptions">
-<dt><i>Exceptions</i></dt>
+<dt>Exceptions</dt>
 <dd><xsl:apply-templates select="*|text()"/></dd>
 </xsl:template>
 
 
 <!-- Formatting -->
 
-<xsl:template match="table">
-  <table border="1" cellspacing="0" cellpadding="3">
-  <xsl:apply-templates select="*"/>
-  </table>
+<xsl:template match='pre'>
+  <pre><xsl:call-template name="preFormat"><xsl:with-param name="string" select="text()"/></xsl:call-template></pre>
 </xsl:template>
 
 <xsl:template match='text()'>
   <xsl:call-template name="docFormat"><xsl:with-param name="string" select="."/></xsl:call-template>
+</xsl:template>
+
+<xsl:template name="preFormat">
+  <xsl:param name="string"/>
+  <!-- double CRLF will be replaced with <BR><BR> -->
+  <xsl:choose>      
+    <xsl:when test="contains($string, '&#xA;&#xA;')">
+      <xsl:value-of select="substring-before($string, '&#xA;&#xA;')"/>
+      <xsl:value-of select="string( '&#xA;')"/>
+      <xsl:call-template name="preFormat">
+        <xsl:with-param name="string" select="substring-after($string, '&#xA;&#xA;')"/>
+      </xsl:call-template>
+    </xsl:when>      
+    <xsl:otherwise>
+      <xsl:value-of select="$string"/>
+    </xsl:otherwise>
+  </xsl:choose>      
 </xsl:template>
     
 <xsl:template name="docFormat">
@@ -124,6 +166,7 @@
   <xsl:choose>      
     <xsl:when test="contains($string, '&#xA;&#xA;')">
       <xsl:value-of select="substring-before($string, '&#xA;&#xA;')"/>
+      <!-- xsl:value-of select="string( '&#xA;')"/ -->
       <br/>
       <xsl:call-template name="docFormat">
         <xsl:with-param name="string" select="substring-after($string, '&#xA;&#xA;')"/>
@@ -139,16 +182,22 @@
   <xsl:param name="string"/>
   <xsl:choose>      
     <xsl:when test="contains($string, ',')">
-      <a>
-        <xsl:attribute name="href">ref-<xsl:value-of select="normalize-space(substring-before($string, ','))"/>.html</xsl:attribute>
-        <xsl:value-of select="normalize-space(substring-before($string, ','))"/>
-      </a>
-      <xsl:value-of select="string( ' ')"/>
-      <xsl:call-template name="seeFormat">
-        <xsl:with-param name="string" select="substring-after($string, ',')"/>
-      </xsl:call-template>
+      <xsl:call-template name="seeFormat"><xsl:with-param name="string" select="substring-before($string, ',')"/></xsl:call-template>
+      <xsl:call-template name="seeFormat"><xsl:with-param name="string" select="substring-after($string, ',')"/></xsl:call-template>
     </xsl:when>      
+
+    <xsl:when test="contains($string, ' ')">
+      <xsl:call-template name="seeFormat"><xsl:with-param name="string" select="substring-before($string, ' ')"/></xsl:call-template>
+      <xsl:call-template name="seeFormat"><xsl:with-param name="string" select="substring-after($string, ' ')"/></xsl:call-template>
+    </xsl:when>      
+
+    <xsl:when test="contains($string, '&#xA;')">
+      <xsl:call-template name="seeFormat"><xsl:with-param name="string" select="substring-before($string, '&#xA;')"/></xsl:call-template>
+      <xsl:call-template name="seeFormat"><xsl:with-param name="string" select="substring-after($string, '&#xA;')"/></xsl:call-template>
+    </xsl:when>      
+
     <xsl:otherwise>
+      <xsl:value-of select="string( ' ')"/>
       <a>
         <xsl:attribute name="href">ref-<xsl:value-of select="normalize-space($string)"/>.html</xsl:attribute>
         <xsl:value-of select="normalize-space($string)"/>
