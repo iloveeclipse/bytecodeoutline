@@ -74,6 +74,46 @@ td {
   <a><xsl:attribute name='name'><xsl:value-of select="name"/></xsl:attribute></a>
   <b><xsl:value-of select="name"/></b> : 
   <xsl:apply-templates select="short/text()"/>
+  <xsl:value-of select="string(' -- ')"/>
+  <xsl:variable name="nm"><xsl:value-of select="name"/></xsl:variable>
+  <xsl:choose>
+    <xsl:when test="contains('getstatic putstatic getfield putfield', $nm)">
+      <a href="http://asm.objectweb.org/current/doc/javadoc/user/org/objectweb/asm/MethodVisitor.html#visitFieldInsn(int,%20java.lang.String,%20java.lang.String,%20java.lang.String)">visitFieldInsn()</a>
+    </xsl:when>
+    <xsl:when test="contains('iinc', $nm)">
+      <a href="http://asm.objectweb.org/current/doc/javadoc/user/org/objectweb/asm/MethodVisitor.html#visitIincInsn(int,%20int)">visitIincInsn()</a>
+    </xsl:when>
+    <xsl:when test="contains('nop aconst_null iconst_m1 iconst_0 iconst_1 iconst_2 iconst_3 iconst_4 iconst_5 lconst_0 lconst_1 fconst_0 fconst_1 fconst_2 dconst_0 dconst_1 iaload laload faload daload aaload baload caload saload iastore lastore fastore dastore aastore bastore castore sastore pop pop2 dup dup_x1 dup_x2 dup2 dup2_x1 dup2_x2 swap iadd ladd fadd dadd isub lsub fsub dsub imul lmul fmul dmul idiv ldiv fdiv ddiv irem lrem frem drem ineg lneg fneg dneg ishl lshl ishr lshr iushr lushr iand land ior lor ixor lxor i2l i2f i2d l2i l2f l2d f2i f2l f2d d2i d2l d2f i2b i2c i2s lcmp fcmpl fcmpg dcmpl dcmpg ireturn lreturn freturn dreturn areturn return arraylength athrow monitorenter monitorexit', $nm)">
+      <a href="http://asm.objectweb.org/current/doc/javadoc/user/org/objectweb/asm/MethodVisitor.html#visitInsn(int)">visitInsn()</a>
+    </xsl:when>
+    <xsl:when test="contains('bipush sipush newarray', $nm)">
+      <a href="http://asm.objectweb.org/current/doc/javadoc/user/org/objectweb/asm/MethodVisitor.html#visitIntInsn(int,%20int)">visitIntInsn()</a>
+    </xsl:when>
+    <xsl:when test="contains('ifeq ifne iflt ifge ifgt ifle if_icmpeq if_icmpne if_icmplt if_icmpge if_icmpgt if_icmple if_acmpeq if_acmpne goto jsr ifnull ifnonnull', $nm)">
+      <a href="http://asm.objectweb.org/current/doc/javadoc/user/org/objectweb/asm/MethodVisitor.html#visitJumpInsn(int,%20org.objectweb.asm.Label)">visitJumpInsn()</a>
+    </xsl:when>
+    <xsl:when test="contains('ldc', $nm)">
+      <a href="http://asm.objectweb.org/current/doc/javadoc/user/org/objectweb/asm/MethodVisitor.html#visitLdcInsn(java.lang.Object)">visitLdcInsn()</a>
+    </xsl:when>
+    <xsl:when test="contains('lookupswitch', $nm)">
+      <a href="http://asm.objectweb.org/current/doc/javadoc/user/org/objectweb/asm/MethodVisitor.html#visitLookupSwitchInsn(org.objectweb.asm.Label,%20int[],%20org.objectweb.asm.Label[])">visitLookupSwitchInsn()</a>
+    </xsl:when>
+    <xsl:when test="contains('tableswitch', $nm)">
+      <a href="http://asm.objectweb.org/current/doc/javadoc/user/org/objectweb/asm/MethodVisitor.html#visitTableSwitchInsn(int,%20int,%20org.objectweb.asm.Label,%20org.objectweb.asm.Label[])">visitTableSwitchInsn()</a>
+    </xsl:when>
+    <xsl:when test="contains('invokevirtual invokespecial invokestatic invokeinterface', $nm)">
+      <a href="http://asm.objectweb.org/current/doc/javadoc/user/org/objectweb/asm/MethodVisitor.html#visitMethodInsn(int,%20java.lang.String,%20java.lang.String,%20java.lang.String)">visitMethodInsn()</a>
+    </xsl:when>
+    <xsl:when test="contains('multianewarray', $nm)">
+      <a href="http://asm.objectweb.org/current/doc/javadoc/user/org/objectweb/asm/MethodVisitor.html#visitMultiANewArrayInsn(java.lang.String,%20int)">visitMultiANewArrayInsn()</a>
+    </xsl:when>
+    <xsl:when test="contains('new anewarray checkcast instanceof', $nm)">
+      <a href="http://asm.objectweb.org/current/doc/javadoc/user/org/objectweb/asm/MethodVisitor.html#visitTypeInsn(int,%20java.lang.String)">visitTypeInsn()</a>
+    </xsl:when>
+    <xsl:when test="contains('iload lload fload dload aload istore lstore fstore dstore astore ret', $nm)">
+      <a href="http://asm.objectweb.org/current/doc/javadoc/user/org/objectweb/asm/MethodVisitor.html#visitVarInsn(int,%20int)">visitVarInsn()</a>
+    </xsl:when>
+  </xsl:choose>
 </p>
 <dl>
 <xsl:apply-templates select="desc"/>
@@ -197,11 +237,11 @@ td {
     </xsl:when>      
 
     <xsl:otherwise>
-      <xsl:value-of select="string( ' ')"/>
       <a>
         <xsl:attribute name="href">ref-<xsl:value-of select="normalize-space($string)"/>.html</xsl:attribute>
         <xsl:value-of select="normalize-space($string)"/>
       </a>
+      <xsl:value-of select="string( ' ')"/>
     </xsl:otherwise>
   </xsl:choose>      
 </xsl:template>
