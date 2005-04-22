@@ -19,5 +19,6 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.jdt,
  org.eclipse.compare,
  org.eclipse.ui.console,
+ org.eclipse.help.base,
  org.objectweb.asm;bundle-version="2.0.0"
 Eclipse-AutoStart: true

@@ -4,13 +4,9 @@
 
 package de.loskutov.bco.views;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.URL;
 
-import org.eclipse.core.runtime.Path;
-import org.eclipse.core.runtime.Platform;
+import org.eclipse.help.internal.base.BaseHelpSystem;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
@@ -21,8 +17,6 @@ import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.part.ViewPart;
-import org.osgi.framework.Bundle;
-
 import org.objectweb.asm.util.AbstractVisitor;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
@@ -35,6 +29,9 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
     public void createPartControl(Composite parent) {
         browser = new Browser(parent, SWT.NONE);
         getSite().getWorkbenchWindow().getPartService().addPartListener(this);
+        
+        // TODO run this in background!
+        BaseHelpSystem.ensureWebappRunning();
     }
 
     public void dispose() {
@@ -97,7 +94,7 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
             if (opcodeName != null) {
                 URL url = getHelpResource( opcodeName);
                 if( url!=null) {
-                    browser.setText( getContent( url));
+                    browser.setUrl( url.toString());
                 } else {
                     browser.setText("");
                 }
@@ -107,42 +104,18 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
         }
     }
 
-    private String getContent(URL url) {
-      BufferedReader r = null;
-        try {
-            r = new BufferedReader(new InputStreamReader(url.openStream()));
-            if (r == null)
-                return null;
-
-            StringBuffer sb = new StringBuffer();
-            String l;
-            while ((l = r.readLine()) != null) {
-                sb.append(l).append("\n");
-            }
-            return sb.toString();
-
-        } catch (IOException ex) {
-            //
-        } finally {
-            try {
-                r.close();
-            } catch (IOException e) {
-                //
-            }
-        }
-        return null;
-    }
-
     private URL getHelpResource( String name) {
-      String pluginId = BytecodeOutlinePlugin.getDefault().getBundle().getSymbolicName();
-      Bundle bundle = Platform.getBundle(pluginId);
-
-      int state = bundle.getState();  // verify if bundle is ready
-      if(( state & ( Bundle.RESOLVED | Bundle.STARTING | Bundle.ACTIVE | Bundle.STOPPING))==0) {
-          return null;
+      try {
+        // TODO use internal appserver from help system
+        String href = "/"+BytecodeOutlinePlugin.getDefault().getBundle().getSymbolicName()+
+            "/doc/ref-"+name.toLowerCase()+".html";
+        return BaseHelpSystem.resolve( href, true);
+        
+        // return new File( BytecodeOutlinePlugin.PLUGIN_PATH+"/doc/ref-"+name.toLowerCase()+".html").toURL();
+        
+      } catch( Exception e) {
+        return null;
       }
-
-      return Platform.find(bundle, new Path( "doc/ref-"+name.toLowerCase()+".html"));
     }
 }
 
