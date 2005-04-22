@@ -6,6 +6,7 @@ package de.loskutov.bco.views;
 
 import java.net.URL;
 
+import org.eclipse.help.internal.appserver.WebappManager;
 import org.eclipse.help.internal.base.BaseHelpSystem;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
@@ -106,11 +107,13 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
 
     private URL getHelpResource( String name) {
       try {
-        // TODO use internal appserver from help system
+        // BaseHelpSystem.resolve() method is not awailable in 3.0
+        String host = WebappManager.getHost();
+        int port = WebappManager.getPort();
         String href = "/"+BytecodeOutlinePlugin.getDefault().getBundle().getSymbolicName()+
             "/doc/ref-"+name.toLowerCase()+".html";
-        return BaseHelpSystem.resolve( href, true);
-        
+        return new URL( "http://"+host+":"+port+"/help/nftopic"+href);
+        // return BaseHelpSystem.resolve( href, true);        
         // return new File( BytecodeOutlinePlugin.PLUGIN_PATH+"/doc/ref-"+name.toLowerCase()+".html").toURL();
         
       } catch( Exception e) {
