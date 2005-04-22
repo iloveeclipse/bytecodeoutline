@@ -28,7 +28,8 @@ THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND ANY EXPRE
    </license>
 
    <url>
-      <update label="Bytecode Outline" url="http://download.forge.objectweb.org/eclipse-update/site.xml"/>
+      <update label="ObjectWeb update site" url="http://download.forge.objectweb.org/eclipse-update/site.xml"/>
+      <discovery label="ObjectWeb update site" url="http://download.forge.objectweb.org/eclipse-update/site.xml"/>
    </url>
 
    <includes id="org.objectweb.asm.feature" version="2.0.0.RC1" optional="false"/>
