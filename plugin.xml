@@ -17,7 +17,7 @@
             id="de.loskutov.bco.views.BytecodeReferenceView"/>
    </extension>
 
-   <extension
+<!--   <extension
          point="org.eclipse.ui.editors">
       <editor
             class="de.loskutov.bco.editors.BytecodeClassFileEditor"
@@ -27,7 +27,7 @@
             id="de.loskutov.bco.editors.BytecodeClassFileEditor"
             extensions="class,java">
       </editor>
-   </extension>
+   </extension> -->
 
 
    <extension
