@@ -443,20 +443,28 @@ public class DecompiledMethod {
     }
 
     private String getTypeName(final boolean useQualifiedNames, String s) {
-        if (!useQualifiedNames) {
-            int idx = s.lastIndexOf('/');
-            if (idx > 0) {
-                // from "Ljava/lang/Object;" to "Object"
-                return s.substring(idx + 1, s.length() - 1);
-            }
-            // this is the case on LVT view - ignore it
-            if("." == s){
-                return s;
-            }
-            // resolve primitive types
-            return CommentedClassVisitor.getSimpleName(Type.getType(s));
-        }
-        return "Lnull;".equals(s) ? "null" : s;
+      if (!useQualifiedNames) {
+          // get leading array symbols
+          String arraySymbols = "";
+          while (s.startsWith("[")){
+              arraySymbols += "[";
+              s = s.substring(1);
+          }
+          
+          int idx = s.lastIndexOf('/');
+          if (idx > 0) {
+              // from "Ljava/lang/Object;" to "Object"
+              return arraySymbols  + s.substring(idx + 1, s.length() - 1);
+          }
+          // this is the case on LVT view - ignore it
+          if("." == s){
+              return arraySymbols  + s;
+          }
+          // resolve primitive types
+          return arraySymbols + 
+              CommentedClassVisitor.getSimpleName(Type.getType(s));
+      }
+      return "Lnull;".equals(s) ? "null" : s;
     }
 
     public int getDecompiledLine(final int sourceLine) {
