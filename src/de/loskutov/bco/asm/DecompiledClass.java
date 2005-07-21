@@ -56,7 +56,7 @@ public class DecompiledClass {
                     lines.add(mlines[j]);
                 }
             } else {
-                lines.add(new String[]{"", "", o.toString()});
+                lines.add(new String[]{"", "", o.toString(), ""});
             }
         }
         return (String[][]) lines.toArray(new String[lines.size()][]);

@@ -85,12 +85,12 @@ public class DecompiledMethod {
             protected Class getClass(final Type t) {
                 try {
                     if (t.getSort() == Type.ARRAY) {
-                        return cl.loadClass(t.getDescriptor().replace(
-                            '/', '.'));
+                        return Class.forName(t.getDescriptor().replace(
+                            '/', '.'), true, cl);
                     }
                     return cl.loadClass(t.getClassName());
                 } catch (ClassNotFoundException e) {
-                    throw new RuntimeException(e.toString(), e);
+                    throw new RuntimeException(e.toString()+" " +cl, e);
                 }
             }
         });
@@ -223,12 +223,16 @@ public class DecompiledMethod {
 
     public String[][] getTextTable() {
         Frame frame = null;
+        String error = "";
         List lines = new ArrayList();
         for (int i = 0; i < text.size(); ++i) {
             Object o = text.get(i);
             if (o instanceof Index) {
                 if (frames != null) {
                     frame = frames[((Index) o).insn];
+                    if (this.error != null && ((Index) o).insn == this.errorInsn) {
+                      error = this.error;
+                    }
                 }
             } else {
                 String locals = " ";
@@ -246,8 +250,9 @@ public class DecompiledMethod {
                         stack = " ";
                     }
                 }
-                lines.add(new String[]{locals, stack, o.toString()});
+                lines.add(new String[]{locals, stack, o.toString(), error});
                 frame = null;
+                error = "";
             }
         }
         return (String[][]) lines.toArray(new String[lines.size()][]);

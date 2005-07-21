@@ -408,6 +408,7 @@ public class BytecodeOutlineView extends ViewPart {
         new TableColumn(tableControl, SWT.LEFT).setText( BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "lvt.header"));
         new TableColumn(tableControl, SWT.LEFT).setText( BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "stack.header"));
         new TableColumn(tableControl, SWT.LEFT);
+        new TableColumn(tableControl, SWT.LEFT);
         tableControl.setLinesVisible(false);
         tableControl.setHeaderVisible(true);
 
@@ -1287,6 +1288,7 @@ public class BytecodeOutlineView extends ViewPart {
                 tableControl.getColumn(0).pack();
                 tableControl.getColumn(1).pack();
                 tableControl.getColumn(2).pack();
+                tableControl.getColumn(3).pack();
             } catch (Exception e) {
                 // TODO fix for Eclipse bug 84609, should be fixed in M5 "final"
             }
