@@ -24,8 +24,10 @@ import java.util.jar.JarFile;
 
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IPathVariableManager;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
@@ -44,6 +46,7 @@ import org.eclipse.jdt.core.IParent;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.ITypeParameter;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jdt.internal.core.BinaryMember;
@@ -865,9 +868,27 @@ public class JdtUtils {
         ClassLoader cl;
 
         IJavaProject javaProject = type.getJavaProject();
+        List urls = new ArrayList();
+
+        getClassURLs(javaProject, urls);
+
+        if (urls.isEmpty()) {
+            cl = JdtUtils.class.getClassLoader();
+        } else {
+            cl = new URLClassLoader((URL[]) urls.toArray(new URL[urls.size()]));
+        }
+        return cl;
+    }
+
+    private static void getClassURLs(IJavaProject javaProject, List urls) {
+        IProject project = javaProject.getProject();
+        IWorkspaceRoot workspaceRoot = project.getWorkspace().getRoot();
+
         IPath projectPath = javaProject.getProject().getLocation();
         IClasspathEntry[] paths = null;
+
         IPath defaultOutputLocation = null;
+
         try {
             paths = javaProject.getResolvedClasspath(true);
             defaultOutputLocation = javaProject.getOutputLocation();
@@ -875,48 +896,48 @@ public class JdtUtils {
             // don't show message to user
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
-        if (paths == null) {
-            return JdtUtils.class.getClassLoader();
-        }
-        List urls = new ArrayList();
-        for (int i = 0; i < paths.length; ++i) {
-            IClasspathEntry cpEntry = paths[i];
-            IPath p = null;
-            if (cpEntry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
-                // filter out source container - there are unused for class search -
-                // add bytecode output location instead
-                p = cpEntry.getOutputLocation();
-                if (p == null) {
-                    // default output used:
-                    p = defaultOutputLocation;
+        if (paths != null) {
+            for (int i = 0; i < paths.length; ++i) {
+                IClasspathEntry cpEntry = paths[i];
+                IPath p = null;
+                if (cpEntry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+                    // filter out source container - there are unused for class
+                    // search -
+                    // add bytecode output location instead
+                    p = cpEntry.getOutputLocation();
+                    if (p == null) {
+                        // default output used:
+                        p = defaultOutputLocation;
+                    }
+                } else if (cpEntry.getEntryKind() == IClasspathEntry.CPE_PROJECT) {
+                    String projName = cpEntry.getPath().toPortableString()
+                        .substring(1);
+                    IProject proj = workspaceRoot.getProject(projName);
+                    IJavaProject projj = JavaCore.create(proj);
+                    getClassURLs(projj, urls);
+                    continue;
+                } else {
+                    p = cpEntry.getPath();
                 }
-            } else {
-                p = cpEntry.getPath();
-            }
 
-            if (p == null) {
-                continue;
-            }
-            if (!p.toFile().exists()) {
-                // removeFirstSegments: remove project from relative path
-                p = projectPath.append(p.removeFirstSegments(1));
-                if (!p.toFile().exists()) {
+                if (p == null) {
                     continue;
                 }
-            }
-            try {
-                urls.add(p.toFile().toURL());
-            } catch (MalformedURLException e) {
-                // don't show message to user
-                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+                if (!p.toFile().exists()) {
+                    // removeFirstSegments: remove project from relative path
+                    p = projectPath.append(p.removeFirstSegments(1));
+                    if (!p.toFile().exists()) {
+                        continue;
+                    }
+                }
+                try {
+                    urls.add(p.toFile().toURL());
+                } catch (MalformedURLException e) {
+                    // don't show message to user
+                    BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+                }
             }
         }
-        if (urls.isEmpty()) {
-            cl = JdtUtils.class.getClassLoader();
-        } else {
-            cl = new URLClassLoader((URL[]) urls.toArray(new URL[urls.size()]));
-        }
-        return cl;
     }
 
     /**
