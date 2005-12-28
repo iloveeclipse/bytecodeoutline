@@ -25,7 +25,6 @@ import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jdt.internal.ui.actions.AbstractToggleLinkingAction;
-import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuListener;
@@ -63,6 +62,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Menu;
@@ -81,10 +81,10 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.console.actions.TextViewerAction;
-import org.eclipse.ui.internal.layout.TrimLayout;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.texteditor.FindReplaceAction;
+import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.texteditor.IUpdate;
 import org.eclipse.ui.texteditor.IWorkbenchActionDefinitionIds;
 
@@ -144,7 +144,7 @@ public class BytecodeOutlineView extends ViewPart {
     protected Table stackTable;
     protected Table lvtTable;
 
-    protected JavaEditor javaEditor;
+    protected ITextEditor javaEditor;
     protected IJavaElement javaInput;
     protected IJavaElement lastChildElement;
     protected IJavaElement lastDecompiledElement;
@@ -267,7 +267,7 @@ public class BytecodeOutlineView extends ViewPart {
         this.bytecodeChanged = bytecodeChanged;
     }
 
-    private void setInput(JavaEditor editor) {
+    private void setInput(ITextEditor editor) {
         javaEditor = null;
         javaInput = null;
         lastDecompiledResult = null;
@@ -352,20 +352,23 @@ public class BytecodeOutlineView extends ViewPart {
             }
         });
 
-        Composite mainComposite = new Composite(parent1, SWT.NONE);
-        TrimLayout tLayout = new TrimLayout();
-        mainComposite.setLayout(tLayout);
+        GridLayout parentLayout = new GridLayout();
+        parentLayout.numColumns = 1;
+        parentLayout.marginBottom = -5;
+        parentLayout.marginTop = -5;
+        parentLayout.marginLeft = -5;
+        parentLayout.marginRight = -5;
 
-        stackComposite = new Composite(mainComposite, SWT.NONE);
-        tLayout.setCenterControl(stackComposite);
+        parent1.setLayout(parentLayout);
+        
+        stackComposite = new Composite(parent1, SWT.NONE);
         stackComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
         stackComposite.setLayout(new StackLayout());
 
         statusLineManager = new StatusLineManager();
-        statusControl = statusLineManager.createControl(mainComposite, SWT.NONE);
-        tLayout.addTrim(statusControl, SWT.BOTTOM);
-        //statusLineManager.setErrorMessage("hallo!");
-
+        statusControl = statusLineManager.createControl(parent1, SWT.NONE);
+        statusControl.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        
 // init text viewer ans some related actions -----------------------------------
 // TODO make init code clear
 
@@ -745,7 +748,7 @@ public class BytecodeOutlineView extends ViewPart {
             isVisible = true;
             // check if java editor is already open
             IEditorPart activeEditor = EclipseUtils.getActiveEditor();
-            if (!(activeEditor instanceof JavaEditor)) {
+            if (!(activeEditor instanceof ITextEditor)) {
                 // start monitoring again, even if current editor is not
                 // supported - but we at front now
                 activateView();
@@ -754,13 +757,13 @@ public class BytecodeOutlineView extends ViewPart {
             part = activeEditor;
             // continue with setting input
         }
-        if (isVisible && part instanceof JavaEditor) {
+        if (isVisible && part instanceof ITextEditor) {
             if (isActive() && part == javaEditor) {
                 return;
             }
             activateView();
             setEnabled(true);
-            setInput((JavaEditor) part);
+            setInput((ITextEditor) part);
             refreshView();
         } else if (part instanceof IEditorPart) {
             if (isActive()) {
@@ -775,7 +778,7 @@ public class BytecodeOutlineView extends ViewPart {
             || !(part instanceof IEditorPart)) {
             return;
         }
-        if (!(part instanceof JavaEditor)) {
+        if (!(part instanceof ITextEditor)) {
             deActivateView();
             return;
         }
@@ -783,7 +786,7 @@ public class BytecodeOutlineView extends ViewPart {
             setEnabled(true);
         }
         if (part != javaEditor) {
-            setInput((JavaEditor) part);
+            setInput((ITextEditor) part);
         } else {
             if( ! updateSelection((ITextSelection) selection)){
                 return;
@@ -1072,7 +1075,7 @@ public class BytecodeOutlineView extends ViewPart {
 
 
     protected void setSelectionInJavaEditor(Point selection) {
-        if (javaEditor != null && javaEditor.getViewer() == null) {
+        if (javaEditor != null && javaEditor.getEditorInput() == null) {
             // editor was closed - we should clean the reference
             javaEditor = null;
             javaInput = null;
@@ -1092,8 +1095,7 @@ public class BytecodeOutlineView extends ViewPart {
 
         try {
             if (sourceLine > 0) {
-                IRegion lineInfo = javaEditor.getViewer().getDocument()
-                    .getLineInformation(sourceLine - 1);
+                IRegion lineInfo = javaEditor.getDocumentProvider().getDocument(javaEditor.getEditorInput()).getLineInformation(sourceLine-1);
 
                 EclipseUtils.selectInEditor(javaEditor, lineInfo
                     .getOffset(), lineInfo.getLength());
@@ -1123,9 +1125,9 @@ public class BytecodeOutlineView extends ViewPart {
         } else {
             if (checkNewSelection) {
                 IEditorPart activeEditor = EclipseUtils.getActiveEditor();
-                if (activeEditor instanceof JavaEditor) {
+                if (activeEditor instanceof ITextEditor) {
                     ITextSelection selection = EclipseUtils
-                        .getSelection(((JavaEditor) activeEditor)
+                        .getSelection(((ITextEditor) activeEditor)
                             .getSelectionProvider());
                     handleSelectionChanged(activeEditor, selection);
                     return;
@@ -1133,7 +1135,7 @@ public class BytecodeOutlineView extends ViewPart {
             }
             for (int i = 0; i < editorReferences.length; i++) {
                 IEditorPart editor = editorReferences[i].getEditor(false);
-                if (editor instanceof JavaEditor) {
+                if (editor instanceof ITextEditor) {
                     return;
                 }
             }
