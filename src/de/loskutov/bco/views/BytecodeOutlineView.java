@@ -360,7 +360,7 @@ public class BytecodeOutlineView extends ViewPart {
         parentLayout.marginRight = -5;
 
         parent1.setLayout(parentLayout);
-        
+
         stackComposite = new Composite(parent1, SWT.NONE);
         stackComposite.setLayoutData(new GridData(GridData.FILL_BOTH));
         stackComposite.setLayout(new StackLayout());
@@ -368,7 +368,7 @@ public class BytecodeOutlineView extends ViewPart {
         statusLineManager = new StatusLineManager();
         statusControl = statusLineManager.createControl(parent1, SWT.NONE);
         statusControl.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        
+
 // init text viewer ans some related actions -----------------------------------
 // TODO make init code clear
 
@@ -485,11 +485,6 @@ public class BytecodeOutlineView extends ViewPart {
                     toggleVerifierAction.setEnabled(true);
                     checkOpenEditors(true);
                     // refreshView();
-                } else {
-                    showSelectedOnlyAction.setEnabled(false);
-                    setRawModeAction.setEnabled(false);
-                    toggleASMifierModeAction.setEnabled(false);
-                    toggleVerifierAction.setEnabled(false);
                 }
             }
         };
@@ -863,7 +858,7 @@ public class BytecodeOutlineView extends ViewPart {
     }
 
     protected void refreshView() {
-        if (!isActive() || !isLinkedWithEditor()) {
+        if (!isActive()) { /* || !isLinkedWithEditor() */
             return;
         }
         boolean scopeChanged = selectionScopeChanged;
@@ -958,7 +953,7 @@ public class BytecodeOutlineView extends ViewPart {
             statusLineManager.setMessage( currentStatusMessage + selectionInfo);
         }
     }
-    
+
     public int getBytecodeInstructionAtLine (int line) {
         if (lastDecompiledResult != null) {
             return lastDecompiledResult.getBytecodeInsn(line);
@@ -1052,19 +1047,11 @@ public class BytecodeOutlineView extends ViewPart {
                 }
             }
 
-            try {
-                lvtTable.getColumn(0).pack();
-                lvtTable.getColumn(1).pack();
-                lvtTable.getColumn(2).pack();
-            } catch (Exception e) {
-                // TODO fix for Eclipse bug 84609, should be fixed in M5 "final"
-            }
-            try {
-                stackTable.getColumn(0).pack();
-                stackTable.getColumn(1).pack();
-            } catch (Exception e) {
-                // TODO fix for Eclipse bug 84609, should be fixed in M5 "final"
-            }
+            lvtTable.getColumn(0).pack();
+            lvtTable.getColumn(1).pack();
+            lvtTable.getColumn(2).pack();
+            stackTable.getColumn(0).pack();
+            stackTable.getColumn(1).pack();
 
         } else {
             // lvtControl.setText("");
@@ -1122,25 +1109,16 @@ public class BytecodeOutlineView extends ViewPart {
             .getEditorReferences();
         if (editorReferences == null || editorReferences.length == 0) {
             deActivateView();
-        } else {
-            if (checkNewSelection) {
-                IEditorPart activeEditor = EclipseUtils.getActiveEditor();
-                if (activeEditor instanceof ITextEditor) {
-                    ITextSelection selection = EclipseUtils
-                        .getSelection(((ITextEditor) activeEditor)
-                            .getSelectionProvider());
-                    handleSelectionChanged(activeEditor, selection);
-                    return;
-                }
+        } else if (checkNewSelection) {
+            IEditorPart activeEditor = EclipseUtils.getActiveEditor();
+            if (activeEditor instanceof ITextEditor) {
+                ITextSelection selection = EclipseUtils
+                    .getSelection(((ITextEditor) activeEditor)
+                        .getSelectionProvider());
+                handleSelectionChanged(activeEditor, selection);
+            } else {
+                deActivateView();
             }
-            for (int i = 0; i < editorReferences.length; i++) {
-                IEditorPart editor = editorReferences[i].getEditor(false);
-                if (editor instanceof ITextEditor) {
-                    return;
-                }
-            }
-            // here are all editors checked and no one is java editor
-            deActivateView();
         }
     }
 
@@ -1286,14 +1264,10 @@ public class BytecodeOutlineView extends ViewPart {
                     item.setText(j, s);
                 }
             }
-            try{
-                tableControl.getColumn(0).pack();
-                tableControl.getColumn(1).pack();
-                tableControl.getColumn(2).pack();
-                tableControl.getColumn(3).pack();
-            } catch (Exception e) {
-                // TODO fix for Eclipse bug 84609, should be fixed in M5 "final"
-            }
+            tableControl.getColumn(0).pack();
+            tableControl.getColumn(1).pack();
+            tableControl.getColumn(2).pack();
+            tableControl.getColumn(3).pack();
         }
     }
 
