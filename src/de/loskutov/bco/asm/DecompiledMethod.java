@@ -378,7 +378,8 @@ public class DecompiledMethod {
       if (error != null && insn != null && insn.intValue() == errorInsn) {
           return null;
       }
-      if (frames != null && insn != null) {
+      if (frames != null && insn != null && insn.intValue() >= 0
+          && insn.intValue() < frames.length) {
         Frame f = frames[insn.intValue()];
         if (f == null) {
             return null;
@@ -455,7 +456,7 @@ public class DecompiledMethod {
               arraySymbols += "[";
               s = s.substring(1);
           }
-          
+
           int idx = s.lastIndexOf('/');
           if (idx > 0) {
               // from "Ljava/lang/Object;" to "Object"
@@ -466,7 +467,7 @@ public class DecompiledMethod {
               return arraySymbols  + s;
           }
           // resolve primitive types
-          return arraySymbols + 
+          return arraySymbols +
               CommentedClassVisitor.getSimpleName(Type.getType(s));
       }
       return "Lnull;".equals(s) ? "null" : s;

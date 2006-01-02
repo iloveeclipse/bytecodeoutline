@@ -44,9 +44,11 @@ import org.eclipse.jface.text.TextEvent;
 import org.eclipse.jface.text.TextViewer;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
+import org.eclipse.jface.viewers.IPostSelectionProvider;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.StackLayout;
@@ -139,8 +141,7 @@ public class BytecodeOutlineView extends ViewPart {
     protected SashForm verifyControl;
     protected SashForm stackAndLvt;
     protected Table tableControl;
-    // protected StyledText stackControl;
-    // protected StyledText lvtControl;
+    protected TableViewer tableControlViewer;
     protected Table stackTable;
     protected Table lvtTable;
 
@@ -158,6 +159,7 @@ public class BytecodeOutlineView extends ViewPart {
     protected Action toggleASMifierModeAction;
     protected Action toggleVerifierAction;
     protected StatusLineManager statusLineManager;
+    protected SelectionProvider viewSelectionProvider;
 
     protected Color errorColor;
 
@@ -384,6 +386,7 @@ public class BytecodeOutlineView extends ViewPart {
             selectionChangedListener);
         textViewer.addTextListener(textListener);
 
+
         createActions();
 
         /*
@@ -401,13 +404,15 @@ public class BytecodeOutlineView extends ViewPart {
         textControl.setMenu(menu);
 
         getSite().registerContextMenu(id, contextMenuManager, textViewer); //$NON-NLS-1$
-        getSite().setSelectionProvider(textViewer);
+
 
 //----------------------------------------
 
         verifyControl = new SashForm(stackComposite, SWT.VERTICAL);
 
         tableControl = new Table(verifyControl, SWT.SINGLE | SWT.FULL_SELECTION);
+        tableControlViewer = new TableViewer(tableControl);
+
         new TableColumn(tableControl, SWT.LEFT).setText( BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "lvt.header"));
         new TableColumn(tableControl, SWT.LEFT).setText( BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "stack.header"));
         new TableColumn(tableControl, SWT.LEFT);
@@ -552,8 +557,10 @@ public class BytecodeOutlineView extends ViewPart {
                 verifyCode = toggleVerifierAction.isChecked();
                 if (verifyCode) {
                     ((StackLayout) stackComposite.getLayout()).topControl = verifyControl;
+                    viewSelectionProvider.setCurrentSelectionProvider(tableControlViewer);
                 } else {
                     ((StackLayout) stackComposite.getLayout()).topControl = textControl;
+                    viewSelectionProvider.setCurrentSelectionProvider(textViewer);
                 }
                 stackComposite.layout();
                 selectionScopeChanged = true;
@@ -599,6 +606,15 @@ public class BytecodeOutlineView extends ViewPart {
         tmanager.add(toggleASMifierModeAction);
         tmanager.add(toggleVerifierAction);
 
+        viewSelectionProvider = new SelectionProvider();
+        viewSelectionProvider.registerSelectionProvider(textViewer);
+        viewSelectionProvider.registerSelectionProvider(tableControlViewer);
+
+        // initially selection provider is the textControl, but this could be changed by user
+        // to the tableControl, if bco will be switched to the verify mode
+        viewSelectionProvider.setCurrentSelectionProvider(textViewer);
+        getSite().setSelectionProvider(viewSelectionProvider);
+
         setEnabled(false);
     }
 
@@ -625,6 +641,7 @@ public class BytecodeOutlineView extends ViewPart {
             selectionChangedListener);
         textViewer.removeTextListener(textListener);
         textViewer = null;
+        viewSelectionProvider = null;
 
         if (textControl != null) {
             textControl.dispose();
@@ -636,6 +653,7 @@ public class BytecodeOutlineView extends ViewPart {
             tableControl = null;
             stackTable = null;
             lvtTable = null;
+            tableControlViewer = null;
         }
         if (errorColor != null) {
             errorColor.dispose();
@@ -1021,8 +1039,6 @@ public class BytecodeOutlineView extends ViewPart {
                 BytecodeOutlinePlugin.error(null, e);
             }
         } else if (verifyCode) {
-            // lvtControl.setText("");
-            // stackControl.setText("");
             lvtTable.removeAll();
             stackTable.removeAll();
         }
@@ -1260,6 +1276,9 @@ public class BytecodeOutlineView extends ViewPart {
                     String s = items[i][j];
                     if (s.endsWith("\n")) {
                         s = s.substring(0, s.length() - 1);
+                        // this is the "cookie" for the bytecode reference, which could be
+                        // mapped later to the sourcecode line on selection event in the table
+                        item.setData(new Integer(i));
                     }
                     item.setText(j, s);
                 }
@@ -1358,68 +1377,182 @@ public class BytecodeOutlineView extends ViewPart {
 
     // orientation
 
-  private void setOrientation(int orientation) {
-    if( verifyControl == null || verifyControl.isDisposed()) {
-      return;
+    private void setOrientation(int orientation) {
+        if (verifyControl == null || verifyControl.isDisposed()) {
+            return;
+        }
+
+        boolean horizontal = orientation == VIEW_ORIENTATION_HORIZONTAL;
+        verifyControl.setOrientation(horizontal
+            ? SWT.HORIZONTAL
+            : SWT.VERTICAL);
+
+        for (int i = 0; i < toggleOrientationActions.length; ++i) {
+            toggleOrientationActions[i]
+                .setChecked(orientation == toggleOrientationActions[i]
+                    .getOrientation());
+        }
+
+        currentOrientation = orientation;
+        // GridLayout layout= (GridLayout) fCounterComposite.getLayout();
+        // setCounterColumns(layout);
+        parent.layout();
     }
 
-    boolean horizontal = orientation == VIEW_ORIENTATION_HORIZONTAL;
-    verifyControl.setOrientation(horizontal ? SWT.HORIZONTAL : SWT.VERTICAL);
-
-    for (int i = 0; i < toggleOrientationActions.length; ++i) {
-      toggleOrientationActions[i].setChecked(orientation == toggleOrientationActions[i].getOrientation());
+    void computeOrientation() {
+        if (orientation != VIEW_ORIENTATION_AUTOMATIC) {
+            currentOrientation = orientation;
+            setOrientation(currentOrientation);
+        } else {
+            Point size = parent.getSize();
+            if (size.x != 0 && size.y != 0) {
+                setOrientation(size.x > size.y
+                    ? VIEW_ORIENTATION_HORIZONTAL
+                    : VIEW_ORIENTATION_VERTICAL);
+            }
+        }
     }
 
-    currentOrientation = orientation;
-    // GridLayout layout= (GridLayout) fCounterComposite.getLayout();
-    // setCounterColumns(layout);
-    parent.layout();
-  }
+    private class ToggleOrientationAction extends Action {
 
+        private final int actionOrientation;
 
-  void computeOrientation() {
-    if (orientation != VIEW_ORIENTATION_AUTOMATIC) {
-      currentOrientation= orientation;
-      setOrientation(currentOrientation);
-    } else {
-      Point size= parent.getSize();
-      if (size.x != 0 && size.y != 0) {
-        setOrientation( size.x > size.y ? VIEW_ORIENTATION_HORIZONTAL : VIEW_ORIENTATION_VERTICAL);
-      }
-    }
-  }
+        public ToggleOrientationAction(BytecodeOutlineView v, int orientation) {
+            super("", AS_RADIO_BUTTON); //$NON-NLS-1$
 
-  private class ToggleOrientationAction extends Action {
-    private final int actionOrientation;
+            String symbolicName = BytecodeOutlinePlugin.getDefault()
+                .getBundle().getSymbolicName();
+            if (orientation == VIEW_ORIENTATION_HORIZONTAL) {
+                setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
+                    + "toggle.horizontal.label")); //$NON-NLS-1$
+                setImageDescriptor(AbstractUIPlugin.imageDescriptorFromPlugin(
+                    symbolicName, "icons/th_horizontal.gif")); //$NON-NLS-1$
+            } else if (orientation == VIEW_ORIENTATION_VERTICAL) {
+                setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
+                    + "toggle.vertical.label")); //$NON-NLS-1$
+                setImageDescriptor(AbstractUIPlugin.imageDescriptorFromPlugin(
+                    symbolicName, "icons/th_vertical.gif")); //$NON-NLS-1$
+            } else if (orientation == VIEW_ORIENTATION_AUTOMATIC) {
+                setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
+                    + "toggle.automatic.label")); //$NON-NLS-1$
+                setImageDescriptor(AbstractUIPlugin.imageDescriptorFromPlugin(
+                    symbolicName, "icons/th_automatic.gif")); //$NON-NLS-1$
+            }
+            actionOrientation = orientation;
+            // WorkbenchHelp.setHelp(this, IJUnitHelpContextIds.RESULTS_VIEW_TOGGLE_ORIENTATION_ACTION);
+        }
 
-    public ToggleOrientationAction(BytecodeOutlineView v, int orientation) {
-      super("", AS_RADIO_BUTTON); //$NON-NLS-1$
+        public int getOrientation() {
+            return actionOrientation;
+        }
 
-      String symbolicName = BytecodeOutlinePlugin.getDefault().getBundle().getSymbolicName();
-      if (orientation == VIEW_ORIENTATION_HORIZONTAL) {
-        setText( BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "toggle.horizontal.label")); //$NON-NLS-1$
-        setImageDescriptor( AbstractUIPlugin.imageDescriptorFromPlugin(symbolicName, "icons/th_horizontal.gif")); //$NON-NLS-1$
-      } else if (orientation == VIEW_ORIENTATION_VERTICAL) {
-        setText( BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "toggle.vertical.label")); //$NON-NLS-1$
-        setImageDescriptor( AbstractUIPlugin.imageDescriptorFromPlugin(symbolicName, "icons/th_vertical.gif")); //$NON-NLS-1$
-      } else if (orientation == VIEW_ORIENTATION_AUTOMATIC) {
-        setText( BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "toggle.automatic.label"));  //$NON-NLS-1$
-        setImageDescriptor( AbstractUIPlugin.imageDescriptorFromPlugin(symbolicName, "icons/th_automatic.gif")); //$NON-NLS-1$
-      }
-      actionOrientation= orientation;
-      // WorkbenchHelp.setHelp(this, IJUnitHelpContextIds.RESULTS_VIEW_TOGGLE_ORIENTATION_ACTION);
-    }
-
-    public int getOrientation() {
-      return actionOrientation;
+        public void run() {
+            if (isChecked()) {
+                orientation = actionOrientation;
+                computeOrientation();
+            }
+        }
     }
 
-    public void run() {
-      if (isChecked()) {
-        orientation= actionOrientation;
-        computeOrientation();
-      }
+    /**
+     * Adapter for different selection provider in one view - text control and table control.
+     *  See <a href="http://forge.objectweb.org/tracker/?func=detail&atid=100023&aid=304424&group_id=23">bug 304424</a>
+     *  The main problem is, that
+     *  <pre>
+     *  getSite().setSelectionProvider(viewSelectionProvider);
+     *  </pre>
+     *  could be set only once per view, so that we cannot switch existing
+     *  selection provider on the fly (or I have no idea how to do this simplier way).
+     * @author Andrei
+     */
+    private class SelectionProvider implements IPostSelectionProvider {
+
+        private IPostSelectionProvider realProvider;
+        private List selProviders;
+        private ISelection selection;
+
+        public SelectionProvider(){
+            super();
+            selProviders = new ArrayList();
+        }
+
+        public void setCurrentSelectionProvider(IPostSelectionProvider provider){
+            if(!selProviders.contains(provider)){
+                BytecodeOutlinePlugin.log(
+                    new Exception(
+                        "Current selection provider is not registered yet"),
+                    IStatus.WARNING);
+                return;
+            }
+            realProvider = provider;
+            if(selection != null) {
+                realProvider.setSelection(selection);
+            }
+        }
+
+        public void registerSelectionProvider(IPostSelectionProvider provider) {
+            if(!selProviders.contains(provider)){
+                selProviders.add(provider);
+            }
+        }
+
+        /* (non-Javadoc)
+         * @see org.eclipse.jface.viewers.IPostSelectionProvider#addPostSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener)
+         */
+        public void addPostSelectionChangedListener(ISelectionChangedListener listener) {
+            for (int i = 0; i < selProviders.size(); i++) {
+                IPostSelectionProvider provider = (IPostSelectionProvider) selProviders.get(i);
+                provider.addPostSelectionChangedListener(listener);
+            }
+        }
+
+        /* (non-Javadoc)
+         * @see org.eclipse.jface.viewers.IPostSelectionProvider#removePostSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener)
+         */
+        public void removePostSelectionChangedListener(ISelectionChangedListener listener) {
+            for (int i = 0; i < selProviders.size(); i++) {
+                IPostSelectionProvider provider = (IPostSelectionProvider) selProviders.get(i);
+                provider.removePostSelectionChangedListener(listener);
+            }
+        }
+
+        /* (non-Javadoc)
+         * @see org.eclipse.jface.viewers.ISelectionProvider#addSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener)
+         */
+        public void addSelectionChangedListener(ISelectionChangedListener listener) {
+            for (int i = 0; i < selProviders.size(); i++) {
+                IPostSelectionProvider provider = (IPostSelectionProvider) selProviders.get(i);
+                provider.addSelectionChangedListener(listener);
+            }
+        }
+
+        /* (non-Javadoc)
+         * @see org.eclipse.jface.viewers.ISelectionProvider#getSelection()
+         */
+        public ISelection getSelection() {
+            return realProvider != null? realProvider.getSelection() : null;
+        }
+
+        /* (non-Javadoc)
+         * @see org.eclipse.jface.viewers.ISelectionProvider#removeSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener)
+         */
+        public void removeSelectionChangedListener(ISelectionChangedListener listener) {
+            for (int i = 0; i < selProviders.size(); i++) {
+                IPostSelectionProvider provider = (IPostSelectionProvider) selProviders.get(i);
+                provider.removeSelectionChangedListener(listener);
+            }
+        }
+
+        /* (non-Javadoc)
+         * @see org.eclipse.jface.viewers.ISelectionProvider#setSelection(org.eclipse.jface.viewers.ISelection)
+         */
+        public void setSelection(ISelection selection) {
+            this.selection = selection;
+            if(realProvider != null) {
+                realProvider.setSelection(selection);
+            }
+        }
+
     }
-  }
 
 }

@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-Name: Bytecode Outline Plug-in
 Bundle-SymbolicName: de.loskutov.BytecodeOutline;singleton=true
-Bundle-Version: 2.0.2
+Bundle-Version: 2.0.4
 Bundle-ClassPath: BytecodeOutline.jar
 Bundle-Activator: de.loskutov.bco.BytecodeOutlinePlugin
 Bundle-Vendor: Andrei Loskutov
@@ -16,7 +16,6 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.jdt.ui,
  org.eclipse.core.resources,
  org.eclipse.ui.ide,
- org.eclipse.jdt,
  org.eclipse.compare,
  org.eclipse.ui.console,
  org.eclipse.help.base,
