@@ -22,6 +22,7 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.swt.graphics.Image;
 
+import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
 import de.loskutov.bco.asm.DecompilerClassVisitor;
 import de.loskutov.bco.ui.JdtUtils;
@@ -141,7 +142,16 @@ public class TypedElement extends BufferedContent
             throw new CoreException(new Status(
                 IStatus.ERROR, "de.loskutov.bco", -1,
                 "cannot get bytecode dump", null));
+        } finally {
+            try {
+                stream.close();
+            } catch (IOException e) {
+                BytecodeOutlinePlugin.log(e, IStatus.WARNING);
+            }
         }
-        return new ByteArrayInputStream(decompiledClass.getText().getBytes());
+        byte[] bytes = decompiledClass.getText().getBytes();
+        // use internal buffering to prevent multiple calls to this method
+        setContent(bytes);
+        return new ByteArrayInputStream(bytes);
     }
 }
