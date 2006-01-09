@@ -49,9 +49,6 @@ import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
-import org.eclipse.jdt.internal.core.PackageFragmentRoot;
-import org.eclipse.jdt.internal.core.SourceMapper;
-import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jface.text.ITextSelection;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
@@ -266,22 +263,27 @@ public class JdtUtils {
         ICompilationUnit workingCopy = null;
         if (input instanceof ICompilationUnit) {
             workingCopy = (ICompilationUnit) input;
-        } else if (input instanceof IClassFile) {
-            IClassFile iClass = (IClassFile) input;
-            IJavaElement ref = getElementAt(selection.getOffset(), iClass);
+            // be in-sync with model
+            // instead of using internal JavaModelUtil.reconcile(workingCopy);
+            synchronized(workingCopy)  {
+                workingCopy.reconcile(
+                    ICompilationUnit.NO_AST,
+                    false /* don't force problem detection */,
+                    null /* use primary owner */,
+                    null /* no progress monitor */);
+            }
+            IJavaElement ref = workingCopy.getElementAt(selection.getOffset());
             if (ref != null) {
                 return ref;
             }
-            // ???
-            return input;
+        } else if (input instanceof IClassFile) {
+            IClassFile iClass = (IClassFile) input;
+            IJavaElement ref = iClass.getElementAt(selection.getOffset());
+            if (ref != null) {
+                return ref;
+            }
         }
-        // be in-sync with model
-        JavaModelUtil.reconcile(workingCopy);
-        IJavaElement ref = workingCopy.getElementAt(selection.getOffset());
-        if (ref == null) {
-            return input;
-        }
-        return ref;
+        return input;
     }
 
     /**
@@ -320,70 +322,6 @@ public class JdtUtils {
         }
         // unknown = > 1.5
         return true;
-    }
-
-    /**
-     * Copied from ClassFile - for usage only with external class files
-     * @param position
-     * @param iClass
-     * @return
-     * @throws JavaModelException
-     */
-    protected static IJavaElement getElementAt(int position, IClassFile iClass)
-        throws JavaModelException {
-        SourceMapper mapper = getSourceMapper(iClass);
-        if (mapper == null) {
-            return null;
-        }
-        // ensure this class file's buffer is open so that source ranges are computed
-        iClass.getBuffer();
-
-        IType type = iClass.getType();
-        IJavaElement javaElt = findElement(type, position, mapper);
-        if (javaElt == null) {
-            javaElt = type;
-        }
-        return javaElt;
-    }
-
-    private static SourceMapper getSourceMapper(IClassFile iClass) {
-        IJavaElement parentElement = iClass.getParent();
-        while (parentElement.getElementType() != IJavaElement.PACKAGE_FRAGMENT_ROOT) {
-            parentElement = parentElement.getParent();
-        }
-        PackageFragmentRoot root = (PackageFragmentRoot) parentElement;
-        return root.getSourceMapper();
-    }
-
-    /**
-     * Copied from ClassFile - for usage only with external class files
-     * @param elt
-     * @param position
-     * @param mapper
-     * @return element
-     */
-    protected static IJavaElement findElement(IJavaElement elt, int position,
-        SourceMapper mapper) {
-        ISourceRange range = mapper.getSourceRange(elt);
-        if (range == null || position < range.getOffset()
-            || range.getOffset() + range.getLength() - 1 < position) {
-            return null;
-        }
-        if (elt instanceof IParent) {
-            try {
-                IJavaElement[] children = ((IParent) elt).getChildren();
-                for (int i = 0; i < children.length; i++) {
-                    IJavaElement match = findElement(
-                        children[i], position, mapper);
-                    if (match != null) {
-                        return match;
-                    }
-                }
-            } catch (JavaModelException npe) {
-                // elt doesn't exist: return the element
-            }
-        }
-        return elt;
     }
 
     /**
