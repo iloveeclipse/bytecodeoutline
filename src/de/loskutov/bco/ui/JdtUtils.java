@@ -49,11 +49,8 @@ import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
-import org.eclipse.jdt.internal.core.BinaryMember;
-import org.eclipse.jdt.internal.core.JavaElement;
 import org.eclipse.jdt.internal.core.PackageFragmentRoot;
 import org.eclipse.jdt.internal.core.SourceMapper;
-import org.eclipse.jdt.internal.core.SourceRange;
 import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jface.text.ITextSelection;
 
@@ -82,7 +79,7 @@ public class JdtUtils {
             sb.append(iMethod.getElementName());
         }
 
-        if (iMethod instanceof BinaryMember) {
+        if (iMethod.isBinary()) { // iMethod instanceof BinaryMember
             // binary info should be full qualified
             return sb.append(iMethod.getSignature()).toString();
         }
@@ -267,32 +264,62 @@ public class JdtUtils {
     public static IJavaElement getElementAtOffset(IJavaElement input,
         ITextSelection selection) throws JavaModelException {
         ICompilationUnit workingCopy = null;
-        boolean fakedCU = false;
         if (input instanceof ICompilationUnit) {
             workingCopy = (ICompilationUnit) input;
         } else if (input instanceof IClassFile) {
             IClassFile iClass = (IClassFile) input;
-            // iClass.gets
             IJavaElement ref = getElementAt(selection.getOffset(), iClass);
             if (ref != null) {
                 return ref;
             }
             // ???
             return input;
-            // if source offset is over given class file (e.g. another class in
-            // same source file, then we try to made a new compilation unit)
-            // workingCopy = iClass.getWorkingCopy(
-            // (WorkingCopyOwner) null, (IProgressMonitor) null);
-            // fakedCU = true;
         }
-        if (!fakedCU) {
-            JavaModelUtil.reconcile(workingCopy);
-        }
+        // be in-sync with model
+        JavaModelUtil.reconcile(workingCopy);
         IJavaElement ref = workingCopy.getElementAt(selection.getOffset());
         if (ref == null) {
             return input;
         }
         return ref;
+    }
+
+    /**
+     * Modified copy from JavaModelUtil.
+     * @param javaElt
+     * @return true, if corresponding java project has compiler setting to generate
+     * bytecode for jdk 1.5 and above
+     */
+    public static boolean is50OrHigher(IJavaElement javaElt) {
+        IJavaProject project = javaElt.getJavaProject();
+        boolean result = JavaCore.VERSION_1_5.equals(project.getOption(
+            JavaCore.COMPILER_COMPLIANCE, true));
+        if(result){
+            return result;
+        }
+        // probably > 1.5?
+        result = JavaCore.VERSION_1_4.equals(project.getOption(
+            JavaCore.COMPILER_COMPLIANCE, true));
+        if(result){
+            return false;
+        }
+        result = JavaCore.VERSION_1_3.equals(project.getOption(
+            JavaCore.COMPILER_COMPLIANCE, true));
+        if(result){
+            return false;
+        }
+        result = JavaCore.VERSION_1_2.equals(project.getOption(
+            JavaCore.COMPILER_COMPLIANCE, true));
+        if(result){
+            return false;
+        }
+        result = JavaCore.VERSION_1_1.equals(project.getOption(
+            JavaCore.COMPILER_COMPLIANCE, true));
+        if(result){
+            return false;
+        }
+        // unknown = > 1.5
+        return true;
     }
 
     /**
@@ -337,7 +364,7 @@ public class JdtUtils {
      */
     protected static IJavaElement findElement(IJavaElement elt, int position,
         SourceMapper mapper) {
-        SourceRange range = mapper.getSourceRange(elt);
+        ISourceRange range = mapper.getSourceRange(elt);
         if (range == null || position < range.getOffset()
             || range.getOffset() + range.getLength() - 1 < position) {
             return null;
@@ -368,6 +395,8 @@ public class JdtUtils {
      * N, or else by both (in that order). Moreover, the bytecode name of a block-local N
      * must consist of its enclosing package member T, the characters `$1$', and N, if the
      * resulting name would be unique.
+     * <br>
+     * Note, that this rule was changed for static blocks after 1.5 jdk.
      * @param javaElement
      * @return simply element name
      */
@@ -383,7 +412,21 @@ public class JdtUtils {
         }
         String name = javaElement.getElementName();
         if (isInnerFromBlock(javaElement)) {
-            name = "1$" + name; // see method comment //$NON-NLS-1$
+            /*
+             * Compiler have different naming conventions for inner classes in
+             * static blocks, this difference was introduced with 1.5 JDK.
+             * The problem is, that we could have projects with classes, generated
+             * with both 1.5 and earlier settings. One could not see on particular
+             * java element, for which jdk version the existing bytecode was generated.
+             * If we could have a *.class file, but we are just searching for one...
+             * So there could be still a chance, that this code fails, if java element
+             * is not compiled with comiler settings from project, but with different
+             */
+            if(is50OrHigher(javaElement)){
+                name = "1" + name; // compiler output changed for > 1.5 code
+            } else {
+                name = "1$" + name; // see method comment, this was the case for older code
+            }
         }
 
         if (name.endsWith(".java")) { //$NON-NLS-1$
@@ -442,6 +485,27 @@ public class JdtUtils {
         }
         // this is not possible, if ancestor exist - which return value we should use?
         return -1;
+    }
+
+    /**
+     * @param javaElement
+     * @return first non-anonymous ancestor
+     */
+    static IJavaElement getFirstNonAnonymous(IJavaElement javaElement,
+        IJavaElement topAncestor) {
+        if (javaElement.getElementType() == IJavaElement.TYPE
+            && !isAnonymousType(javaElement)) {
+            return javaElement;
+        }
+        IJavaElement parent = javaElement.getParent();
+        if (parent == null) {
+            return topAncestor;
+        }
+        IJavaElement ancestor = parent.getAncestor(IJavaElement.TYPE);
+        if (ancestor != null) {
+            return getFirstNonAnonymous(ancestor, topAncestor);
+        }
+        return topAncestor;
     }
 
     /**
@@ -599,7 +663,7 @@ public class JdtUtils {
 
         // existing read-only class files
         if (classFile != null) {
-            JavaElement jarParent = (JavaElement) classFile.getParent();
+            IJavaElement jarParent = classFile.getParent();
             // TODO dirty hack to be sure, that package is from jar -
             // because JarPackageFragment is not public class, we cannot
             // use instanceof here
@@ -755,10 +819,11 @@ public class JdtUtils {
      */
     private static String getClassName(IJavaElement javaElement,
         IJavaElement topAncestor) {
-        char innerClassSeparator = '$';
         StringBuffer sb = new StringBuffer();
         if (!javaElement.equals(topAncestor)) {
-            if (isAnonymousType(javaElement)) {
+            char innerClassSeparator = '$';
+            if (isAnonymousType(javaElement) ||
+                (is50OrHigher(javaElement) && isInnerFromBlock(javaElement))) {
                 sb.append(getElementName(topAncestor));
                 sb.append(innerClassSeparator);
             } else {
@@ -820,14 +885,19 @@ public class JdtUtils {
     }
 
     /**
-     * 1) from instance init 2) from deepest inner from instance init (deepest first) 3)
-     * from static init 4) from deepest inner from static init (deepest first) 5) from
-     * deepest inner (deepest first) 6) regular anon classes from main class
+     * 1) from instance init 2) from deepest inner from instance init (deepest first) 3) from
+     * static init 4) from deepest inner from static init (deepest first) 5) from deepest inner
+     * (deepest first) 6) regular anon classes from main class
+     *
+     * <br>
+     * Note, that nested inner anon. classes which do not have different non-anon. inner class
+     * ancestors, are compiled in they nesting order, opposite to rule 2)
+     *
      * @param javaElement
      * @return priority - lesser mean wil be compiled later, a value > 0
      * @throws JavaModelException
      */
-    static int getAnonCompilePriority(IMember javaElement,
+    static int getAnonCompilePriority(IJavaElement javaElement,
         IJavaElement firstAncestor, IJavaElement topAncestor) {
         // search for initializer block
         IJavaElement lastAncestor = getLastAncestor(
@@ -952,7 +1022,14 @@ public class JdtUtils {
         try {
             switch (javaEl.getElementType()) {
                 case IJavaElement.CLASS_FILE :
-                    abstractOrInterface = ((IClassFile) javaEl).isInterface();
+                    IClassFile classFile = (IClassFile) javaEl;
+                    if(isOnClasspath(javaEl)) {
+                        abstractOrInterface = classFile.isInterface();
+                    } /*else {
+                       this is the case for eclipse-generated class files.
+                       if we do not perform the check in if, then we will have java model
+                       exception on classFile.isInterface() call.
+                    }*/
                     break;
                 case IJavaElement.COMPILATION_UNIT :
                     ICompilationUnit cUnit = (ICompilationUnit) javaEl;
@@ -1041,6 +1118,12 @@ public class JdtUtils {
          * deepest inner from instance init (deepest first) 3) from static init 4) from
          * deepest inner from static init (deepest first) 5) from deepest inner (deepest
          * first) 7) regular anon classes from main class
+         *
+         * <br>
+         * Note, that nested inner anon. classes which do not have different
+         * non-anon. inner class ancestors, are compiled in they nesting order, opposite
+         * to rule 2)
+         *
          * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
          */
         public int compare(Object o1, Object o2) {
@@ -1062,10 +1145,34 @@ public class JdtUtils {
             } else if (compilePrio1 < compilePrio2) {
                 return 1;
             } else {
+                firstAncestor1 = getFirstNonAnonymous(m1, topAncestorType);
+                firstAncestor2 = getFirstNonAnonymous(m2, topAncestorType);
+
+                if(firstAncestor1 == firstAncestor2){
+                    /*
+                     * for anonymous classes from same chain and same first common ancestor,
+                     * the order is the definition order
+                     */
+                    int topAncestorDistance1 = getTopAncestorDistance(
+                        m1, topAncestorType);
+                    int topAncestorDistance2 = getTopAncestorDistance(
+                        m2, topAncestorType);
+                    if (topAncestorDistance1 < topAncestorDistance2) {
+                        return -1;
+                    } else if (topAncestorDistance1 > topAncestorDistance2) {
+                        return 1;
+                    } else {
+                        return sourceComparator.compare(o1, o2);
+                    }
+                }
+                /*
+                 * for anonymous classes which have first non-common non-anonymous ancestor,
+                 * the order is the reversed definition order
+                 */
                 int topAncestorDistance1 = getTopAncestorDistance(
-                    m1, topAncestorType);
+                    firstAncestor1, topAncestorType);
                 int topAncestorDistance2 = getTopAncestorDistance(
-                    m2, topAncestorType);
+                    firstAncestor2, topAncestorType);
                 if (topAncestorDistance1 > topAncestorDistance2) {
                     return -1;
                 } else if (topAncestorDistance1 < topAncestorDistance2) {
