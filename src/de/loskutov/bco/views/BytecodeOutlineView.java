@@ -33,6 +33,7 @@ import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.action.StatusLineManager;
+import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IFindReplaceTarget;
@@ -154,6 +155,7 @@ public class BytecodeOutlineView extends ViewPart {
 
     protected Action linkWithEditorAction;
     protected Action selectionChangedAction;
+    protected Action refreshVarsAndStackAction;
     protected Action showSelectedOnlyAction;
     protected Action setRawModeAction;
     protected Action toggleASMifierModeAction;
@@ -470,6 +472,7 @@ public class BytecodeOutlineView extends ViewPart {
                 if (isLinkedWithEditor()) {
                     selectionChangedAction.run();
                 }
+                refreshVarsAndStackAction.run();
             }
         });
 
@@ -477,6 +480,13 @@ public class BytecodeOutlineView extends ViewPart {
             public void run() {
                 Point selection = textControl.getSelection();
                 setSelectionInJavaEditor(selection);
+            }
+        };
+
+        refreshVarsAndStackAction = new Action() {
+            public void run() {
+                int decompiledLine = tableControl.getSelectionIndex();
+                updateVerifierControl( decompiledLine );
             }
         };
 
@@ -665,6 +675,7 @@ public class BytecodeOutlineView extends ViewPart {
         lastChildElement = null;
         linkWithEditorAction = null;
         selectionChangedAction = null;
+        refreshVarsAndStackAction = null;
         showSelectedOnlyAction = null;
         setRawModeAction = null;
         toggleASMifierModeAction = null;
@@ -1046,7 +1057,7 @@ public class BytecodeOutlineView extends ViewPart {
         updateStatus(lastDecompiledResult, bytecodeOffest);
     }
 
-    private void updateVerifierControl(int decompiledLine) {
+    protected void updateVerifierControl(int decompiledLine) {
         lvtTable.removeAll();
         stackTable.removeAll();
         String[][][] frame = lastDecompiledResult.getFrameTables(
@@ -1098,13 +1109,17 @@ public class BytecodeOutlineView extends ViewPart {
 
         try {
             if (sourceLine > 0) {
-                IRegion lineInfo = javaEditor.getDocumentProvider().getDocument(javaEditor.getEditorInput()).getLineInformation(sourceLine-1);
-
-                EclipseUtils.selectInEditor(javaEditor, lineInfo
-                    .getOffset(), lineInfo.getLength());
-            }
-            if (verifyCode) {
-              updateVerifierControl( decompiledLine);
+                IDocument document = javaEditor.getDocumentProvider()
+                    .getDocument(javaEditor.getEditorInput());
+                try {
+                    IRegion lineInfo = document
+                        .getLineInformation(sourceLine - 1);
+                    EclipseUtils.selectInEditor(javaEditor, lineInfo
+                        .getOffset(), lineInfo.getLength());
+                } catch (BadLocationException e) {
+                    // do nothing. This could happens e.g. if editor does not contain
+                    // full source code etc, so that line info is not exist in editor
+                }
             }
         } catch (Exception e) {
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
