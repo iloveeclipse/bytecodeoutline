@@ -33,6 +33,7 @@ import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.action.StatusLineManager;
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
@@ -95,6 +96,7 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
 import de.loskutov.bco.asm.DecompilerClassVisitor;
 import de.loskutov.bco.compare.actions.ToggleASMifierModeAction;
+import de.loskutov.bco.preferences.BCOConstants;
 import de.loskutov.bco.ui.EclipseUtils;
 import de.loskutov.bco.ui.JdtUtils;
 
@@ -510,9 +512,10 @@ public class BytecodeOutlineView extends ViewPart {
             .setToolTipText(BytecodeOutlinePlugin
                 .getResourceString(NLS_PREFIX + "linkWithEditorText.tooltip"));
 
-        // TODO get preference from store
-        linkWithEditorAction.setChecked(true);
-        doLinkWithEditor = true;
+        IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
+
+        doLinkWithEditor = store.getBoolean(BCOConstants.LINK_VIEW_TO_EDITOR);
+        linkWithEditorAction.setChecked(doLinkWithEditor);
 
         showSelectedOnlyAction = new Action() {
             public void run() {
@@ -529,9 +532,9 @@ public class BytecodeOutlineView extends ViewPart {
             .setToolTipText(BytecodeOutlinePlugin
                 .getResourceString(NLS_PREFIX + "showOnlySelection.tooltip"));
 
-        // TODO get preference from store
-        showSelectedOnlyAction.setChecked(true);
-        selectedOnly = true;
+        selectedOnly = store
+            .getBoolean(BCOConstants.SHOW_ONLY_SELECTED_ELEMENT);
+        showSelectedOnlyAction.setChecked(selectedOnly);
 
         setRawModeAction = new Action() {
             public void run() {
@@ -545,9 +548,9 @@ public class BytecodeOutlineView extends ViewPart {
             .getResourceString(NLS_PREFIX + "enableRawMode.label"));
         setRawModeAction.setToolTipText(BytecodeOutlinePlugin
             .getResourceString(NLS_PREFIX + "enableRawMode.tooltip"));
-        // TODO get preference from store
-        setRawModeAction.setChecked(false);
-        showQualifiedNames = false;
+
+        showQualifiedNames = store.getBoolean(BCOConstants.SHOW_RAW_BYTECODE);
+        setRawModeAction.setChecked(showQualifiedNames);
 
         toggleASMifierModeAction = new ToggleASMifierModeAction();
         toggleASMifierModeAction
@@ -558,9 +561,9 @@ public class BytecodeOutlineView extends ViewPart {
                     }
                 }
             });
-        // TODO get preference from store
-        toggleASMifierModeAction.setChecked(false);
-        isASMifierMode = false;
+
+        isASMifierMode = store.getBoolean(BCOConstants.SHOW_ASMIFIER_CODE);
+        toggleASMifierModeAction.setChecked(isASMifierMode);
 
         toggleVerifierAction = new Action() {
             public void run() {
@@ -582,13 +585,12 @@ public class BytecodeOutlineView extends ViewPart {
             .imageDescriptorFromPlugin(BytecodeOutlinePlugin.getDefault()
                 .getBundle().getSymbolicName(), "icons/verify.gif"));
 
-        // TODO get preference from store
-        toggleVerifierAction.setChecked(false);
+        verifyCode = store.getBoolean(BCOConstants.SHOW_ANALYZER);
+        toggleVerifierAction.setChecked(verifyCode);
         toggleVerifierAction.setText(BytecodeOutlinePlugin
             .getResourceString(NLS_PREFIX + "enableVerifier.label"));
         toggleVerifierAction.setToolTipText(BytecodeOutlinePlugin
             .getResourceString(NLS_PREFIX + "enableVerifier.tooltip"));
-        verifyCode = false;
 
         IActionBars bars = getViewSite().getActionBars();
 
@@ -599,7 +601,7 @@ public class BytecodeOutlineView extends ViewPart {
         mmanager.add(toggleASMifierModeAction);
         mmanager.add(toggleVerifierAction);
 
-        mmanager.add( new Separator());
+        mmanager.add(new Separator());
 
         toggleOrientationActions = new ToggleOrientationAction[] {
             new ToggleOrientationAction(this, VIEW_ORIENTATION_VERTICAL),
