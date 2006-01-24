@@ -25,8 +25,6 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
     private static BytecodeOutlinePlugin plugin;
     //Resource bundle.
     private ResourceBundle resourceBundle;
-    /** asm logo */
-    public static final String IMG_ASM = "icons/asm.gif"; //$NON-NLS-1$
 
     /**
      * The constructor.

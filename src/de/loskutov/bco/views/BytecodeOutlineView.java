@@ -23,8 +23,6 @@ import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.internal.ui.JavaPluginImages;
-import org.eclipse.jdt.internal.ui.actions.AbstractToggleLinkingAction;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuListener;
@@ -95,10 +93,10 @@ import org.eclipse.ui.texteditor.IWorkbenchActionDefinitionIds;
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
 import de.loskutov.bco.asm.DecompilerClassVisitor;
-import de.loskutov.bco.compare.actions.ToggleASMifierModeAction;
 import de.loskutov.bco.preferences.BCOConstants;
 import de.loskutov.bco.ui.EclipseUtils;
 import de.loskutov.bco.ui.JdtUtils;
+import de.loskutov.bco.ui.actions.DefaultToggleAction;
 
 /**
  * This view shows decompiled java bytecode
@@ -128,6 +126,8 @@ public class BytecodeOutlineView extends ViewPart {
     protected boolean selectedOnly;
     protected boolean showQualifiedNames;
     protected boolean isASMifierMode;
+    protected boolean hideLocals;
+    protected boolean hideLineInfo;
     protected boolean verifyCode;
 
     protected boolean bytecodeChanged;
@@ -161,6 +161,8 @@ public class BytecodeOutlineView extends ViewPart {
     protected Action showSelectedOnlyAction;
     protected Action setRawModeAction;
     protected Action toggleASMifierModeAction;
+    protected Action hideLineInfoAction;
+    protected Action hideLocalsAction;
     protected Action toggleVerifierAction;
     protected StatusLineManager statusLineManager;
     protected SelectionProvider viewSelectionProvider;
@@ -242,6 +244,8 @@ public class BytecodeOutlineView extends ViewPart {
         setRawModeAction.setEnabled(on);
         toggleASMifierModeAction.setEnabled(on);
         toggleVerifierAction.setEnabled(on);
+        hideLocalsAction.setEnabled(on);
+        hideLineInfoAction.setEnabled(on);
     }
 
     /**
@@ -492,67 +496,91 @@ public class BytecodeOutlineView extends ViewPart {
             }
         };
 
-        linkWithEditorAction = new AbstractToggleLinkingAction() {
-            public void run() {
-                doLinkWithEditor = linkWithEditorAction.isChecked();
-                if (doLinkWithEditor) {
-                    showSelectedOnlyAction.setEnabled(true);
-                    setRawModeAction.setEnabled(true);
-                    toggleASMifierModeAction.setEnabled(true);
-                    toggleVerifierAction.setEnabled(true);
-                    checkOpenEditors(true);
-                    // refreshView();
+        IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
+        doLinkWithEditor = store.getBoolean(BCOConstants.LINK_VIEW_TO_EDITOR);
+
+        linkWithEditorAction = new DefaultToggleAction(
+            DefaultToggleAction.LINK_WITH_EDITOR, doLinkWithEditor);
+        linkWithEditorAction
+            .addPropertyChangeListener(new IPropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent event) {
+                if (IAction.CHECKED.equals(event.getProperty())) {
+                    doLinkWithEditor =  Boolean.TRUE == event.getNewValue();
+                    if (doLinkWithEditor) {
+                        showSelectedOnlyAction.setEnabled(true);
+                        setRawModeAction.setEnabled(true);
+                        toggleASMifierModeAction.setEnabled(true);
+                        toggleVerifierAction.setEnabled(true);
+                        hideLineInfoAction.setEnabled(true);
+                        hideLocalsAction.setEnabled(true);
+                        checkOpenEditors(true);
+                        // refreshView();
+                    }
                 }
             }
-        };
-
-        linkWithEditorAction.setText(BytecodeOutlinePlugin
-            .getResourceString(NLS_PREFIX + "linkWithEditor.label"));
-        linkWithEditorAction
-            .setToolTipText(BytecodeOutlinePlugin
-                .getResourceString(NLS_PREFIX + "linkWithEditorText.tooltip"));
-
-        IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
-
-        doLinkWithEditor = store.getBoolean(BCOConstants.LINK_VIEW_TO_EDITOR);
-        linkWithEditorAction.setChecked(doLinkWithEditor);
-
-        showSelectedOnlyAction = new Action() {
-            public void run() {
-                selectedOnly = showSelectedOnlyAction.isChecked();
-                selectionScopeChanged = true;
-                refreshView();
-            }
-        };
-        JavaPluginImages.setToolImageDescriptors(
-            showSelectedOnlyAction, "segment_edit.gif");
-        showSelectedOnlyAction.setText(BytecodeOutlinePlugin
-            .getResourceString(NLS_PREFIX + "showOnlySelection.label"));
-        showSelectedOnlyAction
-            .setToolTipText(BytecodeOutlinePlugin
-                .getResourceString(NLS_PREFIX + "showOnlySelection.tooltip"));
+        });
 
         selectedOnly = store
             .getBoolean(BCOConstants.SHOW_ONLY_SELECTED_ELEMENT);
-        showSelectedOnlyAction.setChecked(selectedOnly);
-
-        setRawModeAction = new Action() {
-            public void run() {
-                showQualifiedNames = setRawModeAction.isChecked();
-                selectionScopeChanged = true;
-                refreshView();
+        showSelectedOnlyAction = new DefaultToggleAction(
+            DefaultToggleAction.SHOW_SELECTED_ONLY, selectedOnly);
+        showSelectedOnlyAction
+            .addPropertyChangeListener(new IPropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent event) {
+                if (IAction.CHECKED.equals(event.getProperty())) {
+                    selectedOnly = Boolean.TRUE == event.getNewValue();
+                    selectionScopeChanged = true;
+                    refreshView();
+                }
             }
-        };
-        setRawModeAction.setImageDescriptor(JavaPluginImages.DESC_OBJS_PACKAGE);
-        setRawModeAction.setText(BytecodeOutlinePlugin
-            .getResourceString(NLS_PREFIX + "enableRawMode.label"));
-        setRawModeAction.setToolTipText(BytecodeOutlinePlugin
-            .getResourceString(NLS_PREFIX + "enableRawMode.tooltip"));
+        });
 
         showQualifiedNames = store.getBoolean(BCOConstants.SHOW_RAW_BYTECODE);
-        setRawModeAction.setChecked(showQualifiedNames);
+        setRawModeAction = new DefaultToggleAction(
+            DefaultToggleAction.SHOW_RAW_BYTECODE, showQualifiedNames);
+        setRawModeAction
+            .addPropertyChangeListener(new IPropertyChangeListener() {
+                public void propertyChange(PropertyChangeEvent event) {
+                    if (IAction.CHECKED.equals(event.getProperty())) {
+                        showQualifiedNames = Boolean.TRUE == event
+                            .getNewValue();
+                        selectionScopeChanged = true;
+                        refreshView();
+                    }
+                }
+            });
 
-        toggleASMifierModeAction = new ToggleASMifierModeAction();
+        hideLineInfo = !store.getBoolean(BCOConstants.SHOW_LINE_INFO);
+        hideLineInfoAction = new DefaultToggleAction(
+            DefaultToggleAction.HIDE_LINE_INFO, hideLineInfo);
+        hideLineInfoAction
+            .addPropertyChangeListener(new IPropertyChangeListener() {
+                public void propertyChange(PropertyChangeEvent event) {
+                    if (IAction.CHECKED.equals(event.getProperty())) {
+                        hideLineInfo = Boolean.TRUE == event.getNewValue();
+                        // TODO add something here
+//                        toggleASMifierMode(Boolean.TRUE == event.getNewValue());
+                    }
+                }
+            });
+
+        hideLocals = !store.getBoolean(BCOConstants.SHOW_VARIABLES);
+        hideLocalsAction = new DefaultToggleAction(
+            DefaultToggleAction.HIDE_LOCALS, hideLocals);
+        hideLocalsAction
+            .addPropertyChangeListener(new IPropertyChangeListener() {
+                public void propertyChange(PropertyChangeEvent event) {
+                    if (IAction.CHECKED.equals(event.getProperty())) {
+                        hideLocals = Boolean.TRUE == event.getNewValue();
+                        // TODO add something here
+//                        toggleASMifierMode(Boolean.TRUE == event.getNewValue());
+                    }
+                }
+            });
+
+        isASMifierMode = store.getBoolean(BCOConstants.SHOW_ASMIFIER_CODE);
+        toggleASMifierModeAction = new DefaultToggleAction(
+            DefaultToggleAction.TOGGLE_ASMIFIER, isASMifierMode);
         toggleASMifierModeAction
             .addPropertyChangeListener(new IPropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent event) {
@@ -562,35 +590,30 @@ public class BytecodeOutlineView extends ViewPart {
                 }
             });
 
-        isASMifierMode = store.getBoolean(BCOConstants.SHOW_ASMIFIER_CODE);
-        toggleASMifierModeAction.setChecked(isASMifierMode);
-
-        toggleVerifierAction = new Action() {
-            public void run() {
-                verifyCode = toggleVerifierAction.isChecked();
-                if (verifyCode) {
-                    ((StackLayout) stackComposite.getLayout()).topControl = verifyControl;
-                    viewSelectionProvider.setCurrentSelectionProvider(tableControlViewer);
-                } else {
-                    ((StackLayout) stackComposite.getLayout()).topControl = textControl;
-                    viewSelectionProvider.setCurrentSelectionProvider(textViewer);
-                }
-                stackComposite.layout();
-                selectionScopeChanged = true;
-                refreshView();
-            }
-        };
-
-        toggleVerifierAction.setImageDescriptor(AbstractUIPlugin
-            .imageDescriptorFromPlugin(BytecodeOutlinePlugin.getDefault()
-                .getBundle().getSymbolicName(), "icons/verify.gif"));
-
         verifyCode = store.getBoolean(BCOConstants.SHOW_ANALYZER);
-        toggleVerifierAction.setChecked(verifyCode);
-        toggleVerifierAction.setText(BytecodeOutlinePlugin
-            .getResourceString(NLS_PREFIX + "enableVerifier.label"));
-        toggleVerifierAction.setToolTipText(BytecodeOutlinePlugin
-            .getResourceString(NLS_PREFIX + "enableVerifier.tooltip"));
+        toggleVerifierAction = new DefaultToggleAction(DefaultToggleAction.SHOW_VERIFIER,
+            verifyCode);
+
+        toggleVerifierAction
+            .addPropertyChangeListener(new IPropertyChangeListener() {
+                public void propertyChange(PropertyChangeEvent event) {
+                    if (IAction.CHECKED.equals(event.getProperty())) {
+                        verifyCode = Boolean.TRUE == event.getNewValue();
+                        if (verifyCode) {
+                            ((StackLayout) stackComposite.getLayout()).topControl = verifyControl;
+                            viewSelectionProvider
+                                .setCurrentSelectionProvider(tableControlViewer);
+                        } else {
+                            ((StackLayout) stackComposite.getLayout()).topControl = textControl;
+                            viewSelectionProvider
+                                .setCurrentSelectionProvider(textViewer);
+                        }
+                        stackComposite.layout();
+                        selectionScopeChanged = true;
+                        refreshView();
+                    }
+                }
+            });
 
         IActionBars bars = getViewSite().getActionBars();
 
@@ -598,6 +621,8 @@ public class BytecodeOutlineView extends ViewPart {
         mmanager.add(linkWithEditorAction);
         mmanager.add(showSelectedOnlyAction);
         mmanager.add(setRawModeAction);
+        mmanager.add(hideLineInfoAction);
+        mmanager.add(hideLocalsAction);
         mmanager.add(toggleASMifierModeAction);
         mmanager.add(toggleVerifierAction);
 
@@ -615,6 +640,8 @@ public class BytecodeOutlineView extends ViewPart {
         tmanager.add(linkWithEditorAction);
         tmanager.add(showSelectedOnlyAction);
         tmanager.add(setRawModeAction);
+        tmanager.add(hideLineInfoAction);
+        tmanager.add(hideLocalsAction);
         tmanager.add(toggleASMifierModeAction);
         tmanager.add(toggleVerifierAction);
 
@@ -681,6 +708,8 @@ public class BytecodeOutlineView extends ViewPart {
         showSelectedOnlyAction = null;
         setRawModeAction = null;
         toggleASMifierModeAction = null;
+        hideLineInfoAction = null;
+        hideLocalsAction = null;
         toggleVerifierAction = null;
         lastDecompiledResult = null;
         super.dispose();

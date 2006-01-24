@@ -21,13 +21,16 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.action.ToolBarManager;
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.IReusableEditor;
 
-import de.loskutov.bco.compare.actions.ToggleASMifierModeAction;
+import de.loskutov.bco.BytecodeOutlinePlugin;
+import de.loskutov.bco.preferences.BCOConstants;
+import de.loskutov.bco.ui.actions.DefaultToggleAction;
 
 /**
  */
@@ -37,8 +40,13 @@ public class BytecodeCompare extends CompareEditorInput {
     protected TypedElement left;
     /** Stores reference to the element displayed on the right side of the viewer. */
     protected TypedElement right;
-    protected Action toggleModeAction; 
-    
+    /** Action used in compare view/bytecode view to toggle asmifier mode on/off */
+    protected Action toggleAsmifierModeAction;
+    /** Action used in compare view/bytecode view to hide/show line info.  */
+    protected Action hideLineInfoAction;
+    /** Action used in compare view/bytecode view to hide/show local variables. */
+    protected Action hideLocalsAction;
+
     protected IReusableEditor myEditor;
 
     /**
@@ -50,13 +58,40 @@ public class BytecodeCompare extends CompareEditorInput {
         super(new CompareConfiguration());
         this.left = left;
         this.right = right;
-        toggleModeAction = new ToggleASMifierModeAction();
-        toggleModeAction.addPropertyChangeListener(new IPropertyChangeListener(){
+        IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
+        boolean toggleAsmifierMode = store.getBoolean(BCOConstants.SHOW_ASMIFIER_CODE);
+        toggleAsmifierModeAction = new DefaultToggleAction(
+            DefaultToggleAction.TOGGLE_ASMIFIER, toggleAsmifierMode);
+        toggleAsmifierModeAction.addPropertyChangeListener(new IPropertyChangeListener(){
             public void propertyChange(PropertyChangeEvent event) {
                 if(IAction.CHECKED.equals(event.getProperty())){
                     toggleASMifierMode(Boolean.TRUE == event.getNewValue());
                 }
-            }            
+            }
+        });
+
+        boolean hideLineInfo = !store.getBoolean(BCOConstants.SHOW_LINE_INFO);
+        hideLineInfoAction = new DefaultToggleAction(
+            DefaultToggleAction.HIDE_LINE_INFO, hideLineInfo);
+        hideLineInfoAction.addPropertyChangeListener(new IPropertyChangeListener(){
+            public void propertyChange(PropertyChangeEvent event) {
+                if(IAction.CHECKED.equals(event.getProperty())){
+                    // TODO add custom behavoir
+//                    toggleASMifierMode(Boolean.TRUE == event.getNewValue());
+                }
+            }
+        });
+
+        boolean hideLocals = !store.getBoolean(BCOConstants.SHOW_VARIABLES);
+        hideLocalsAction = new DefaultToggleAction(
+            DefaultToggleAction.HIDE_LOCALS, hideLocals);
+        hideLocalsAction.addPropertyChangeListener(new IPropertyChangeListener(){
+            public void propertyChange(PropertyChangeEvent event) {
+                if(IAction.CHECKED.equals(event.getProperty())){
+                    // TODO add custom behavoir
+//                    toggleASMifierMode(Boolean.TRUE == event.getNewValue());
+                }
+            }
         });
     }
 
@@ -99,11 +134,11 @@ public class BytecodeCompare extends CompareEditorInput {
         cc.setRightLabel(right.getName());
         cc.setRightImage(right.getImage());
 
-        setTitle("Bytecode compare "  //$NON-NLS-1$
+        setTitle("Bytecode compare: "  //$NON-NLS-1$
             + left.getElementName() + " - " + right.getElementName()); //$NON-NLS-1$
     }
-   
-   
+
+
     /**
      * @see org.eclipse.compare.CompareEditorInput#createContents(org.eclipse.swt.widgets.Composite)
      */
@@ -114,16 +149,16 @@ public class BytecodeCompare extends CompareEditorInput {
         // CompareEditor extends EditorPart implements IReusableEditor
         if(obj instanceof IReusableEditor){
             myEditor = (IReusableEditor)obj;
-        } 
-        
+        }
+
         Control control = super.createContents(parent);
-        
-        // dirty hook on this place to get reference to CompareViewerPane 
+
+        // dirty hook on this place to get reference to CompareViewerPane
         // from CompareEditorInput: see field
-        // private CompareViewerSwitchingPane fContentInputPane; 
+        // private CompareViewerSwitchingPane fContentInputPane;
         // see also CompareEditorInput.createContents:
         //  fComposite.setData("Nav", //$NON-NLS-1$
-        Object obj2 = control.getData("Nav");  //$NON-NLS-1$     
+        Object obj2 = control.getData("Nav");  //$NON-NLS-1$
         if (obj2 instanceof CompareViewerSwitchingPane[]) {
             // there are 4 panels, last one is the input pane that we search for
             CompareViewerSwitchingPane[] panels = (CompareViewerSwitchingPane[])obj2;
@@ -131,26 +166,46 @@ public class BytecodeCompare extends CompareEditorInput {
                 Composite comparePane = panels[panels.length-1];
                 ToolBarManager toolBarManager2 = CompareViewerPane
                     .getToolBarManager(comparePane);
-                if (toolBarManager2.find(toggleModeAction.getId()) == null) {                    
-                    toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
-                    toolBarManager2.insertBefore("bco", toggleModeAction); //$NON-NLS-1$
+                boolean separatorExist = false;
+                if (toolBarManager2.find(hideLineInfoAction.getId()) == null) {
+                    if(!separatorExist) {
+                        separatorExist = true;
+                        toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
+                    }
+                    toolBarManager2.insertBefore("bco", hideLineInfoAction); //$NON-NLS-1$
                     toolBarManager2.update(true);
-                }                
+                }
+                if (toolBarManager2.find(hideLocalsAction.getId()) == null) {
+                    if(!separatorExist) {
+                        separatorExist = true;
+                        toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
+                    }
+                    toolBarManager2.insertBefore("bco", hideLocalsAction); //$NON-NLS-1$
+                    toolBarManager2.update(true);
+                }
+                if (toolBarManager2.find(toggleAsmifierModeAction.getId()) == null) {
+                    if(!separatorExist) {
+                        toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
+                        separatorExist = true;
+                    }
+                    toolBarManager2.insertBefore("bco", toggleAsmifierModeAction); //$NON-NLS-1$
+                    toolBarManager2.update(true);
+                }
             }
         }
-        
+
         return control;
     }
 
     protected void toggleASMifierMode(boolean isASMifierMode) {
         String contentType = isASMifierMode
             ? TypedElement.TYPE_ASM_IFIER
-            : TypedElement.TYPE_BYTECODE; 
-        
-        left.setASMifierMode(isASMifierMode);            
+            : TypedElement.TYPE_BYTECODE;
+
+        left.setASMifierMode(isASMifierMode);
         left.setType(contentType);
         right.setASMifierMode(isASMifierMode);
         right.setType(contentType);
         CompareUI.reuseCompareEditor(this, myEditor);
-    }    
+    }
 }
