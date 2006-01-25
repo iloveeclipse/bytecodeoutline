@@ -33,12 +33,13 @@ public class DefaultToggleAction extends Action {
         setId(id);
         init();
 
-        addPropertyChangeListener(listener);
-        
         IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
-        
+
         isChecked = store.getBoolean(id);
         setChecked(isChecked);
+        // as last action, after setChecked(), to prevent unexpected listener
+        // events during initialization
+        addPropertyChangeListener(listener);
     }
 
     private void init(){
