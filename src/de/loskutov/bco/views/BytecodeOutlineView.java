@@ -538,8 +538,8 @@ public class BytecodeOutlineView extends ViewPart {
                 public void propertyChange(PropertyChangeEvent event) {
                     if (IAction.CHECKED.equals(event.getProperty())) {
                         modes.set(BCOConstants.F_SHOW_LINE_INFO, Boolean.TRUE == event.getNewValue());
-                        // TODO add something here
-//                        toggleASMifierMode(Boolean.TRUE == event.getNewValue());
+                        selectionScopeChanged = true;
+                        refreshView();
                     }
                 }
             });
@@ -549,8 +549,8 @@ public class BytecodeOutlineView extends ViewPart {
                 public void propertyChange(PropertyChangeEvent event) {
                     if (IAction.CHECKED.equals(event.getProperty())) {
                         modes.set(BCOConstants.F_SHOW_VARIABLES, Boolean.TRUE == event.getNewValue());
-                        // TODO add something here
-//                        toggleASMifierMode(Boolean.TRUE == event.getNewValue());
+                        selectionScopeChanged = true;
+                        refreshView();
                     }
                 }
             });
