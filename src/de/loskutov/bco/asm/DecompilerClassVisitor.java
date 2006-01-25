@@ -3,6 +3,7 @@ package de.loskutov.bco.asm;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
 import org.objectweb.asm.AnnotationVisitor;
@@ -15,6 +16,8 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.ASMifierClassVisitor;
 import org.objectweb.asm.util.AbstractVisitor;
+
+import de.loskutov.bco.preferences.BCOConstants;
 
 /**
  * @author Eric Bruneton
@@ -45,6 +48,31 @@ public class DecompilerClassVisitor extends ClassAdapter {
         this.methods = new ArrayList();
     }
 
+    public static DecompiledClass getDecompiledClass(final InputStream is,
+        final String field, final String method, final BitSet modes, final ClassLoader cl)
+        throws IOException {
+        ClassReader cr = new ClassReader(is);
+        ClassVisitor cv;
+        if (modes.get(BCOConstants.F_SHOW_ASMIFIER_CODE)) {
+            cv = new ASMifierClassVisitor(null) {
+                public void visitEnd() {
+                    text.add("cw.visitEnd();\n\n");
+                    text.add("return cw.toByteArray();\n");
+                    text.add("}\n");
+                    text.add("}\n");
+                }
+            };
+
+        } else {
+            cv = new CommentedClassVisitor(!modes.get(BCOConstants.F_SHOW_RAW_BYTECODE));
+        }
+        DecompilerClassVisitor dcv = new DecompilerClassVisitor(
+            cv, field, method, modes.get(BCOConstants.F_SHOW_ANALYZER));
+        cr.accept(dcv, false);
+
+        return dcv.getResult(cl);
+    }
+        
     public static DecompiledClass getDecompiledClass(final InputStream is,
         final String field, final String method, final boolean raw,
         final boolean asmify, final boolean verify, final ClassLoader cl)

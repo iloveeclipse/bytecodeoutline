@@ -59,4 +59,15 @@ public interface BCOConstants {
      */
     String SHOW_ANALYZER = "showAnalyzer";
 
+
+    int F_LINK_VIEW_TO_EDITOR = 0;
+    int F_SHOW_ONLY_SELECTED_ELEMENT = 1;
+    int F_SHOW_ASMIFIER_CODE = 2;
+    int F_SHOW_RAW_BYTECODE = 3;
+    int F_SHOW_LINE_INFO = 4;
+    int F_SHOW_VARIABLES = 5;
+    int F_RECALCULATE_STACKMAP = 6;
+    int F_EXPAND_STACKMAP = 7;
+    int F_SHOW_ANALYZER = 8;
+    
 }

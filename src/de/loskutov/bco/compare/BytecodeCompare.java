@@ -21,14 +21,12 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.action.ToolBarManager;
-import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.IReusableEditor;
 
-import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.preferences.BCOConstants;
 import de.loskutov.bco.ui.actions.DefaultToggleAction;
 
@@ -58,41 +56,34 @@ public class BytecodeCompare extends CompareEditorInput {
         super(new CompareConfiguration());
         this.left = left;
         this.right = right;
-        IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
-        boolean toggleAsmifierMode = store.getBoolean(BCOConstants.SHOW_ASMIFIER_CODE);
-        toggleAsmifierModeAction = new DefaultToggleAction(
-            DefaultToggleAction.TOGGLE_ASMIFIER, toggleAsmifierMode);
-        toggleAsmifierModeAction.addPropertyChangeListener(new IPropertyChangeListener(){
-            public void propertyChange(PropertyChangeEvent event) {
-                if(IAction.CHECKED.equals(event.getProperty())){
-                    toggleASMifierMode(Boolean.TRUE == event.getNewValue());
-                }
-            }
-        });
 
-        boolean hideLineInfo = !store.getBoolean(BCOConstants.SHOW_LINE_INFO);
-        hideLineInfoAction = new DefaultToggleAction(
-            DefaultToggleAction.HIDE_LINE_INFO, hideLineInfo);
-        hideLineInfoAction.addPropertyChangeListener(new IPropertyChangeListener(){
-            public void propertyChange(PropertyChangeEvent event) {
-                if(IAction.CHECKED.equals(event.getProperty())){
-                    // TODO add custom behavoir
-//                    toggleASMifierMode(Boolean.TRUE == event.getNewValue());
+        toggleAsmifierModeAction = new DefaultToggleAction(BCOConstants.SHOW_ASMIFIER_CODE, 
+            new IPropertyChangeListener(){
+                public void propertyChange(PropertyChangeEvent event) {
+                    if(IAction.CHECKED.equals(event.getProperty())){
+                        toggleASMifierMode(Boolean.TRUE == event.getNewValue());
+                    }
                 }
-            }
-        });
+            });
 
-        boolean hideLocals = !store.getBoolean(BCOConstants.SHOW_VARIABLES);
-        hideLocalsAction = new DefaultToggleAction(
-            DefaultToggleAction.HIDE_LOCALS, hideLocals);
-        hideLocalsAction.addPropertyChangeListener(new IPropertyChangeListener(){
-            public void propertyChange(PropertyChangeEvent event) {
-                if(IAction.CHECKED.equals(event.getProperty())){
-                    // TODO add custom behavoir
-//                    toggleASMifierMode(Boolean.TRUE == event.getNewValue());
+        hideLineInfoAction = new DefaultToggleAction(BCOConstants.SHOW_LINE_INFO, new IPropertyChangeListener(){
+                public void propertyChange(PropertyChangeEvent event) {
+                    if(IAction.CHECKED.equals(event.getProperty())){
+                        // TODO add custom behavoir
+    //                    toggleASMifierMode(Boolean.TRUE == event.getNewValue());
+                    }
                 }
-            }
-        });
+            });
+
+        hideLocalsAction = new DefaultToggleAction(BCOConstants.SHOW_VARIABLES, 
+            new IPropertyChangeListener(){
+                public void propertyChange(PropertyChangeEvent event) {
+                    if(IAction.CHECKED.equals(event.getProperty())){
+                        // TODO add custom behavoir
+    //                    toggleASMifierMode(Boolean.TRUE == event.getNewValue());
+                    }
+                }
+            });
     }
 
     /** @see CompareEditorInput#prepareInput(IProgressMonitor) */
