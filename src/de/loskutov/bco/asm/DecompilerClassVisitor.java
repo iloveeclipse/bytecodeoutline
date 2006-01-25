@@ -12,6 +12,8 @@ import org.objectweb.asm.ClassAdapter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodAdapter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.ASMifierClassVisitor;
@@ -68,7 +70,23 @@ public class DecompilerClassVisitor extends ClassAdapter {
         }
         DecompilerClassVisitor dcv = new DecompilerClassVisitor(
             cv, field, method, modes.get(BCOConstants.F_SHOW_ANALYZER));
-        cr.accept(dcv, false);
+        cr.accept(new ClassAdapter(dcv) {
+            public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+                MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
+                return mv==null ? null : new MethodAdapter(mv) {
+                        public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
+                            if(modes.get(BCOConstants.F_SHOW_VARIABLES)) {
+                                super.visitLocalVariable(name, desc, signature, start, end, index);
+                            }
+                        }
+                        public void visitLineNumber(int line, Label start) {
+                            if(modes.get(BCOConstants.F_SHOW_LINE_INFO)) {
+                                super.visitLineNumber(line, start);
+                            }
+                        }
+                    };
+            }
+        }, false);
 
         return dcv.getResult(cl);
     }
