@@ -199,11 +199,11 @@ public class BytecodeSourceMapper extends SourceMapper {
      * @see org.eclipse.jdt.internal.core.SourceMapper#mapSource(IType, char[])
      */
     public void mapSource(IType type, char[] contents, boolean force) {
-// TODO commented out for now. there is no such method anymore in Eclipse 3.2M4
+// TODO commented out for now. there is no such stuff in Eclipse 3.2M5
 //        if (force) {
 //            fSourceRanges.remove(type);
 //        }
-        super.mapSource(type, contents);
+//        super.mapSource(type, contents);
     }
 
 }
