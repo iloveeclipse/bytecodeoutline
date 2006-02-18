@@ -892,19 +892,17 @@ public class JdtUtils {
         IProject project = javaProject.getProject();
         IWorkspaceRoot workspaceRoot = project.getWorkspace().getRoot();
 
-        IPath projectPath = javaProject.getProject().getLocation();
         IClasspathEntry[] paths = null;
-
         IPath defaultOutputLocation = null;
-
         try {
             paths = javaProject.getResolvedClasspath(true);
             defaultOutputLocation = javaProject.getOutputLocation();
         } catch (JavaModelException e) {
-            // don't show message to user
-            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+            // don't show message to user neither log it
+            // BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
         if (paths != null) {
+            IPath projectPath = javaProject.getProject().getLocation();
             for (int i = 0; i < paths.length; ++i) {
                 IClasspathEntry cpEntry = paths[i];
                 IPath p = null;
@@ -997,7 +995,8 @@ public class JdtUtils {
                     break;
             }
         } catch (JavaModelException e) {
-            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+            // No point to log it here
+            // BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
         return abstractOrInterface;
     }
