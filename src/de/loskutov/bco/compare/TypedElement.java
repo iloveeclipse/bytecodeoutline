@@ -11,6 +11,7 @@ package de.loskutov.bco.compare;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.BitSet;
 
 import org.eclipse.compare.BufferedContent;
 import org.eclipse.compare.CompareUI;
@@ -21,6 +22,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.widgets.Display;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
@@ -41,46 +43,27 @@ public class TypedElement extends BufferedContent
 
     private IJavaElement element;
 
-    private boolean isASMifierMode;
-
     /** used by Eclipse to recognize appropriated viewer */
     public static final String TYPE_BYTECODE = "bytecode";
 
     /** used by Eclipse to recognize appropriated viewer */
     public static final String TYPE_ASM_IFIER = "java";
 
-    /**
-     * Constructor for TypedElement.
-     */
-    public TypedElement() {
-        super();
-    }
+    private final BitSet modes;
 
     /**
      * Constructor for TypedElement.
      * @param name
      * @param type
      * @param element
+     * @param modes
      */
-    public TypedElement(String name, String type, IJavaElement element) {
-        this();
+    public TypedElement(String name, String type, IJavaElement element, BitSet modes) {
+        super();
         this.name = name;
         this.type = type;
         this.element = element;
-    }
-
-    /**
-     * @return Returns the isASMifierMode.
-     */
-    protected boolean isASMifierMode() {
-        return isASMifierMode;
-    }
-
-    /**
-     * @param isASMifierMode The isASMifierMode to set.
-     */
-    protected void setASMifierMode(boolean isASMifierMode) {
-        this.isASMifierMode = isASMifierMode;
+        this.modes = modes;
     }
 
     /**
@@ -137,7 +120,7 @@ public class TypedElement extends BufferedContent
         DecompiledClass decompiledClass = null;
         try {
             decompiledClass = DecompilerClassVisitor.getDecompiledClass(
-                stream, null, null, true, isASMifierMode(), false, null);
+                stream, null, null, modes, null);
         } catch (IOException e) {
             throw new CoreException(new Status(
                 IStatus.ERROR, "de.loskutov.bco", -1,
@@ -149,9 +132,25 @@ public class TypedElement extends BufferedContent
                 BytecodeOutlinePlugin.log(e, IStatus.WARNING);
             }
         }
-        byte[] bytes = decompiledClass.getText().getBytes();
+        final byte[] bytes = decompiledClass.getText().getBytes();
         // use internal buffering to prevent multiple calls to this method
-        setContent(bytes);
+        Display.getDefault().syncExec(new Runnable(){
+            public void run() {
+                setContent(bytes);
+            }
+        });
+
         return new ByteArrayInputStream(bytes);
+    }
+
+    /**
+     *
+     * @param mode one of BCOConstants.F_* modes
+     * @param value
+     */
+    public void setMode(int mode, boolean value){
+        modes.set(mode, value);
+        // force create new stream
+        discardBuffer();
     }
 }

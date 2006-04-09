@@ -237,9 +237,7 @@ public class CommentedClassVisitor extends TraceClassVisitor {
         }
 
         public void visitLineNumber(final int line, final Label start) {
-            if (raw) {
-                super.visitLineNumber(line, start);
-            }
+             super.visitLineNumber(line, start);
         }
 
         public void visitMaxs(final int maxStack, final int maxLocals) {

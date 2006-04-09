@@ -3,6 +3,7 @@ package de.loskutov.bco.editors;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -141,8 +142,9 @@ public class BytecodeSourceMapper extends SourceMapper {
         boolean raw = true;
         boolean asmify = false;
         boolean verify = false;
+        // TODO put bitset of modes instead of new BitSet()
         DecompiledClass decompiledClass = DecompilerClassVisitor
-            .getDecompiledClass(is, null, null, raw, asmify, verify, null);
+            .getDecompiledClass(is, null, null, new BitSet(), null);
         source.append(decompiledClass.getText());
     }
 

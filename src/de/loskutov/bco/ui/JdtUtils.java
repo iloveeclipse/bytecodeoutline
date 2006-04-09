@@ -65,6 +65,37 @@ public class JdtUtils {
         // don't call
     }
 
+    /**
+     * @param childEl
+     * @return method signature, if given java element is either initializer or method,
+     * otherwise returns null.
+     */
+    public static String getMethodSignature(IJavaElement childEl) {
+        String methodName = null;
+        if (childEl.getElementType() == IJavaElement.INITIALIZER) {
+            IInitializer ini = (IInitializer) childEl;
+            try {
+                if (Flags.isStatic(ini.getFlags())) {
+                    methodName = "<clinit>()V";
+                } else {
+                    methodName = "<init>()";
+                }
+            } catch (JavaModelException e) {
+                // this is compilation problem - don't show the message
+                BytecodeOutlinePlugin.log(e, IStatus.WARNING);
+            }
+        } else if (childEl.getElementType() == IJavaElement.METHOD) {
+            IMethod iMethod = (IMethod) childEl;
+            try {
+                methodName = createMethodSignature(iMethod);
+            } catch (JavaModelException e) {
+                // this is compilation problem - don't show the message
+                BytecodeOutlinePlugin.log(e, IStatus.WARNING);
+            }
+        }
+        return methodName;
+    }    
+    
     public static String createMethodSignature(IMethod iMethod)
         throws JavaModelException {
         StringBuffer sb = new StringBuffer();
@@ -255,11 +286,14 @@ public class JdtUtils {
      * Modified copy from org.eclipse.jdt.internal.ui.actions.SelectionConverter
      * @param input
      * @param selection
-     * @return
+     * @return null, if selection is null or could not be resolved to java element
      * @throws JavaModelException
      */
     public static IJavaElement getElementAtOffset(IJavaElement input,
         ITextSelection selection) throws JavaModelException {
+        if(selection == null){
+            return null;
+        }
         ICompilationUnit workingCopy = null;
         if (input instanceof ICompilationUnit) {
             workingCopy = (ICompilationUnit) input;
@@ -283,7 +317,7 @@ public class JdtUtils {
                 return ref;
             }
         }
-        return input;
+        return null;
     }
 
     /**

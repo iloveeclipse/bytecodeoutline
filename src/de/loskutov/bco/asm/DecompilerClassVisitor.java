@@ -27,26 +27,26 @@ import de.loskutov.bco.preferences.BCOConstants;
 
 public class DecompilerClassVisitor extends ClassAdapter {
 
-    private String fieldFilter;
+    private final String fieldFilter;
 
-    private String methodFilter;
-
-    private boolean verify;
+    private final String methodFilter;
 
     private String name;
 
-    private List methods;
+    private final List methods;
 
     private AnnotationVisitor dummyAnnVisitor;
 
     private String javaVersion;
 
+    private final BitSet modes;
+
     public DecompilerClassVisitor(final ClassVisitor cv, final String field,
-        final String method, final boolean verify) {
+        final String method, final BitSet modes) {
         super(cv);
         this.fieldFilter = field;
         this.methodFilter = method;
-        this.verify = verify;
+        this.modes = modes;
         this.methods = new ArrayList();
     }
 
@@ -69,7 +69,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
             cv = new CommentedClassVisitor(!modes.get(BCOConstants.F_SHOW_RAW_BYTECODE));
         }
         DecompilerClassVisitor dcv = new DecompilerClassVisitor(
-            cv, field, method, modes.get(BCOConstants.F_SHOW_ANALYZER));
+            cv, field, method, modes);
         cr.accept(new ClassAdapter(dcv) {
             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
                 MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
@@ -79,40 +79,23 @@ public class DecompilerClassVisitor extends ClassAdapter {
                                 super.visitLocalVariable(name1, desc1, signature1, start, end, index);
                             }
                         }
+                        public void visitMaxs(int maxStack, int maxLocals) {
+                            if(modes.get(BCOConstants.F_SHOW_VARIABLES)) {
+                                super.visitMaxs(maxStack, maxLocals);
+                            }
+                        }
                         public void visitLineNumber(int line, Label start) {
                             if(modes.get(BCOConstants.F_SHOW_LINE_INFO)) {
                                 super.visitLineNumber(line, start);
                             }
                         }
+                        public void visitLabel(Label label) {
+                            // TODO Auto-generated method stub
+                            super.visitLabel(label);
+                        }
                     };
             }
         }, 0);
-
-        return dcv.getResult(cl);
-    }
-
-    public static DecompiledClass getDecompiledClass(final InputStream is,
-        final String field, final String method, final boolean raw,
-        final boolean asmify, final boolean verify, final ClassLoader cl)
-        throws IOException {
-        ClassReader cr = new ClassReader(is);
-        ClassVisitor cv;
-        if (asmify) {
-            cv = new ASMifierClassVisitor(null) {
-                public void visitEnd() {
-                    text.add("cw.visitEnd();\n\n");
-                    text.add("return cw.toByteArray();\n");
-                    text.add("}\n");
-                    text.add("}\n");
-                }
-            };
-
-        } else {
-            cv = new CommentedClassVisitor(raw);
-        }
-        DecompilerClassVisitor dcv = new DecompilerClassVisitor(
-            cv, field, method, verify);
-        cr.accept(dcv, 0);
 
         return dcv.getResult(cl);
     }
@@ -224,7 +207,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
             return null;
         }
         MethodNode meth = null;
-        if (verify) {
+        if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
             meth = new MethodNode(access, name1, desc, signature, exceptions);
         }
         List text = ((AbstractVisitor) cv).getText();

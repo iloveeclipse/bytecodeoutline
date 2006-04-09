@@ -57,11 +57,12 @@ public class BytecodeCompare extends CompareEditorInput {
         this.left = left;
         this.right = right;
 
-        toggleAsmifierModeAction = new DefaultToggleAction(BCOConstants.SHOW_ASMIFIER_CODE, 
+        toggleAsmifierModeAction = new DefaultToggleAction(BCOConstants.SHOW_ASMIFIER_CODE,
             new IPropertyChangeListener(){
                 public void propertyChange(PropertyChangeEvent event) {
                     if(IAction.CHECKED.equals(event.getProperty())){
-                        toggleASMifierMode(Boolean.TRUE == event.getNewValue());
+                        boolean asmifier = Boolean.TRUE == event.getNewValue();
+                        toggleMode(BCOConstants.F_SHOW_ASMIFIER_CODE, asmifier, asmifier);
                     }
                 }
             });
@@ -69,18 +70,22 @@ public class BytecodeCompare extends CompareEditorInput {
         hideLineInfoAction = new DefaultToggleAction(BCOConstants.SHOW_LINE_INFO, new IPropertyChangeListener(){
                 public void propertyChange(PropertyChangeEvent event) {
                     if(IAction.CHECKED.equals(event.getProperty())){
-                        // TODO add custom behavoir
-    //                    toggleASMifierMode(Boolean.TRUE == event.getNewValue());
+                        toggleMode(
+                            BCOConstants.F_SHOW_LINE_INFO,
+                            Boolean.TRUE == event.getNewValue(),
+                            toggleAsmifierModeAction.isChecked());
                     }
                 }
             });
 
-        hideLocalsAction = new DefaultToggleAction(BCOConstants.SHOW_VARIABLES, 
+        hideLocalsAction = new DefaultToggleAction(BCOConstants.SHOW_VARIABLES,
             new IPropertyChangeListener(){
                 public void propertyChange(PropertyChangeEvent event) {
                     if(IAction.CHECKED.equals(event.getProperty())){
-                        // TODO add custom behavoir
-    //                    toggleASMifierMode(Boolean.TRUE == event.getNewValue());
+                        toggleMode(
+                            BCOConstants.F_SHOW_VARIABLES,
+                            Boolean.TRUE == event.getNewValue(),
+                            toggleAsmifierModeAction.isChecked());
                     }
                 }
             });
@@ -188,14 +193,17 @@ public class BytecodeCompare extends CompareEditorInput {
         return control;
     }
 
-    protected void toggleASMifierMode(boolean isASMifierMode) {
+    protected void toggleMode(int mode, boolean value, boolean isASMifierMode) {
         String contentType = isASMifierMode
             ? TypedElement.TYPE_ASM_IFIER
             : TypedElement.TYPE_BYTECODE;
 
-        left.setASMifierMode(isASMifierMode);
+        left.setMode(mode, value);
+        left.setMode(BCOConstants.F_SHOW_ASMIFIER_CODE, isASMifierMode);
         left.setType(contentType);
-        right.setASMifierMode(isASMifierMode);
+
+        right.setMode(mode, value);
+        right.setMode(BCOConstants.F_SHOW_ASMIFIER_CODE, isASMifierMode);
         right.setType(contentType);
         CompareUI.reuseCompareEditor(this, myEditor);
     }

@@ -1,6 +1,6 @@
 /*******************************************************************************
  * Copyright (c) 2004 Andrei Loskutov.
- * All rights reserved. This program and the accompanying materials 
+ * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the BSD License
  * which accompanies this distribution, and is available at
  * http://www.opensource.org/licenses/bsd-license.php
@@ -25,22 +25,22 @@ import org.eclipse.ui.IWorkbenchPartReference;
 public class EditorListener implements ISelectionListener, IFileBufferListener,
     IPartListener2 {
     protected BytecodeOutlineView view;
-    
+
     EditorListener(BytecodeOutlineView view){
         this.view = view;
-    }  
-    
-    /** 
+    }
+
+    /**
      * clean view reference
      */
     public void dispose(){
         this.view = null;
     }
-    
+
     /**
      * @param part
      * @param selection
-     * 
+     *
      */
     public void selectionChanged(IWorkbenchPart part, ISelection selection) {
         if(!(selection instanceof ITextSelection)){
@@ -48,32 +48,42 @@ public class EditorListener implements ISelectionListener, IFileBufferListener,
         }
         view.handleSelectionChanged(part, selection);
     }
-    
+
     /**
      * @see org.eclipse.core.filebuffers.IFileBufferListener#dirtyStateChanged(org.eclipse.core.filebuffers.IFileBuffer, boolean)
      */
     public void dirtyStateChanged(IFileBuffer buffer, final boolean isDirty) {
         if(!view.isLinkedWithEditor()){
             return;
-        }        
+        }
         if(isSupportedBuffer(buffer)){ //$NON-NLS-1$
             // first call set only view flag - cause
             view.handleBufferIsDirty(isDirty);
-            
+
             // second call will really refresh view
             if(!isDirty){
-                Runnable runnable = new Runnable() {
-                    public void run() {                        
+                // this one will be called in UI thread after some delay, because we need
+                // to wait until the bytecode will be written on disk
+                final Runnable runnable2 = new Runnable() {
+                    public void run() {
                         view.handleBufferIsDirty(isDirty);
                     }
                 };
-                Display current = Display.getCurrent();
-                // let compiler time for generating bytecode
-                current.timerExec(1000, runnable);
+                // this one will be called in UI thread ASAP and allow us to leave
+                // current (probably non-UI) thread
+                Runnable runnable1 = new Runnable() {
+                    public void run() {
+                        Display display = Display.getCurrent();
+                        display.timerExec(1000, runnable2);
+                    }
+                };
+                Display display = Display.getDefault();
+                // fork
+                display.asyncExec(runnable1);
             }
         }
-    }        
-    
+    }
+
     private boolean isSupportedBuffer(IFileBuffer buffer) {
         String fileExtension = buffer.getLocation().getFileExtension();
         // TODO export to properties
@@ -92,37 +102,37 @@ public class EditorListener implements ISelectionListener, IFileBufferListener,
      */
     public void partHidden(IWorkbenchPartReference partRef) {
         view.handlePartHidden(partRef.getPart(false));
-    }    
-    
+    }
+
     /**
      * @see org.eclipse.ui.IPartListener2#partOpened(org.eclipse.ui.IWorkbenchPartReference)
      */
-    public void partOpened(IWorkbenchPartReference partRef) {    
+    public void partOpened(IWorkbenchPartReference partRef) {
         view.handlePartVisible(partRef.getPart(false));
     }
 
     /**
      * @see org.eclipse.ui.IPartListener2#partVisible(org.eclipse.ui.IWorkbenchPartReference)
      */
-    public void partVisible(IWorkbenchPartReference partRef) {      
+    public void partVisible(IWorkbenchPartReference partRef) {
         view.handlePartVisible(partRef.getPart(false));
-    }    
-    
-    
+    }
+
+
     /**
      * @see org.eclipse.core.filebuffers.IFileBufferListener#bufferDisposed(org.eclipse.core.filebuffers.IFileBuffer)
      */
     public void bufferDisposed(IFileBuffer buffer) {
         // is not used here
-    }    
-    
+    }
+
     /**
      * @see org.eclipse.core.filebuffers.IFileBufferListener#bufferCreated(org.eclipse.core.filebuffers.IFileBuffer)
      */
     public void bufferCreated(IFileBuffer buffer) {
         // is not used here
     }
-    
+
     /**
      * @see org.eclipse.core.filebuffers.IFileBufferListener#bufferContentAboutToBeReplaced(org.eclipse.core.filebuffers.IFileBuffer)
      */
@@ -178,7 +188,7 @@ public class EditorListener implements ISelectionListener, IFileBufferListener,
     public void partInputChanged(IWorkbenchPartReference partRef) {
         // is not used here
     }
-        
+
     /**
      * @see org.eclipse.ui.IPartListener2#partActivated(org.eclipse.ui.IWorkbenchPartReference)
      */
@@ -198,7 +208,7 @@ public class EditorListener implements ISelectionListener, IFileBufferListener,
      */
     public void partDeactivated(IWorkbenchPartReference partRef) {
         // is not used here
-    }    
+    }
 
 
 
