@@ -1264,7 +1264,7 @@ public class BytecodeOutlineView extends ViewPart {
         } catch (IOException e) {
             try {
                 // check if compilation unit is ok - then this is the user problem
-                if (type != null && type.isStructureKnown()) {
+                if (type.isStructureKnown()) {
                     BytecodeOutlinePlugin.error(null, e);
                 }
             } catch (JavaModelException e1) {

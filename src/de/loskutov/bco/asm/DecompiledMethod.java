@@ -223,7 +223,7 @@ public class DecompiledMethod {
 
     public String[][] getTextTable() {
         Frame frame = null;
-        String error = "";
+        String error1 = "";
         List lines = new ArrayList();
         for (int i = 0; i < text.size(); ++i) {
             Object o = text.get(i);
@@ -231,7 +231,7 @@ public class DecompiledMethod {
                 if (frames != null) {
                     frame = frames[((Index) o).insn];
                     if (this.error != null && ((Index) o).insn == this.errorInsn) {
-                      error = this.error;
+                      error1 = this.error;
                     }
                 }
             } else {
@@ -250,9 +250,9 @@ public class DecompiledMethod {
                         stack = " ";
                     }
                 }
-                lines.add(new String[]{locals, stack, o.toString(), error});
+                lines.add(new String[]{locals, stack, o.toString(), error1});
                 frame = null;
-                error = "";
+                error1 = "";
             }
         }
         return (String[][]) lines.toArray(new String[lines.size()][]);

@@ -74,9 +74,9 @@ public class DecompilerClassVisitor extends ClassAdapter {
             public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
                 MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
                 return mv==null ? null : new MethodAdapter(mv) {
-                        public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
+                        public void visitLocalVariable(String name1, String desc1, String signature1, Label start, Label end, int index) {
                             if(modes.get(BCOConstants.F_SHOW_VARIABLES)) {
-                                super.visitLocalVariable(name, desc, signature, start, end, index);
+                                super.visitLocalVariable(name1, desc1, signature1, start, end, index);
                             }
                         }
                         public void visitLineNumber(int line, Label start) {
@@ -86,11 +86,11 @@ public class DecompilerClassVisitor extends ClassAdapter {
                         }
                     };
             }
-        }, false);
+        }, 0);
 
         return dcv.getResult(cl);
     }
-        
+
     public static DecompiledClass getDecompiledClass(final InputStream is,
         final String field, final String method, final boolean raw,
         final boolean asmify, final boolean verify, final ClassLoader cl)
@@ -112,7 +112,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
         }
         DecompilerClassVisitor dcv = new DecompilerClassVisitor(
             cv, field, method, verify);
-        cr.accept(dcv, false);
+        cr.accept(dcv, 0);
 
         return dcv.getResult(cl);
     }

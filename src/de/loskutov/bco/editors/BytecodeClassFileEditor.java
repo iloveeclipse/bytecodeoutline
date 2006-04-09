@@ -1,4 +1,4 @@
-/* $Id: BytecodeClassFileEditor.java,v 1.2 2005-02-07 18:59:14 andrei Exp $ */
+/* $Id: BytecodeClassFileEditor.java,v 1.3 2006-04-09 15:06:59 andrei Exp $ */
 
 package de.loskutov.bco.editors;
 
@@ -178,14 +178,15 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
                     range = containsDecompiled()
                         ? sourceMapper.getNameRange(member)
                         : member.getNameRange();
-
-                    offset = range.getOffset();
-                    length = range.getLength();
-
-                    if (range != null && offset > -1 && length > 0) {
-                        if (getSourceViewer() != null) {
-                            getSourceViewer().revealRange(offset, length);
-                            getSourceViewer().setSelectedRange(offset, length);
+                    if(range != null){
+                        offset = range.getOffset();
+                        length = range.getLength();
+    
+                        if (offset > -1 && length > 0) {
+                            if (getSourceViewer() != null) {
+                                getSourceViewer().revealRange(offset, length);
+                                getSourceViewer().setSelectedRange(offset, length);
+                            }
                         }
                     }
                 }

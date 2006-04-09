@@ -191,6 +191,15 @@ public class DecompilerMethodVisitor extends MethodAdapter {
         }
     }
 
+    public void visitFrame(int type, int nLocal, Object[] local, int nStack,
+        Object[] stack) {
+        addIndex(-1);
+        super.visitFrame(type, nLocal, local, nStack, stack);
+        if (meth != null) {
+            meth.visitFrame(type, nLocal, local, nStack, stack);
+        }
+    }
+
     protected void addIndex(final int opcode) {
         text.add(new Index(currentLabel, currentInsn++, opcode));
     }
