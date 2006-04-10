@@ -91,7 +91,7 @@ public class BytecodeCompare extends CompareEditorInput {
                     }
                 }
             });
-        
+
         hideStackMapAction = new DefaultToggleAction(BCOConstants.SHOW_STACKMAP,
             new IPropertyChangeListener(){
                 public void propertyChange(PropertyChangeEvent event) {
@@ -205,7 +205,7 @@ public class BytecodeCompare extends CompareEditorInput {
                     toolBarManager2.insertBefore("bco", hideLocalsAction); //$NON-NLS-1$
                     toolBarManager2.update(true);
                 }
-                
+
                 if (toolBarManager2.find(hideStackMapAction.getId()) == null) {
                     if(!separatorExist) {
                         separatorExist = true;
@@ -230,6 +230,13 @@ public class BytecodeCompare extends CompareEditorInput {
                     }
                     toolBarManager2.insertBefore("bco", toggleAsmifierModeAction); //$NON-NLS-1$
                     toolBarManager2.update(true);
+                }
+                try {
+                    toolBarManager2.getControl().getParent().layout(true);
+                    toolBarManager2.getControl().getParent().update();
+                } catch (NullPointerException e) {
+                    // ignore, i'm just curios why we need this code in 3.2 and expect
+                    // some unwanted side effects...
                 }
             }
         }
