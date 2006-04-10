@@ -44,6 +44,8 @@ public class BytecodeCompare extends CompareEditorInput {
     protected Action hideLineInfoAction;
     /** Action used in compare view/bytecode view to hide/show local variables. */
     protected Action hideLocalsAction;
+    protected Action hideStackMapAction;
+    protected Action expandStackMapAction;
 
     protected IReusableEditor myEditor;
 
@@ -84,6 +86,30 @@ public class BytecodeCompare extends CompareEditorInput {
                     if(IAction.CHECKED.equals(event.getProperty())){
                         toggleMode(
                             BCOConstants.F_SHOW_VARIABLES,
+                            Boolean.TRUE == event.getNewValue(),
+                            toggleAsmifierModeAction.isChecked());
+                    }
+                }
+            });
+        
+        hideStackMapAction = new DefaultToggleAction(BCOConstants.SHOW_STACKMAP,
+            new IPropertyChangeListener(){
+                public void propertyChange(PropertyChangeEvent event) {
+                    if(IAction.CHECKED.equals(event.getProperty())){
+                        toggleMode(
+                            BCOConstants.F_SHOW_STACKMAP,
+                            Boolean.TRUE == event.getNewValue(),
+                            toggleAsmifierModeAction.isChecked());
+                    }
+                }
+            });
+
+        expandStackMapAction = new DefaultToggleAction(BCOConstants.EXPAND_STACKMAP,
+            new IPropertyChangeListener(){
+                public void propertyChange(PropertyChangeEvent event) {
+                    if(IAction.CHECKED.equals(event.getProperty())){
+                        toggleMode(
+                            BCOConstants.F_EXPAND_STACKMAP,
                             Boolean.TRUE == event.getNewValue(),
                             toggleAsmifierModeAction.isChecked());
                     }
@@ -179,6 +205,24 @@ public class BytecodeCompare extends CompareEditorInput {
                     toolBarManager2.insertBefore("bco", hideLocalsAction); //$NON-NLS-1$
                     toolBarManager2.update(true);
                 }
+                
+                if (toolBarManager2.find(hideStackMapAction.getId()) == null) {
+                    if(!separatorExist) {
+                        separatorExist = true;
+                        toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
+                    }
+                    toolBarManager2.insertBefore("bco", hideStackMapAction); //$NON-NLS-1$
+                    toolBarManager2.update(true);
+                }
+                if (toolBarManager2.find(expandStackMapAction.getId()) == null) {
+                    if(!separatorExist) {
+                        separatorExist = true;
+                        toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
+                    }
+                    toolBarManager2.insertBefore("bco", expandStackMapAction); //$NON-NLS-1$
+                    toolBarManager2.update(true);
+                }
+
                 if (toolBarManager2.find(toggleAsmifierModeAction.getId()) == null) {
                     if(!separatorExist) {
                         toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$

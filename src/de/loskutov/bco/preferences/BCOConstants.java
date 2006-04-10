@@ -47,12 +47,17 @@ public interface BCOConstants {
     /**
      * recalculate stackmap (to see computed frames, works for all classes even before MUSTANG)
      */
-    String RECALCULATE_STACKMAP = "recalculateStackmap";
+    String SHOW_STACKMAP = "showStackmap";
 
     /**
      * expand stackmap frames
      */
     String EXPAND_STACKMAP = "expandStackmap";
+    
+    /**
+     * recalculate stackmap (to see computed frames, works for all classes even before MUSTANG)
+     */
+    String RECALCULATE_STACKMAP = "recalculateStackmap";
 
     /**
      * show "analyzer" - LVT and stack tables (for current bytecode selection)
@@ -69,5 +74,6 @@ public interface BCOConstants {
     int F_RECALCULATE_STACKMAP = 6;
     int F_EXPAND_STACKMAP = 7;
     int F_SHOW_ANALYZER = 8;
+    int F_SHOW_STACKMAP = 9;
     
 }

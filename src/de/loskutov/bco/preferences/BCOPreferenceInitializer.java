@@ -24,15 +24,20 @@ public class BCOPreferenceInitializer extends AbstractPreferenceInitializer {
      */
     public void initializeDefaultPreferences() {
         IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
-        store.setDefault(BCOConstants.EXPAND_STACKMAP, false);
         store.setDefault(BCOConstants.LINK_VIEW_TO_EDITOR, true);
-        store.setDefault(BCOConstants.RECALCULATE_STACKMAP, false);
+        store.setDefault(BCOConstants.SHOW_ONLY_SELECTED_ELEMENT, true);
+
+        store.setDefault(BCOConstants.SHOW_RAW_BYTECODE, false);
+
         store.setDefault(BCOConstants.SHOW_ASMIFIER_CODE, false);
         store.setDefault(BCOConstants.SHOW_ANALYZER, false);
-        store.setDefault(BCOConstants.SHOW_LINE_INFO, true);
-        store.setDefault(BCOConstants.SHOW_ONLY_SELECTED_ELEMENT, true);
-        store.setDefault(BCOConstants.SHOW_RAW_BYTECODE, false);
+
         store.setDefault(BCOConstants.SHOW_VARIABLES, true);
+        store.setDefault(BCOConstants.SHOW_LINE_INFO, true);
+
+        store.setDefault(BCOConstants.SHOW_STACKMAP, true);
+        store.setDefault(BCOConstants.EXPAND_STACKMAP, false);
+        store.setDefault(BCOConstants.RECALCULATE_STACKMAP, false);
     }
 
 }

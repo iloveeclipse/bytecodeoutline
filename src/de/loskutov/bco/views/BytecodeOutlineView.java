@@ -151,6 +151,8 @@ public class BytecodeOutlineView extends ViewPart {
     protected Action toggleASMifierModeAction;
     protected Action hideLineInfoAction;
     protected Action hideLocalsAction;
+    protected Action hideStackMapAction;
+    protected Action expandStackMapAction;
     protected Action toggleVerifierAction;
     protected StatusLineManager statusLineManager;
     protected BCOViewSelectionProvider viewSelectionProvider;
@@ -227,6 +229,7 @@ public class BytecodeOutlineView extends ViewPart {
         toggleVerifierAction.setEnabled(on);
         hideLocalsAction.setEnabled(on);
         hideLineInfoAction.setEnabled(on);
+        hideStackMapAction.setEnabled(on);
         toggleASMifierModeAction.setEnabled(on);
         if(on && !toggleASMifierModeAction.isChecked()) {
             setRawModeAction.setEnabled(true);
@@ -373,6 +376,8 @@ public class BytecodeOutlineView extends ViewPart {
         modes.set(BCOConstants.F_SHOW_RAW_BYTECODE, store.getBoolean(BCOConstants.SHOW_RAW_BYTECODE));
         modes.set(BCOConstants.F_SHOW_LINE_INFO, store.getBoolean(BCOConstants.SHOW_LINE_INFO));
         modes.set(BCOConstants.F_SHOW_VARIABLES, store.getBoolean(BCOConstants.SHOW_VARIABLES));
+        modes.set(BCOConstants.F_SHOW_STACKMAP, store.getBoolean(BCOConstants.SHOW_STACKMAP));
+        modes.set(BCOConstants.F_EXPAND_STACKMAP, store.getBoolean(BCOConstants.EXPAND_STACKMAP));
         modes.set(BCOConstants.F_SHOW_ASMIFIER_CODE, store.getBoolean(BCOConstants.SHOW_ASMIFIER_CODE));
         modes.set(BCOConstants.F_SHOW_ANALYZER, store.getBoolean(BCOConstants.SHOW_ANALYZER));
     }
@@ -463,6 +468,28 @@ public class BytecodeOutlineView extends ViewPart {
                 }
             });
 
+        hideStackMapAction = new DefaultToggleAction(BCOConstants.SHOW_STACKMAP,
+            new IPropertyChangeListener() {
+                public void propertyChange(PropertyChangeEvent event) {
+                    if (IAction.CHECKED.equals(event.getProperty())) {
+                        modes.set(BCOConstants.F_SHOW_STACKMAP, Boolean.TRUE == event.getNewValue());
+                        inputChanged = true;
+                        refreshView();
+                    }
+                }
+            });
+
+        expandStackMapAction = new DefaultToggleAction(BCOConstants.EXPAND_STACKMAP,
+            new IPropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent event) {
+                if (IAction.CHECKED.equals(event.getProperty())) {
+                    modes.set(BCOConstants.F_EXPAND_STACKMAP, Boolean.TRUE == event.getNewValue());
+                    inputChanged = true;
+                    refreshView();
+                }
+            }
+        });
+        
         toggleASMifierModeAction = new DefaultToggleAction(BCOConstants.SHOW_ASMIFIER_CODE,
             new IPropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent event) {
@@ -514,6 +541,8 @@ public class BytecodeOutlineView extends ViewPart {
         mmanager.add(setRawModeAction);
         mmanager.add(hideLineInfoAction);
         mmanager.add(hideLocalsAction);
+        mmanager.add(hideStackMapAction);
+        mmanager.add(expandStackMapAction);
         mmanager.add(toggleASMifierModeAction);
         mmanager.add(toggleVerifierAction);
 
@@ -530,8 +559,8 @@ public class BytecodeOutlineView extends ViewPart {
         tmanager.add(linkWithEditorAction);
         tmanager.add(showSelectedOnlyAction);
         tmanager.add(setRawModeAction);
-        tmanager.add(hideLineInfoAction);
-        tmanager.add(hideLocalsAction);
+        // tmanager.add(hideLineInfoAction);
+        // tmanager.add(hideLocalsAction);
         tmanager.add(toggleASMifierModeAction);
         tmanager.add(toggleVerifierAction);
     }
@@ -717,6 +746,8 @@ public class BytecodeOutlineView extends ViewPart {
         toggleASMifierModeAction = null;
         hideLineInfoAction = null;
         hideLocalsAction = null;
+        hideStackMapAction = null;
+        expandStackMapAction = null;        
         toggleVerifierAction = null;
         lastDecompiledResult = null;
         super.dispose();

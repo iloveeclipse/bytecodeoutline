@@ -54,6 +54,10 @@ public class DecompilerClassVisitor extends ClassAdapter {
         final String field, final String method, final BitSet modes, final ClassLoader cl)
         throws IOException {
         ClassReader cr = new ClassReader(is);
+        int crFlags = 0;
+        if(modes.get(BCOConstants.F_EXPAND_STACKMAP)) {
+            crFlags |= ClassReader.EXPAND_FRAMES;
+        }
         ClassVisitor cv;
         if (modes.get(BCOConstants.F_SHOW_ASMIFIER_CODE)) {
             cv = new ASMifierClassVisitor(null) {
@@ -90,12 +94,19 @@ public class DecompilerClassVisitor extends ClassAdapter {
                             }
                         }
                         public void visitLabel(Label label) {
-                            // TODO Auto-generated method stub
                             super.visitLabel(label);
+                        }
+                        
+                        public void visitFrame(int type, int nLocal,
+                            Object[] local, int nStack, Object[] stack) {
+                            if (modes.get(BCOConstants.F_SHOW_STACKMAP)) {
+                                super.visitFrame(
+                                    type, nLocal, local, nStack, stack);
+                            }
                         }
                     };
             }
-        }, 0);
+        }, crFlags);
 
         return dcv.getResult(cl);
     }
