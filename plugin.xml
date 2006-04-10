@@ -17,6 +17,7 @@
             id="de.loskutov.bco.views.BytecodeReferenceView"/>
    </extension>
 
+   <!--
    <extension
          point="org.eclipse.ui.preferencePages">
       <page
@@ -26,10 +27,11 @@
             name="Bytecode Outline">
       </page>
    </extension>
+   -->
 
-  <extension point="org.eclipse.core.runtime.preferences">
-    <initializer class="de.loskutov.bco.preferences.BCOPreferenceInitializer"/>
-  </extension>
+   <extension point="org.eclipse.core.runtime.preferences">
+      <initializer class="de.loskutov.bco.preferences.BCOPreferenceInitializer"/>
+   </extension>
 
    <extension
          point="org.eclipse.ui.popupMenus">
