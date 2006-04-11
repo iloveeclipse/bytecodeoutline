@@ -231,10 +231,10 @@ public class BytecodeOutlineView extends ViewPart {
         hideLineInfoAction.setEnabled(on);
         hideStackMapAction.setEnabled(on);
         toggleASMifierModeAction.setEnabled(on);
-        if(on && !toggleASMifierModeAction.isChecked()) {
-            setRawModeAction.setEnabled(true);
-        } else {
-            setRawModeAction.setEnabled(false);
+        setRawModeAction.setEnabled(on && !toggleASMifierModeAction.isChecked());
+        boolean showAnalyzer = on && toggleVerifierAction.isChecked();
+        for (int i = 0; i < toggleOrientationActions.length; ++i) {
+            toggleOrientationActions[i].setEnabled(showAnalyzer);
         }
     }
 
@@ -489,7 +489,7 @@ public class BytecodeOutlineView extends ViewPart {
                 }
             }
         });
-        
+
         toggleASMifierModeAction = new DefaultToggleAction(BCOConstants.SHOW_ASMIFIER_CODE,
             new IPropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent event) {
@@ -747,7 +747,7 @@ public class BytecodeOutlineView extends ViewPart {
         hideLineInfoAction = null;
         hideLocalsAction = null;
         hideStackMapAction = null;
-        expandStackMapAction = null;        
+        expandStackMapAction = null;
         toggleVerifierAction = null;
         lastDecompiledResult = null;
         super.dispose();
