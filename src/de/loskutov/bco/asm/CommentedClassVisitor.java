@@ -1,11 +1,15 @@
 package de.loskutov.bco.asm;
 
+import java.util.BitSet;
+
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.util.TraceAnnotationVisitor;
 import org.objectweb.asm.util.TraceClassVisitor;
 import org.objectweb.asm.util.TraceFieldVisitor;
 import org.objectweb.asm.util.TraceMethodVisitor;
+
+import de.loskutov.bco.preferences.BCOConstants;
 
 /**
  * @author Eric Bruneton
@@ -14,10 +18,18 @@ import org.objectweb.asm.util.TraceMethodVisitor;
 public class CommentedClassVisitor extends TraceClassVisitor {
 
     protected boolean raw;
+    protected BitSet modes;
+    protected boolean showLines;
+    protected boolean showLocals;
+    protected boolean showStackMap;
 
-    public CommentedClassVisitor(final boolean raw) {
+    public CommentedClassVisitor(final BitSet modes) {
         super(null);
-        this.raw = raw;
+        this.modes = modes;
+        raw = !modes.get(BCOConstants.F_SHOW_RAW_BYTECODE);
+        showLines = modes.get(BCOConstants.F_SHOW_LINE_INFO);
+        showLocals = modes.get(BCOConstants.F_SHOW_VARIABLES);
+        showStackMap = modes.get(BCOConstants.F_SHOW_STACKMAP);
     }
 
     public void visitEnd() {
@@ -184,6 +196,12 @@ public class CommentedClassVisitor extends TraceClassVisitor {
             return null;
         }
 
+        public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
+            if(showStackMap) {
+                super.visitFrame(type, nLocal, local, nStack, stack);
+            }
+        }
+
         public void visitMethodInsn (
             final int opcode,
             final String owner,
@@ -230,18 +248,20 @@ public class CommentedClassVisitor extends TraceClassVisitor {
         public void visitLocalVariable(final String name, final String desc,
             final String signature, final Label start, final Label end,
             final int index) {
-            if (raw) {
+            if (showLocals) {
                 super.visitLocalVariable(
                     name, desc, signature, start, end, index);
             }
         }
 
         public void visitLineNumber(final int line, final Label start) {
-             super.visitLineNumber(line, start);
+            if (showLines) {
+                super.visitLineNumber(line, start);
+            }
         }
 
         public void visitMaxs(final int maxStack, final int maxLocals) {
-            if (raw) {
+            if (showLocals) {
                 super.visitMaxs(maxStack, maxLocals);
             }
         }

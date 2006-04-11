@@ -1,6 +1,7 @@
 package de.loskutov.bco.asm;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,10 +34,13 @@ public class DecompilerMethodVisitor extends MethodAdapter {
 
     private List localVariables;
 
+    private final BitSet modes;
+
     public DecompilerMethodVisitor(final String owner, final MethodNode meth,
-        final MethodVisitor mv) {
+        final MethodVisitor mv, BitSet modes) {
         super(mv);
         this.owner = owner;
+        this.modes = modes;
         this.text = ((AbstractVisitor) mv).getText();
         this.meth = meth;
         this.lineNumbers = new HashMap();
@@ -45,7 +49,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
 
     public DecompiledMethod getResult(final ClassLoader cl) {
         return new DecompiledMethod(
-            owner, text, lineNumbers, localVariables, meth, cl);
+            owner, text, lineNumbers, localVariables, meth, cl, modes);
     }
 
     public void visitInsn(final int opcode) {

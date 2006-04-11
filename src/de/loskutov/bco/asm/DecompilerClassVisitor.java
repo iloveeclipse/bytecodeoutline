@@ -12,8 +12,6 @@ import org.objectweb.asm.ClassAdapter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodAdapter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.ASMifierClassVisitor;
@@ -70,44 +68,11 @@ public class DecompilerClassVisitor extends ClassAdapter {
             };
 
         } else {
-            cv = new CommentedClassVisitor(!modes.get(BCOConstants.F_SHOW_RAW_BYTECODE));
+            cv = new CommentedClassVisitor(modes);
         }
         DecompilerClassVisitor dcv = new DecompilerClassVisitor(
             cv, field, method, modes);
-        cr.accept(new ClassAdapter(dcv) {
-            public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-                MethodVisitor mv = super.visitMethod(access, name, desc, signature, exceptions);
-                return mv==null ? null : new MethodAdapter(mv) {
-                        public void visitLocalVariable(String name1, String desc1, String signature1, Label start, Label end, int index) {
-                            if(modes.get(BCOConstants.F_SHOW_VARIABLES)) {
-                                super.visitLocalVariable(name1, desc1, signature1, start, end, index);
-                            }
-                        }
-                        public void visitMaxs(int maxStack, int maxLocals) {
-                            if(modes.get(BCOConstants.F_SHOW_VARIABLES)) {
-                                super.visitMaxs(maxStack, maxLocals);
-                            }
-                        }
-                        public void visitLineNumber(int line, Label start) {
-                            if(modes.get(BCOConstants.F_SHOW_LINE_INFO)) {
-                                super.visitLineNumber(line, start);
-                            }
-                        }
-                        public void visitLabel(Label label) {
-                            super.visitLabel(label);
-                        }
-                        
-                        public void visitFrame(int type, int nLocal,
-                            Object[] local, int nStack, Object[] stack) {
-                            if (modes.get(BCOConstants.F_SHOW_STACKMAP)) {
-                                super.visitFrame(
-                                    type, nLocal, local, nStack, stack);
-                            }
-                        }
-                    };
-            }
-        }, crFlags);
-
+        cr.accept(dcv, crFlags);
         return dcv.getResult(cl);
     }
 
@@ -225,7 +190,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
         int size = text.size();
         MethodVisitor mv = cv.visitMethod(
             access, name1, desc, signature, exceptions);
-        mv = new DecompilerMethodVisitor(this.name, meth, mv);
+        mv = new DecompilerMethodVisitor(this.name, meth, mv, modes);
         methods.add(mv);
         for (int i = size; i < text.size(); ++i) {
             if (text.get(i) instanceof List) {

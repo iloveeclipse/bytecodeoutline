@@ -1,6 +1,7 @@
 package de.loskutov.bco.asm;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -50,9 +51,12 @@ public class DecompiledMethod {
 
     private int errorInsn;
 
+    private final BitSet modes;
+
     public DecompiledMethod(final String owner, final List inputText,
         final Map lineNumbers, final List localVariables,
-        final MethodNode meth, final ClassLoader cl) {
+        final MethodNode meth, final ClassLoader cl, BitSet modes) {
+        this.modes = modes;
         this.text = new ArrayList();
         this.localVariables = localVariables;
         this.sourceLines = new HashMap();
