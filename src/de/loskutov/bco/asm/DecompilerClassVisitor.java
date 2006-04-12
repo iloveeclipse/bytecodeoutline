@@ -14,7 +14,6 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.util.ASMifierClassVisitor;
 import org.objectweb.asm.util.AbstractVisitor;
 
 import de.loskutov.bco.preferences.BCOConstants;
@@ -50,7 +49,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
 
     public static DecompiledClass getDecompiledClass(final InputStream is,
         final String field, final String method, final BitSet modes, final ClassLoader cl)
-        throws IOException {
+        throws IOException, UnsupportedClassVersionError {
         ClassReader cr = new ClassReader(is);
         int crFlags = 0;
         if(modes.get(BCOConstants.F_EXPAND_STACKMAP)) {
@@ -58,15 +57,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
         }
         ClassVisitor cv;
         if (modes.get(BCOConstants.F_SHOW_ASMIFIER_CODE)) {
-            cv = new ASMifierClassVisitor(null) {
-                public void visitEnd() {
-                    text.add("cw.visitEnd();\n\n");
-                    text.add("return cw.toByteArray();\n");
-                    text.add("}\n");
-                    text.add("}\n");
-                }
-            };
-
+            cv = new CommentedASMifierClassVisitor(modes);
         } else {
             cv = new CommentedClassVisitor(modes);
         }
