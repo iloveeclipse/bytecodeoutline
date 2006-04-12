@@ -124,7 +124,12 @@ public class TypedElement extends BufferedContent
         } catch (IOException e) {
             throw new CoreException(new Status(
                 IStatus.ERROR, "de.loskutov.bco", -1,
-                "cannot get bytecode dump", null));
+                "cannot get bytecode dump", e));
+        } catch (UnsupportedClassVersionError e){
+            throw new CoreException(new Status(
+                IStatus.ERROR, "de.loskutov.bco", -1,
+                "Error caused by attempt to load class compiled with Java version which"
+                + " is not supported by current JVM", e));
         } finally {
             try {
                 stream.close();

@@ -1294,6 +1294,11 @@ public class BytecodeOutlineView extends ViewPart {
                 // this is compilation problem - don't show the message
                 BytecodeOutlinePlugin.log(e1, IStatus.WARNING);
             }
+        } catch (UnsupportedClassVersionError e) {
+            BytecodeOutlinePlugin
+                .error("Cannot decompile: " + type + ". Error was caused by attempt to " +
+                        "load a class compiled with the Java version which is not " +
+                        "supported by the current JVM. ", e);
         } finally {
             try {
                 is.close();
