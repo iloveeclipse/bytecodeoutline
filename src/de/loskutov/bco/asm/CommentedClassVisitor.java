@@ -55,14 +55,10 @@ public class CommentedClassVisitor extends TraceClassVisitor {
     protected void appendDescriptor(final StringBuffer buf1, final int type,
         final String desc, final boolean raw1) {
         if (desc == null) {
-            //buf1.append("null");
             return;
         }
         if (raw1) {
             if(type == CLASS_SIGNATURE || type == FIELD_SIGNATURE || type == METHOD_SIGNATURE) {
-                if(type != CLASS_SIGNATURE) {
-                    buf1.append(tab);
-                }
                 buf1.append( "// signature ").append( desc ).append('\n');
             } else {
                 buf1.append(desc);
@@ -99,6 +95,12 @@ public class CommentedClassVisitor extends TraceClassVisitor {
 
                 case METHOD_SIGNATURE :
                 case FIELD_SIGNATURE :
+                    // fine tuning of identation - we have two tabs in this case
+                    if(buf.lastIndexOf(tab) == buf.length() - tab.length()){
+                        buf.delete(buf.lastIndexOf(tab), buf.length());
+                    }
+                    break;
+
                 case CLASS_SIGNATURE :
                     // ignore - show only in "raw" mode
                     break;
