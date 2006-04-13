@@ -73,7 +73,15 @@ public class CommentedClassVisitor extends TraceClassVisitor {
                     buf1.append(eatPackageNames(desc, '/'));
                     break;
                 case FIELD_DESCRIPTOR :
-                    buf1.append(getSimpleName(Type.getType(desc)));
+                    if ("T".equals(desc)) {
+                        buf1.append("top");
+                    } else if ("N".equals(desc)) {
+                        buf1.append("null");
+                    } else if ("U".equals(desc)) {
+                        buf1.append("uninitialized_this");
+                    } else {
+                        buf1.append(getSimpleName(Type.getType(desc)));
+                    }
                     break;
                 case METHOD_DESCRIPTOR :
                     Type[] args = Type.getArgumentTypes(desc);
