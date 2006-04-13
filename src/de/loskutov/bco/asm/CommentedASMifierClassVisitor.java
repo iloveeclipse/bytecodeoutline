@@ -25,7 +25,14 @@ public class CommentedASMifierClassVisitor extends ASMifierClassVisitor {
     protected boolean raw;
 
     protected ASMifierMethodVisitor createASMifierMethodVisitor() {
-        return new ASMifierMethodVisitor(){
+        return new ASMifierMethodVisitor() {
+
+            public void visitFrame(final int type, final int nLocal,
+                final Object[] local, final int nStack, final Object[] stack) {
+                if (showStackMap) {
+                    super.visitFrame(type, nLocal, local, nStack, stack);
+                }
+            }
 
             public void visitLineNumber(int line, Label start) {
                 if (showLines) {
@@ -33,9 +40,11 @@ public class CommentedASMifierClassVisitor extends ASMifierClassVisitor {
                 }
             }
 
-            public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
+            public void visitLocalVariable(String name, String desc,
+                String signature, Label start, Label end, int index) {
                 if (showLocals) {
-                    super.visitLocalVariable(name, desc, signature, start, end, index);
+                    super.visitLocalVariable(
+                        name, desc, signature, start, end, index);
                 }
             }
 
