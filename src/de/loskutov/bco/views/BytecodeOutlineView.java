@@ -1071,6 +1071,7 @@ public class BytecodeOutlineView extends ViewPart {
                     case IJavaElement.METHOD :
                     case IJavaElement.FIELD :
                     case IJavaElement.INITIALIZER :
+                    case IJavaElement.TYPE :
                         break;
                     case IJavaElement.LOCAL_VARIABLE :
                         childEl = childEl.getAncestor(IJavaElement.METHOD);

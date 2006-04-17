@@ -371,6 +371,22 @@ public class JdtUtils {
             IClassFile iClass = (IClassFile) input;
             IJavaElement ref = iClass.getElementAt(selection.getOffset());
             if (ref != null) {
+                // If we are in the inner class, try to refine search result now
+                if(ref instanceof IType){
+                    IType type = (IType) ref;
+                    IClassFile classFile = type.getClassFile();
+                    if(classFile != iClass){
+                        /*
+                         * WORKAROUND it seems that source range for constructors from
+                         * bytecode with source attached from zip files is not computed
+                         * in Eclipse (SourceMapper returns nothing useful).
+                         * Example: HashMap$Entry class with constructor
+                         * <init>(ILjava/lang/Object;Ljava/lang/Object;Ljava/util/HashMap$Entry;)V
+                         * We will get here at least the inner class...
+                         */
+                        ref = classFile.getElementAt(selection.getOffset());
+                    }
+                }
                 return ref;
             }
         }
