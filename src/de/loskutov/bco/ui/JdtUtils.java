@@ -38,7 +38,6 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
@@ -57,6 +56,10 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
  * @author Andrei
  */
 public class JdtUtils {
+    /** package separator in bytecode notation */
+    private static final char PACKAGE_SEPARATOR = '/';
+    /** type name separator (for inner types) in bytecode notation */
+    private static final char TYPE_SEPARATOR = '$';
 
     /**
      *
@@ -94,8 +97,8 @@ public class JdtUtils {
             }
         }
         return methodName;
-    }    
-    
+    }
+
     public static String createMethodSignature(IMethod iMethod)
         throws JavaModelException {
         StringBuffer sb = new StringBuffer();
@@ -112,9 +115,27 @@ public class JdtUtils {
             return sb.append(iMethod.getSignature()).toString();
         }
 
+        // start method parameter descriptions list
         sb.append('(');
         IType declaringType = iMethod.getDeclaringType();
         String[] parameterTypes = iMethod.getParameterTypes();
+
+        /*
+         * For non - static inner classes bytecode constructor should contain as first
+         * parameter the enclosing type instance, but in Eclipse AST there are no
+         * appropriated parameter. So we need to create enclosing type signature and
+         * add it as first parameter.
+         */
+        if (iMethod.isConstructor() && isNonStaticInner(declaringType)) {
+            // this is a very special case
+            String typeSignature = getTypeSignature(getFirstAncestor(declaringType));
+            if(typeSignature != null) {
+                String [] newParams = new String [parameterTypes.length + 1];
+                newParams[0] = typeSignature;
+                System.arraycopy(parameterTypes, 0, newParams, 1, parameterTypes.length);
+                parameterTypes = newParams;
+            }
+        }
 
         // doSomething(Lgenerics/DummyForAsmGenerics;)Lgenerics/DummyForAsmGenerics;
         for (int i = 0; i < parameterTypes.length; i++) {
@@ -132,13 +153,34 @@ public class JdtUtils {
         String returnType = iMethod.getReturnType();
         String resolvedType = getResolvedType(returnType, declaringType);
         if(resolvedType != null && resolvedType.length() > 0){
-            sb.append(getResolvedType(returnType, declaringType));
+            sb.append(resolvedType);
         } else {
             // this is a generic type
             appendGenericType(sb, iMethod, returnType);
         }
 
         return sb.toString();
+    }
+
+    /**
+     * @param type
+     * @return full qualified, resolved type name in bytecode notation
+     */
+    private static String getTypeSignature(IType type) {
+        if(type == null){
+            return null;
+        }
+        /*
+         * getFullyQualifiedName() returns name, where package separator is '.',
+         * but we need '/' for bytecode. The hack with ',' is to use a character
+         * which is not allowed as Java char to be sure not to replace too much
+         */
+        String name = type.getFullyQualifiedName(',');
+        // replace package separators
+        name = name.replace(Signature.C_DOT, PACKAGE_SEPARATOR);
+        // replace class separators
+        name = name.replace(',', TYPE_SEPARATOR);
+        return Signature.C_RESOLVED + name + Signature.C_SEMICOLON;
     }
 
     private static void appendGenericType(StringBuffer sb, IMethod iMethod,
@@ -187,16 +229,21 @@ public class JdtUtils {
             // simply add whole string (probably with array chars like [[I etc.)
             sb.append(typeToResolve);
         } else {
-            // we need resolved types
-            String resolved = getResolvedTypeName(typeToResolve, declaringType);
-            if(resolved != null) {
-                while (arrayCount > 0) {
-                    sb.append(Signature.C_ARRAY);
-                    arrayCount--;
+            boolean isUnresolvedType = isUnresolvedType(typeToResolve, arrayCount);
+            if(!isUnresolvedType) {
+                sb.append(typeToResolve);
+            } else {
+                // we need resolved types
+                String resolved = getResolvedTypeName(typeToResolve, declaringType);
+                if(resolved != null) {
+                    while (arrayCount > 0) {
+                        sb.append(Signature.C_ARRAY);
+                        arrayCount--;
+                    }
+                    sb.append(Signature.C_RESOLVED);
+                    sb.append(resolved);
+                    sb.append(Signature.C_SEMICOLON);
                 }
-                sb.append(Signature.C_RESOLVED);
-                sb.append(resolved);
-                sb.append(Signature.C_SEMICOLON);
             }
         }
         return sb.toString();
@@ -221,8 +268,7 @@ public class JdtUtils {
          * JdtUtils.concatenateName()
          */
         int arrayCount = Signature.getArrayCount(refTypeSig);
-        char type= refTypeSig.charAt(arrayCount);
-        if (type == Signature.C_UNRESOLVED) {
+        if (isUnresolvedType(refTypeSig, arrayCount)) {
             String name= ""; //$NON-NLS-1$
             int bracket= refTypeSig.indexOf(Signature.C_GENERIC_START, arrayCount + 1);
             if (bracket > 0) {
@@ -240,23 +286,34 @@ public class JdtUtils {
             }
             return null;
         }
-        return Signature.toString(refTypeSig.substring(arrayCount));
+        return refTypeSig.substring(arrayCount);// Signature.toString(substring);
     }
 
     /**
-     * Concatenates package and Class name Both strings can be empty or <code>null</code>.
+     * @param refTypeSig
+     * @param arrayCount expected array count in the signature
+     * @return true if the given string is an unresolved signature (Eclipse - internal
+     * representation)
+     */
+    private static boolean isUnresolvedType(String refTypeSig, int arrayCount){
+        char type = refTypeSig.charAt(arrayCount);
+        return type == Signature.C_UNRESOLVED;
+    }
+
+    /**
+     * Concatenates package and class name. Both strings can be empty or <code>null</code>.
      */
     private static String concatenateName(String packageName, String className) {
         StringBuffer buf = new StringBuffer();
         if (packageName != null && packageName.length() > 0) {
-            packageName = packageName.replace(Signature.C_DOT, '/');
+            packageName = packageName.replace(Signature.C_DOT, PACKAGE_SEPARATOR);
             buf.append(packageName);
         }
         if (className != null && className.length() > 0) {
             if (buf.length() > 0) {
-                buf.append('/');
+                buf.append(PACKAGE_SEPARATOR);
             }
-            className = className.replace(Signature.C_DOT, '$');
+            className = className.replace(Signature.C_DOT, TYPE_SEPARATOR);
             buf.append(className);
         }
         return buf.toString();
@@ -374,19 +431,22 @@ public class JdtUtils {
      */
     public static String getElementName(IJavaElement javaElement) {
         if (isAnonymousType(javaElement)) {
+            IType anonType = (IType) javaElement;
             List allAnonymous = new ArrayList();
-            collectAllAnonymous(allAnonymous, (IType) getLastAncestor(
-                javaElement, IJavaElement.TYPE));
-            int idx = getAnonimousIndex(
-                (IMember) javaElement, (IMember[]) allAnonymous
-                    .toArray(new IMember[allAnonymous.size()]));
+            /*
+             * in order to resolve anon. class name we need to know about all other
+             * anonymous classes in declaring class, therefore we need to collect all here
+             */
+            collectAllAnonymous(allAnonymous, anonType);
+            int idx = getAnonimousIndex(anonType, (IType[]) allAnonymous
+                .toArray(new IType[allAnonymous.size()]));
             return Integer.toString(idx);
         }
         String name = javaElement.getElementName();
         if (isInnerFromBlock(javaElement)) {
             /*
-             * Compiler have different naming conventions for inner classes in
-             * static blocks, this difference was introduced with 1.5 JDK.
+             * Compiler have different naming conventions for inner non-anon. classes in
+             * static blocks or any methods, this difference was introduced with 1.5 JDK.
              * The problem is, that we could have projects with classes, generated
              * with both 1.5 and earlier settings. One could not see on particular
              * java element, for which jdk version the existing bytecode was generated.
@@ -413,13 +473,13 @@ public class JdtUtils {
      * @param javaElement
      * @return null, if javaElement is top level class
      */
-    static IJavaElement getFirstAncestor(IJavaElement javaElement) {
+    static IType getFirstAncestor(IJavaElement javaElement) {
         IJavaElement parent = javaElement;
         if (javaElement.getElementType() == IJavaElement.TYPE) {
             parent = javaElement.getParent();
         }
         if (parent != null) {
-            return parent.getAncestor(IJavaElement.TYPE);
+            return (IType) parent.getAncestor(IJavaElement.TYPE);
         }
         return null;
     }
@@ -485,18 +545,32 @@ public class JdtUtils {
      * @return true, if given element is anonymous inner class
      */
     private static boolean isAnonymousType(IJavaElement javaElement) {
+        // TODO why not to use type.isAnonymous here? Check binary/source types response
         return javaElement instanceof IType
             && "".equals(javaElement.getElementName()); //$NON-NLS-1$
     }
 
     /**
-     * @param javaElement
-     * @return true, if given element is inner class from initializer block
+     * @param innerType should be inner type.
+     * @return true, if given element is inner class from initializer block or method body
      */
-    private static boolean isInnerFromBlock(IJavaElement javaElement) {
-        IJavaElement parent = javaElement.getParent();
-        return javaElement instanceof IType
-            && (parent != null && parent.getElementType() == IJavaElement.INITIALIZER);
+    private static boolean isInnerFromBlock(IJavaElement innerType) {
+        IJavaElement parent = innerType.getParent();
+        return innerType instanceof IType
+            && (parent != null && (parent.getElementType() == IJavaElement.INITIALIZER || parent
+                .getElementType() == IJavaElement.METHOD));
+    }
+
+    /**
+     * @param type
+     * @return true, if given element is non static inner class
+     * @throws JavaModelException
+     */
+    private static boolean isNonStaticInner(IType type) throws JavaModelException {
+        if(type.isMember()){
+            return !Flags.isStatic(type.getFlags());
+        }
+        return false;
     }
 
     /**
@@ -572,7 +646,7 @@ public class JdtUtils {
             dir = path.toOSString();
         } else {
             String packPath = EclipseUtils.getJavaPackageName(javaElement)
-                .replace('.', '/');
+                .replace(Signature.C_DOT, PACKAGE_SEPARATOR);
             dir = path.append(packPath).toOSString();
         }
         return dir;
@@ -774,12 +848,11 @@ public class JdtUtils {
         }
         String packageName = packageFr.getElementName();
         // switch to java bytecode naming conventions
-        packageName = packageName.replace('.', '/');
+        packageName = packageName.replace(Signature.C_DOT, PACKAGE_SEPARATOR);
 
         String className = classFile.getElementName();
-        // className = className.replace('.', '$');
         if (packageName != null && packageName.length() > 0) {
-            return packageName + '/' + className;
+            return packageName + PACKAGE_SEPARATOR + className;
         }
         return className;
     }
@@ -793,17 +866,26 @@ public class JdtUtils {
         IJavaElement topAncestor) {
         StringBuffer sb = new StringBuffer();
         if (!javaElement.equals(topAncestor)) {
-            char innerClassSeparator = '$';
-            if (isAnonymousType(javaElement) ||
-                (is50OrHigher(javaElement) && isInnerFromBlock(javaElement))) {
+            boolean is50OrHigher = is50OrHigher(javaElement);
+            if (!is50OrHigher &&
+                (isAnonymousType(javaElement) || isInnerFromBlock(javaElement))) {
                 sb.append(getElementName(topAncestor));
-                sb.append(innerClassSeparator);
+                sb.append(TYPE_SEPARATOR);
             } else {
+                /*
+                 * TODO there is an issue with < 1.5 compiler setting and with inner
+                 * classes with the same name but defined in different methods in the same
+                 * source file. Then compiler needs to generate *different* content for
+                 *  A$1$B and A$1$B, which is not possible so therefore compiler generates
+                 *  A$1$B and A$2$B. The naming order is the source range order of inner
+                 *  classes, so the first inner B class will get A$1$B and the second
+                 *  inner B class A$2$B etc.
+                 */
+
                 // override top ancestor with immediate ancestor
                 topAncestor = getFirstAncestor(javaElement);
                 while (topAncestor != null) {
-                    sb.insert(0, getElementName(topAncestor)
-                        + innerClassSeparator);
+                    sb.insert(0, getElementName(topAncestor) + TYPE_SEPARATOR);
                     topAncestor = getFirstAncestor(topAncestor);
                 }
             }
@@ -813,31 +895,68 @@ public class JdtUtils {
     }
 
     /**
-     * @param list all anonymous classes from given element will be stored in this list,
-     * elements instanceof IJavaElement
-     * @param javaElement
+     * Collect all anonymous classes which are on the same "name shema level"
+     * as the given element for the compiler. The list could contain different set of
+     * elements for the same source code, depends on the compiler and jdk version
+     * @param list for the found anon. classes, elements instanceof IType.
+     * @param anonType the anon. type
      */
-    private static void collectAllAnonymous(List list, IParent topElement) {
+    private static void collectAllAnonymous(List list, IType anonType) {
+        /*
+         * For JDK >= 1.5 in Eclipse 3.1+ the naming shema for nested anonymous
+         * classes was changed from A$1, A$2, A$3, A$4, ..., A$n
+         * to A$1, A$1$1, A$1$2, A$1$2$1, ..., A$2, A$2$1, A$2$2, ..., A$x$y
+         */
+        boolean allowNested = ! is50OrHigher(anonType);
+
+        IParent declaringType;
+        if(allowNested) {
+            declaringType = (IType) getLastAncestor(anonType, IJavaElement.TYPE);
+        } else {
+            declaringType = anonType.getDeclaringType();
+        }
+
         try {
-            IJavaElement[] children = topElement.getChildren();
-            for (int i = 0; i < children.length; i++) {
-                if (isAnonymousType(children[i])) {
-                    list.add(children[i]);
-                }
-                if (children[i] instanceof IParent) {
-                    collectAllAnonymous(list, (IParent) children[i]);
-                }
-            }
+            collectAllAnonymous(list, declaringType, allowNested);
         } catch (JavaModelException e) {
             BytecodeOutlinePlugin.error(null, e);
         }
     }
 
-    private static int getAnonimousIndex(IMember javaElement,
-        IMember[] anonymous) {
-        sortAnonymous(anonymous, javaElement);
+    /**
+     * Traverses down the children tree of this parent and collect all child anon. classes
+     * @param list
+     * @param parent
+     * @param allowNested true to search in IType child elements too
+     * @throws JavaModelException
+     */
+    private static void collectAllAnonymous(List list, IParent parent,
+        boolean allowNested) throws JavaModelException {
+        IJavaElement[] children = parent.getChildren();
+        for (int i = 0; i < children.length; i++) {
+            IJavaElement childElem = children[i];
+            if (isAnonymousType(childElem)) {
+                list.add(childElem);
+            }
+            if (childElem instanceof IParent) {
+                if(allowNested || !(childElem instanceof IType)) {
+                    collectAllAnonymous(list, (IParent) childElem, allowNested);
+                }
+            }
+        }
+    }
+
+    /**
+     * @param anonType
+     * @param anonymous
+     * @return the index of given java element in the anon. classes list, which was used
+     *  by compiler to generate bytecode name for given element. If the given type is not
+     *  in the list, then return value is '-1'
+     */
+    private static int getAnonimousIndex(IType anonType, IType[] anonymous) {
+        sortAnonymous(anonymous, anonType);
         for (int i = 0; i < anonymous.length; i++) {
-            if (anonymous[i] == javaElement) {
+            if (anonymous[i] == anonType) {
                 // +1 because compiler starts generated classes always with 1
                 return i + 1;
             }
@@ -847,13 +966,13 @@ public class JdtUtils {
 
     /**
      * Sort given anonymous classes in order like java compiler would generate output
-     * classes
+     * classes, in context of given anonymous type
      * @param anonymous
      */
-    private static void sortAnonymous(IMember[] anonymous, IMember javaElement) {
+    private static void sortAnonymous(IType[] anonymous, IType anonType) {
         SourceOffsetComparator sourceComparator = new SourceOffsetComparator();
         Arrays.sort(anonymous, new AnonymClassComparator(
-            javaElement, sourceComparator));
+            anonType, sourceComparator));
     }
 
     /**
@@ -942,8 +1061,7 @@ public class JdtUtils {
                 IPath p = null;
                 if (cpEntry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
                     // filter out source container - there are unused for class
-                    // search -
-                    // add bytecode output location instead
+                    // search - add bytecode output location instead
                     p = cpEntry.getOutputLocation();
                     if (p == null) {
                         // default output used:
@@ -1039,13 +1157,13 @@ public class JdtUtils {
 
         /**
          * First source occurence win.
-         * @param o1 should be IMember
-         * @param o2 should be IMember
+         * @param o1 should be IType
+         * @param o2 should be IType
          * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
          */
         public int compare(Object o1, Object o2) {
-            IMember m1 = (IMember) o1;
-            IMember m2 = (IMember) o2;
+            IType m1 = (IType) o1;
+            IType m2 = (IType) o2;
             int idx1, idx2;
             try {
                 ISourceRange sr1 = m1.getSourceRange();
@@ -1077,7 +1195,7 @@ public class JdtUtils {
          * @param javaElement
          * @param sourceComparator
          */
-        public AnonymClassComparator(IMember javaElement,
+        public AnonymClassComparator(IType javaElement,
             SourceOffsetComparator sourceComparator) {
             this.sourceComparator = sourceComparator;
             topAncestorType = (IType) getLastAncestor(
@@ -1098,8 +1216,8 @@ public class JdtUtils {
          * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
          */
         public int compare(Object o1, Object o2) {
-            IMember m1 = (IMember) o1;
-            IMember m2 = (IMember) o2;
+            IType m1 = (IType) o1;
+            IType m2 = (IType) o2;
             IJavaElement firstAncestor1 = getFirstAncestor(m1);
             IJavaElement firstAncestor2 = getFirstAncestor(m2);
             // both have the same ancestor as immediate ancestor

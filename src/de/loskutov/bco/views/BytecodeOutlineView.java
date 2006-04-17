@@ -20,6 +20,7 @@ import java.util.ResourceBundle;
 import org.eclipse.core.filebuffers.FileBuffers;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
@@ -1237,6 +1238,15 @@ public class BytecodeOutlineView extends ViewPart {
                 (lastChildElement != null && !lastChildElement.equals(childEl))){
                 return true;
             }
+        }
+
+        /*
+         * the check if we changed from inner class to outer class or vice versa
+         */
+        if (lastChildElement != null && childEl != null) {
+            IType newEnclosingType = JdtUtils.getEnclosingType(childEl);
+            IType oldEnclosingType = JdtUtils.getEnclosingType(lastChildElement);
+            return newEnclosingType == null || !newEnclosingType.equals(oldEnclosingType);
         }
         return false;
     }
