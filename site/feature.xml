@@ -52,7 +52,6 @@ THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS&apos;&apos; AND
       <import plugin="org.eclipse.ui.console"/>
       <import plugin="org.eclipse.help.base"/>
       <import plugin="org.eclipse.help.appserver"/>
-      <import plugin="org.objectweb.asm" version="3.0.0" match="greaterOrEqual"/>
    </requires>
 
    <plugin
