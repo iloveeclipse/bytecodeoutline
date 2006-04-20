@@ -33,10 +33,6 @@ THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS&apos;&apos; AND
       <discovery label="ObjectWeb update site" url="http://download.forge.objectweb.org/eclipse-update/site.xml"/>
    </url>
 
-   <includes
-         id="org.objectweb.asm.feature"
-         version="3.0.0"/>
-
    <requires>
       <import plugin="org.eclipse.ui"/>
       <import plugin="org.eclipse.ui.editors"/>
