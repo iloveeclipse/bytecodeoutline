@@ -296,6 +296,7 @@ public class BytecodeOutlineView extends ViewPart {
             } else {
                 if(restoreVerify) {
                     inputChanged = true;
+                    toggleVerifierAction.setEnabled(true);
                     toggleVerifyMode(getViewSite().getActionBars().getMenuManager(), true);
                 }
                 restoreVerify = false;
@@ -1026,6 +1027,7 @@ public class BytecodeOutlineView extends ViewPart {
             int l = ((Integer) errors.get(i)).intValue();
             tableControl.getItem(l).setForeground(errorColor);
         }
+        toggleVerifierAction.setEnabled(true);
     }
 
     /**
