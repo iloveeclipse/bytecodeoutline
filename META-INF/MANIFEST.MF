@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Bytecode Outline Plug-in
 Bundle-SymbolicName: de.loskutov.BytecodeOutline;singleton:=true
-Bundle-Version: 2.1.0
+Bundle-Version: 2.1.1
 Bundle-ClassPath: .,
  lib/asm-3.0_beta2.jar,
  lib/asm-analysis-3.0_beta2.jar,
@@ -26,4 +26,4 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.ui.console,
  org.eclipse.help.base,
  org.eclipse.help.appserver
-Eclipse-AutoStart: true
+Eclipse-LazyStart: true

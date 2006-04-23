@@ -143,10 +143,9 @@ public class BytecodeOutlineView extends ViewPart {
     protected IJavaElement lastChildElement;
     protected ITextSelection currentSelection;
     protected EditorListener editorListener;
-
-    protected Action linkWithEditorAction;
     protected Action selectionChangedAction;
     protected Action refreshVarsAndStackAction;
+    protected Action linkWithEditorAction;
     protected Action showSelectedOnlyAction;
     protected Action setRawModeAction;
     protected Action toggleASMifierModeAction;
@@ -168,7 +167,13 @@ public class BytecodeOutlineView extends ViewPart {
     /** global class info, without current selection status */
     protected String currentStatusMessage;
     protected boolean hasAnalyzerError;
-
+    /*
+     * I don't know how to update the state of toolbar and menu managers because it seems
+     * that if we toggle the action state internally (not by user click) then either the
+     * managers or contribution items or whatever holds the old state of checked action.
+     * This flag is a workaround and allows us restore the state after internal toggling.
+     */
+    private boolean restoreVerify;
     private static final String NLS_PREFIX = "BytecodeOutlineView.";
 
     // updates the find replace action if the document length is > 0
@@ -266,7 +271,7 @@ public class BytecodeOutlineView extends ViewPart {
             setJavaInput(javaElem);
             javaEditor = editor;
 
-            checkVerifyAction(javaInput);
+            checkVerifyMode();
 
             updateSelection(EclipseUtils.getSelection(javaEditor
                 .getSelectionProvider()));
@@ -274,17 +279,28 @@ public class BytecodeOutlineView extends ViewPart {
         }
     }
 
-    /**
-     * @param javaElement
-     * @return true if verify mode could be enabled
-     */
-    private boolean checkVerifyAction(IJavaElement javaElement) {
-        boolean aoi = JdtUtils.isAbstractOrInterface(javaElement);
-        // deactivate, but only if not in verify mode
+    private void checkVerifyMode() {
+        boolean aoi = JdtUtils.isAbstractOrInterface(javaInput);
+
         if(!toggleVerifierAction.isChecked()){
+            // deactivate verify button, but only if *not* in verify mode
             toggleVerifierAction.setEnabled(!aoi);
+            restoreVerify = false;
+        } else {
+            if(aoi){
+                // swith verify mode off, because it is not applicable to selected element
+                inputChanged = true;
+                toggleVerifyMode(getViewSite().getActionBars().getMenuManager(), false);
+                // remember last state, to match the state of the toolbars and menus
+                restoreVerify = true;
+            } else {
+                if(restoreVerify) {
+                    inputChanged = true;
+                    toggleVerifyMode(getViewSite().getActionBars().getMenuManager(), true);
+                }
+                restoreVerify = false;
+            }
         }
-        return !aoi;
     }
 
     private boolean updateSelection(ITextSelection sel) {
@@ -512,28 +528,12 @@ public class BytecodeOutlineView extends ViewPart {
         toggleVerifierAction = new DefaultToggleAction(BCOConstants.SHOW_ANALYZER,
             new IPropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent event) {
-                    if (IAction.CHECKED.equals(event.getProperty())) {
+                    if(IAction.CHECKED.equals(event.getProperty())) {
                         boolean showAnalyzer = Boolean.TRUE == event.getNewValue();
-                        modes.set(BCOConstants.F_SHOW_ANALYZER, showAnalyzer);
-                        if(modes.get(BCOConstants.F_SHOW_ANALYZER)) {
-                            ((StackLayout) stackComposite.getLayout()).topControl = verifyControl;
-                            viewSelectionProvider.setCurrentSelectionProvider(tableControlViewer);
-                        } else {
-                            ((StackLayout) stackComposite.getLayout()).topControl = textControl;
-                            viewSelectionProvider.setCurrentSelectionProvider(textViewer);
-                        }
-                        stackComposite.layout();
-
-                        for (int i = 0; i < toggleOrientationActions.length; ++i) {
-                            toggleOrientationActions[i].setEnabled(showAnalyzer);
-                        }
-                        mmanager.markDirty();
-                        mmanager.update();
-
+                        toggleVerifyMode(mmanager, showAnalyzer);
                         inputChanged = true;
                         refreshView();
                     }
-
                 }
             });
 
@@ -972,24 +972,23 @@ public class BytecodeOutlineView extends ViewPart {
         if (inputChanged || isSelectedElementChanged(childEl)) {
 
             DecompiledClass result = decompileBytecode(childEl);
-            if (result != null) {
-                boolean verifyPossible = checkVerifyAction(childEl == null
-                    ? javaInput
-                    : childEl);
-                if (!modes.get(BCOConstants.F_SHOW_ANALYZER) || !verifyPossible) {
-                    refreshTextView(result);
-                } else {
-                    refreshVerifyView(result);
-                }
-            } else {
+            if (result == null) {
                 clearOutput = true;
+            } else {
+                if (modes.get(BCOConstants.F_SHOW_ANALYZER)
+                    && !result.isAbstractOrInterface()) {
+                    refreshVerifyView(result);
+                } else {
+                    toggleVerifierAction.setEnabled(!result.isAbstractOrInterface());
+                    refreshTextView(result);
+                }
             }
             lastDecompiledResult = result;
-        } else {
-            if(childEl == null && modes.get(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT)) {
-                clearOutput = true;
-            }
+        } else if (childEl == null
+            && modes.get(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT)) {
+            clearOutput = true;
         }
+
         lastChildElement = childEl;
         if(clearOutput){
             if (!modes.get(BCOConstants.F_SHOW_ANALYZER)) {
@@ -1319,7 +1318,7 @@ public class BytecodeOutlineView extends ViewPart {
         }
         // remember class file size to show it later in UI
         if(decompiledClass != null){
-            decompiledClass.setAttribute("class.size", "" + available);
+            decompiledClass.setAttribute(DecompiledClass.ATTR_CLAS_SIZE, "" + available);
         }
         return decompiledClass;
     }
@@ -1458,6 +1457,24 @@ public class BytecodeOutlineView extends ViewPart {
                     : VIEW_ORIENTATION_VERTICAL);
             }
         }
+    }
+
+    protected void toggleVerifyMode(final IMenuManager mmanager, boolean showAnalyzer) {
+        modes.set(BCOConstants.F_SHOW_ANALYZER, showAnalyzer);
+        if(modes.get(BCOConstants.F_SHOW_ANALYZER)) {
+            ((StackLayout) stackComposite.getLayout()).topControl = verifyControl;
+            viewSelectionProvider.setCurrentSelectionProvider(tableControlViewer);
+        } else {
+            ((StackLayout) stackComposite.getLayout()).topControl = textControl;
+            viewSelectionProvider.setCurrentSelectionProvider(textViewer);
+        }
+        stackComposite.layout();
+
+        for (int i = 0; i < toggleOrientationActions.length; ++i) {
+            toggleOrientationActions[i].setEnabled(showAnalyzer);
+        }
+        mmanager.markDirty();
+        mmanager.update();
     }
 
     private class ToggleOrientationAction extends Action {

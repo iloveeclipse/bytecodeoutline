@@ -38,6 +38,8 @@ public class DecompilerClassVisitor extends ClassAdapter {
 
     private final BitSet modes;
 
+    private int accessFlags;
+
     public DecompilerClassVisitor(final ClassVisitor cv, final String field,
         final String method, final BitSet modes) {
         super(cv);
@@ -74,7 +76,8 @@ public class DecompilerClassVisitor extends ClassAdapter {
             text.remove(0);
         }
         DecompiledClass dc = new DecompiledClass(text);
-        dc.setAttribute("java.version", javaVersion);
+        dc.setAttribute(DecompiledClass.ATTR_JAVA_VERSION, javaVersion);
+        dc.setAttribute(DecompiledClass.ATTR_ACCESS_FLAGS, String.valueOf(accessFlags));
         return dc;
     }
 
@@ -118,6 +121,8 @@ public class DecompilerClassVisitor extends ClassAdapter {
         if (javaV > 0 && javaV < 10) {
             javaVersion = "1." + javaV; //$NON-NLS-1$
         }
+
+        this.accessFlags = access;
     }
 
     public void visitSource(final String source, final String debug) {

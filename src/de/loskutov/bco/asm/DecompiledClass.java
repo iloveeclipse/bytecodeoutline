@@ -5,11 +5,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.objectweb.asm.Opcodes;
+
 /**
  * @author Eric Bruneton
  */
 
 public class DecompiledClass {
+
+    public static final String ATTR_CLAS_SIZE = "class.size";
+    public static final String ATTR_JAVA_VERSION = "java.version";
+    public static final String ATTR_ACCESS_FLAGS = "access";
 
     private List text;
     /**
@@ -24,6 +30,34 @@ public class DecompiledClass {
 
     public void setAttribute(String key, String value){
         classAttributesMap.put(key, value);
+    }
+
+    /**
+     * @return the class's access flags (see {@link Opcodes}). This
+     *        parameter also indicates if the class is deprecated.
+     */
+    public int getAccessFlags(){
+        int result = 0;
+        String flags = (String) classAttributesMap.get(ATTR_ACCESS_FLAGS);
+        if(flags == null){
+            return result;
+        }
+        try {
+            Integer intFlags = Integer.valueOf(flags);
+            result = intFlags.intValue();
+        } catch (NumberFormatException e) {
+            // ignore, should not happen
+        }
+        return result;
+    }
+
+    /**
+     * @return true if the class is either abstract or interface
+     */
+    public boolean isAbstractOrInterface(){
+        int accessFlags = getAccessFlags();
+        return ((accessFlags & Opcodes.ACC_ABSTRACT) != 0) ||
+            ((accessFlags & Opcodes.ACC_INTERFACE) != 0);
     }
 
     public String getAttribute(String key){
