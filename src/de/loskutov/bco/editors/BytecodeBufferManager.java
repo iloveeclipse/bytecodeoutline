@@ -1,93 +1,65 @@
-
 package de.loskutov.bco.editors;
 
-import java.util.Enumeration;
+import java.lang.reflect.Method;
 
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.core.IBuffer;
-import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IOpenable;
-import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.core.BufferManager;
 
-import de.loskutov.bco.BytecodeOutlinePlugin;
-
-
 /**
- * This class is a hack that replaces JDT <code>BufferManager</code> in order
- * to make <code>addBuffer()</code> and <code>removeBuffer()</code>
- * accessible.
- * 
- * @author V.Grishchenko
+ * This class is a hack that mades JDT <code>BufferManager</code> methods
+ * <code>addBuffer()</code> and <code>removeBuffer()</code> accessible.
+ *
+ * It does NOT modify or replace the instance of default buffer manager, because if they
+ * are more then one plugin which performs such hack, then it will end up in a big bang.
+ *
+ * @author Andrei
  */
-public class BytecodeBufferManager extends BufferManager {
+public final class BytecodeBufferManager {
 
-    /**
-     * Constructor for JadclipseBufferManager.
-     */
-    public BytecodeBufferManager(BufferManager manager) {
+    private BytecodeBufferManager() {
         super();
-        synchronized (BufferManager.class) {
-            Enumeration en = manager.getOpenBuffers();
-            while (en.hasMoreElements()) {
-                addBuffer((IBuffer) en.nextElement());
-            }
-            BufferManager.DEFAULT_BUFFER_MANAGER = this;
-        }
     }
 
-    /**
-     * Closes buffers open by jadclipse
-     * 
-     * @param all
-     *            close all buffers including those that have no real source
-     */
-    public static void closeJadclipseBuffers(boolean all) {
-        BufferManager manager = BufferManager.getDefaultBufferManager();
-        if (manager instanceof BytecodeBufferManager) {
-            Enumeration en = manager.getOpenBuffers();
-            while (en.hasMoreElements()) {
-                IBuffer buffer = (IBuffer) en.nextElement();
-                IOpenable owner = buffer.getOwner();
-                if (owner instanceof IClassFile && 
-                    buffer.getContents().startsWith( BytecodeClassFileEditor.MARK)) {
-                    BytecodeBufferManager jManager = (BytecodeBufferManager) manager;
-                    jManager.removeBuffer(buffer);
-                    if (!all) { // restore buffers for files without source
-                        IClassFile cf = (IClassFile) owner;
-                        String realSource = null;
-                        try {
-                            realSource = cf.getSource();
-                        } catch (JavaModelException e) {
-                            IStatus err = new Status(
-                                IStatus.ERROR, BytecodeClassFileEditor.ID,
-                                0,
-                                "failed to get source while flushing buffers",
-                                e);
-                            BytecodeOutlinePlugin.getDefault().getLog().log(err);
-                        }
-                        if (realSource == null) {
-                            jManager.addBuffer(buffer);
-                        }
-                    }
-                }
-            }
-        }
+    public static IBuffer getBuffer(IOpenable owner) {
+        return BufferManager.getDefaultBufferManager().getBuffer(owner);
+    }
+
+    public static IBuffer createBuffer(IOpenable owner) {
+        return BufferManager.getDefaultBufferManager().createBuffer(owner);
     }
 
     /**
      * @see BufferManager#addBuffer(IBuffer)
      */
-    public void addBuffer(IBuffer buffer) {
-        super.addBuffer(buffer);
+    public static void addBuffer(IBuffer buffer) {
+        BufferManager manager = BufferManager.getDefaultBufferManager();
+        try {
+            Method addMethod = BufferManager.class.getDeclaredMethod(
+                "addBuffer", new Class[]{IBuffer.class});
+            addMethod.setAccessible(true);
+            addMethod.invoke(manager, new Object[]{buffer});
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     /**
      * @see BufferManager#removeBuffer(IBuffer)
      */
-    public void removeBuffer(IBuffer buffer) {
-        super.removeBuffer(buffer);
+    public static void removeBuffer(IBuffer buffer) {
+        if (buffer != null) {
+            BufferManager manager = BufferManager.getDefaultBufferManager();
+            try {
+                Method removeMethod = BufferManager.class.getDeclaredMethod(
+                    "removeBuffer", new Class[]{IBuffer.class});
+                removeMethod.setAccessible(true);
+                removeMethod.invoke(manager, new Object[]{buffer});
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
     }
 }
-

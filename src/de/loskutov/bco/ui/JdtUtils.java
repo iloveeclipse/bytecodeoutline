@@ -68,6 +68,36 @@ public class JdtUtils {
         // don't call
     }
 
+    public static IJavaElement getMethod(IParent parent, String signature){
+        try {
+            IJavaElement[] children = parent.getChildren();
+            for (int i = 0; i < children.length; i++) {
+                IJavaElement javaElement = children[i];
+                switch (javaElement.getElementType()) {
+                    case IJavaElement.INITIALIZER :
+                        // fall through
+                    case IJavaElement.METHOD :
+                        if(signature.equals(getMethodSignature(javaElement))){
+                            return javaElement;
+                        }
+                        break;
+                    default :
+                        break;
+                }
+                if(javaElement instanceof IParent){
+                    javaElement = getMethod((IParent) javaElement, signature);
+                    if(javaElement != null){
+                        return javaElement;
+                    }
+                }
+            }
+        } catch (JavaModelException e) {
+            // just ignore it. Mostly caused by class files not on the class path
+            // which is not a problem for us, but a big problem for JDT
+        }
+        return null;
+    }
+
     /**
      * @param childEl
      * @return method signature, if given java element is either initializer or method,
@@ -340,6 +370,43 @@ public class JdtUtils {
     }
 
     /**
+     * @param parent
+     * @return inner type which has the same name as the given string, or null
+     */
+    public static IType getInnerType(IParent parent, String fullTypeName) {
+        try {
+            IJavaElement[] children = parent.getChildren();
+            for (int i = 0; i < children.length; i++) {
+                if(children[i].getElementType() == IJavaElement.TYPE){
+                    String name = ((IType)children[i]).getFullyQualifiedName(TYPE_SEPARATOR);
+                    /*
+                     * TODO for inner and anonymous classes from the blocks or methods
+                     * getFullyQualifiedName() does not work and will never match the
+                     * fullTypeName... I'm not sure if it is intended or if it is a bug
+                     * in Eclipse: instead of A$1B we get A$B for B class from a method in A
+                     */
+                    if(name != null && name.equals(fullTypeName)){
+                        return (IType) children[i];
+                    }
+                }
+                if(children[i] instanceof IParent){
+                    IType type = getInnerType((IParent) children[i], fullTypeName);
+                    if(type != null){
+                        return type;
+                    }
+                }
+            }
+        } catch (JavaModelException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+
+
+    /**
      * Modified copy from org.eclipse.jdt.internal.ui.actions.SelectionConverter
      * @param input
      * @param selection
@@ -383,6 +450,7 @@ public class JdtUtils {
                          * Example: HashMap$Entry class with constructor
                          * <init>(ILjava/lang/Object;Ljava/lang/Object;Ljava/util/HashMap$Entry;)V
                          * We will get here at least the inner class...
+                         * see https://bugs.eclipse.org/bugs/show_bug.cgi?id=137847
                          */
                         ref = classFile.getElementAt(selection.getOffset());
                     }
@@ -715,7 +783,7 @@ public class JdtUtils {
 
     /**
      * @param javaElement
-     * @return new generated input stream for gicen element bytecode class file, or null
+     * @return new generated input stream for given element bytecode class file, or null
      * if class file cannot be found or this element is not from java source path
      */
     public static InputStream createInputStream(IJavaElement javaElement) {

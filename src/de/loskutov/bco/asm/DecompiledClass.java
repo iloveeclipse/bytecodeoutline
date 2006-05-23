@@ -5,7 +5,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.jdt.core.IClassFile;
+import org.eclipse.jdt.core.IJavaElement;
 import org.objectweb.asm.Opcodes;
+
+import de.loskutov.bco.ui.JdtUtils;
 
 /**
  * @author Eric Bruneton
@@ -17,6 +21,8 @@ public class DecompiledClass {
     public static final String ATTR_JAVA_VERSION = "java.version";
     public static final String ATTR_ACCESS_FLAGS = "access";
 
+    /** key is DecompiledMethod, value is IJavaElement (Member)*/
+    private Map methodToJavaElt;
     private List text;
     /**
      * key is string, value is string
@@ -26,6 +32,7 @@ public class DecompiledClass {
 
     public DecompiledClass(final List text) {
         this.text = text;
+        methodToJavaElt = new HashMap();
     }
 
     public void setAttribute(String key, String value){
@@ -150,6 +157,71 @@ public class DecompiledClass {
         return -1;
     }
 
+    public DecompiledMethod getMethod(final int decompiledLine) {
+        int currentDecompiledLine = 0;
+        for (int i = 0; i < text.size(); ++i) {
+            Object o = text.get(i);
+            if (o instanceof DecompiledMethod) {
+                DecompiledMethod m = (DecompiledMethod) o;
+                int l = m.getSourceLine(decompiledLine - currentDecompiledLine);
+                if (l != -1) {
+                    return m;
+                }
+                currentDecompiledLine += m.getLineCount();
+            } else {
+                currentDecompiledLine++;
+            }
+        }
+        return null;
+    }
+
+    public DecompiledMethod getMethod(final String signature) {
+        for (int i = 0; i < text.size(); ++i) {
+            Object o = text.get(i);
+            if (o instanceof DecompiledMethod) {
+                DecompiledMethod m = (DecompiledMethod) o;
+                if(signature.equals(m.getSignature())){
+                    return m;
+                }
+            }
+        }
+        return null;
+    }
+
+    public IJavaElement getJavaElement(int decompiledLine, IClassFile clazz){
+        DecompiledMethod method = getMethod(decompiledLine);
+        if(method != null){
+            IJavaElement javaElement = (IJavaElement) methodToJavaElt.get(method);
+            if(javaElement == null) {
+                javaElement = JdtUtils.getMethod(clazz, method.getSignature());
+                if(javaElement != null) {
+                    methodToJavaElt.put(method, javaElement);
+                } else {
+                    javaElement = clazz;
+                }
+            }
+            return javaElement;
+        }
+        return clazz;
+    }
+
+    public int getDecompiledLine(String methSignature){
+        int currentDecompiledLine = 0;
+        for (int i = 0; i < text.size(); ++i) {
+            Object o = text.get(i);
+            if (o instanceof DecompiledMethod) {
+                DecompiledMethod m = (DecompiledMethod) o;
+                if(methSignature.equals(m.getSignature())){
+                    return currentDecompiledLine;
+                }
+                currentDecompiledLine += m.getLineCount();
+            } else {
+                currentDecompiledLine++;
+            }
+        }
+        return 0;
+    }
+
     /**
      *
      * @param decompiledLine
@@ -228,5 +300,23 @@ public class DecompiledClass {
             }
         }
         return errors;
+    }
+
+    public int getBestDecompiledMatch(int sourceLine) {
+        int bestMatch = -1;
+
+        for (int i = 0; i < text.size(); ++i) {
+            Object o = text.get(i);
+            if (o instanceof DecompiledMethod) {
+                DecompiledMethod m = (DecompiledMethod) o;
+                int line = m.getFirstSourceLine();
+                if(line >= sourceLine){
+                    if(bestMatch == -1 || line < bestMatch){
+                        bestMatch = line;
+                    }
+                }
+            }
+        }
+        return bestMatch;
     }
 }

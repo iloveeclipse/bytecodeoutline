@@ -4,62 +4,66 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.BitSet;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.WeakHashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Path;
+import org.eclipse.debug.core.DebugException;
+import org.eclipse.debug.internal.ui.contexts.DebugContextManager;
+import org.eclipse.debug.internal.ui.contexts.provisional.IDebugContextListener;
+import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
-import org.eclipse.jdt.core.IParent;
-import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.debug.core.IJavaReferenceType;
 import org.eclipse.jdt.internal.compiler.env.IBinaryType;
 import org.eclipse.jdt.internal.core.BinaryType;
-import org.eclipse.jdt.internal.core.SourceMapper;
+import org.eclipse.jdt.internal.debug.core.model.JDIStackFrame;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.ui.IWorkbenchPart;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
 import de.loskutov.bco.asm.DecompilerClassVisitor;
+import de.loskutov.bco.ui.JdtUtils;
 
 /**
- * Yet "better" way to hook into JDT... using a source mapper enables us to use the
- * outline! Sorry, still ne better news for debuging.
  * @author Jochen Klein
+ * @author Andrei
  */
-public class BytecodeSourceMapper extends SourceMapper {
+public class BytecodeSourceMapper implements IDebugContextListener {
+
+    /** key is IClassFile, value is DecompiledClass */
+    private WeakHashMap classToDecompiled;
+    private IJavaReferenceType lastTypeInDebugger;
 
     public BytecodeSourceMapper() {
-        // values are never used, as we have overwritten
-        // findSource()
-
-        // super(new Path("."), "");
-        super(new Path("."), "", new HashMap()); // per Rene's e-mail
+        super();
+        classToDecompiled = new WeakHashMap();
+        DebugContextManager.getDefault().addDebugContextListener(this);
     }
 
-    /*
-     * (non-Javadoc) R2.1 fix
-     * @see org.eclipse.jdt.internal.core.SourceMapper#findSource(org.eclipse.jdt.core.IType)
-     */
-    public char[] findSource(IType type) {
+    public char[] getSource(IClassFile classFile, BitSet decompilerFlags) {
+        IType type;
+        try {
+            type = classFile.getType();
+        } catch (JavaModelException e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+            return null;
+        }
         if (!type.isBinary()) {
             return null;
         }
-        BinaryType parent = (BinaryType) type.getDeclaringType();
-        BinaryType declType = (BinaryType) type;
-        while (parent != null) {
-            declType = parent;
-            parent = (BinaryType) declType.getDeclaringType();
-        }
         IBinaryType info = null;
         try {
-            info = (IBinaryType) declType.getElementInfo();
+            info = (IBinaryType) ((BinaryType) type).getElementInfo();
         } catch (JavaModelException e) {
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             return null;
@@ -67,85 +71,127 @@ public class BytecodeSourceMapper extends SourceMapper {
         if (info == null) {
             return null;
         }
-        return findSource(type, info);
+        return findSource(type, info, classFile, decompilerFlags);
+    }
+
+    public char[] getSource(IFile file, IClassFile cf, BitSet decompilerFlags) {
+        StringBuffer source = new StringBuffer();
+
+        DecompiledClass decompiledClass = decompile(source, file.getLocation()
+            .toOSString(), decompilerFlags);
+
+        classToDecompiled.put(cf, decompiledClass);
+
+        return source.toString().toCharArray();
     }
 
     /**
+     *
      */
-    public char[] findSource(IType type, IBinaryType info) {
-        Collection exceptions = new LinkedList();
+    protected char[] findSource(IType type, IBinaryType info, IClassFile cf,
+        BitSet decompilerFlags) {
+
         IPackageFragment pkgFrag = type.getPackageFragment();
         IPackageFragmentRoot root = (IPackageFragmentRoot) pkgFrag.getParent();
         String pkg = type.getPackageFragment().getElementName().replace(
             '.', '/');
-        String location = "\tDECOMPILED FROM: ";
+
         String classFile = new String(info.getFileName());
         int p = classFile.lastIndexOf('/');
         classFile = classFile.substring(p + 1);
 
         StringBuffer source = new StringBuffer();
-
+        String location = null;
+        String className = pkg + "/" + classFile;
         if (root.isArchive()) {
-            String archivePath = getArchivePath(root);
-            location += archivePath;
-            decompileFromArchive(source, archivePath, pkg, classFile);
+            location = getArchivePath(root);
+            DecompiledClass decompiledClass = decompileFromArchive(
+                source, location, className, decompilerFlags);
+            classToDecompiled.put(cf, decompiledClass);
         } else {
             try {
-                location += root.getUnderlyingResource().getLocation()
+                location = root.getUnderlyingResource().getLocation()
                     .toOSString()
-                    + "/" + pkg + "/" + classFile;
-                decompile(source, root.getUnderlyingResource().getLocation()
-                    .toOSString(), pkg, classFile);
+                    + "/" + className;
+                DecompiledClass decompiledClass = decompile(
+                    source, location, decompilerFlags);
+                classToDecompiled.put(cf, decompiledClass);
             } catch (JavaModelException e) {
-                exceptions.add(e);
                 BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
         }
 
-        source.append("\n\n");
+        source.append("\n\n// DECOMPILED FROM: ");
         source.append(location).append("\n");
-        // source.append(decompiler.getLog());
-        // exceptions.addAll(decompiler.getExceptions());
-        // logExceptions(exceptions, source);
-
         return source.toString().toCharArray();
     }
 
-    public void decompile(StringBuffer source, String root, String packege,
-        String className) {
-        try {
-            decompile(source, new FileInputStream(root + "/" + packege + "/"
-                + className));
+    public int getDecompiledLine(IMember elt, IClassFile cf) {
+        DecompiledClass dc = (DecompiledClass) classToDecompiled.get(cf);
+        if (dc != null) {
+            String signature = JdtUtils.getMethodSignature(elt);
+            if (signature != null) {
+                return dc.getDecompiledLine(signature);
+            }
+        }
+        return 0;
+    }
 
+    protected DecompiledClass decompile(StringBuffer source, String filePath,
+        BitSet decompilerFlags) {
+        FileInputStream inputStream = null;
+        DecompiledClass dc = null;
+        try {
+            inputStream = new FileInputStream(filePath);
+            dc = decompile(source, inputStream, decompilerFlags);
         } catch (IOException e) {
             source.append(e.toString());
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+                }
+            }
         }
+        return dc;
     }
 
-    public void decompileFromArchive(StringBuffer source, String archivePath,
-        String packege, String className) {
+    protected DecompiledClass decompileFromArchive(StringBuffer source,
+        String archivePath, String className, BitSet decompilerFlags) {
+        if(archivePath == null){
+            return null;
+        }
+        InputStream inputStream = null;
+        DecompiledClass decompiledClass = null;
         try {
             ZipFile zf = new ZipFile(archivePath);
-            // TODO implement better entry resolution (inner classes?)
-            ZipEntry ze = zf.getEntry(packege + "/" + className);
-            decompile(source, zf.getInputStream(ze));
-
+            ZipEntry ze = zf.getEntry(className);
+            inputStream = zf.getInputStream(ze);
+            decompiledClass = decompile(source, inputStream, decompilerFlags);
         } catch (IOException e) {
             source.append(e.toString());
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+                }
+            }
         }
+        return decompiledClass;
     }
 
-    private void decompile(StringBuffer source, InputStream is)
-        throws IOException {
-        boolean raw = true;
-        boolean asmify = false;
-        boolean verify = false;
-        // TODO put bitset of modes instead of new BitSet()
+    private DecompiledClass decompile(StringBuffer source, InputStream is,
+        BitSet decompilerFlags) throws IOException {
         DecompiledClass decompiledClass = DecompilerClassVisitor
-            .getDecompiledClass(is, null, null, new BitSet(), null);
+            .getDecompiledClass(is, null, null, decompilerFlags, null);
         source.append(decompiledClass.getText());
+        return decompiledClass;
     }
 
     private String getArchivePath(IPackageFragmentRoot root) {
@@ -161,51 +207,65 @@ public class BytecodeSourceMapper extends SourceMapper {
                 archivePath = root.getPath().toOSString();
             }
         } catch (JavaModelException e) {
-            throw new RuntimeException("Unexpected Java model exception: "
-                + e.toString());
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
         return archivePath;
     }
 
-    /**
-     * Finds the deepest <code>IJavaElement</code> in the hierarchy of
-     * <code>elt</elt>'s children (including <code>elt</code> itself)
-     * which has a source range that encloses <code>position</code>
-     * according to <code>mapper</code>.
-     *
-     * Code mostly taken from 'org.eclipse.jdt.internal.core.ClassFile'
-     */
-    protected IJavaElement findElement(IJavaElement elt, int position) {
-        ISourceRange range = getSourceRange(elt);
-        if (range == null || position < range.getOffset()
-            || range.getOffset() + range.getLength() - 1 < position) {
-            return null;
+    protected IJavaElement findElement(IClassFile cf, int decompiledLine) {
+        DecompiledClass dc = (DecompiledClass) classToDecompiled.get(cf);
+        if (dc != null) {
+            return dc.getJavaElement(decompiledLine, cf);
         }
-        if (elt instanceof IParent) {
-            try {
-                IJavaElement[] children = ((IParent) elt).getChildren();
-                for (int i = 0; i < children.length; i++) {
-                    IJavaElement match = findElement(children[i], position);
-                    if (match != null) {
-                        return match;
-                    }
-                }
-            } catch (JavaModelException e) {
-                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-            }
-        }
-        return elt;
+        return cf;
     }
 
-    /**
-     * @see org.eclipse.jdt.internal.core.SourceMapper#mapSource(IType, char[])
-     */
-    public void mapSource(IType type, char[] contents, boolean force) {
-// TODO commented out for now. there is no such stuff in Eclipse 3.2M5
-//        if (force) {
-//            fSourceRanges.remove(type);
-//        }
-//        super.mapSource(type, contents);
+    public int mapToSource(int decompiledLine, IClassFile cf) {
+        if (cf == null) {
+            return 0;
+        }
+        DecompiledClass dc = (DecompiledClass) classToDecompiled.get(cf);
+        if (dc != null) {
+            return dc.getSourceLine(decompiledLine);
+        }
+        return 0;
+    }
+
+    public int mapToDecompiled(int sourceLine, IClassFile cf) {
+        if (cf == null) {
+            return 0;
+        }
+        DecompiledClass dc = (DecompiledClass) classToDecompiled.get(cf);
+        if (dc != null) {
+            return dc.getDecompiledLine(sourceLine);
+        }
+        return 0;
+    }
+
+    public void contextActivated(ISelection selection, IWorkbenchPart part) {
+        if(selection instanceof IStructuredSelection){
+            IStructuredSelection sSelection = (IStructuredSelection) selection;
+            if(sSelection.isEmpty()){
+                return;
+            }
+            Object element = sSelection.getFirstElement();
+            if(element instanceof JDIStackFrame){
+                JDIStackFrame frame = (JDIStackFrame) element;
+                try {
+                    lastTypeInDebugger = frame.getReferenceType();
+                } catch (DebugException e) {
+                    BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+                }
+            }
+        }
+    }
+
+    public void contextChanged(ISelection selection, IWorkbenchPart part) {
+        contextActivated(selection, part);
+    }
+
+    public IJavaReferenceType getLastTypeInDebugger() {
+        return lastTypeInDebugger;
     }
 
 }

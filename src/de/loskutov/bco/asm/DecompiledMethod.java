@@ -20,6 +20,7 @@ import org.objectweb.asm.tree.analysis.SimpleVerifier;
 import org.objectweb.asm.tree.analysis.Value;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
+import de.loskutov.bco.preferences.BCOConstants;
 
 /**
  * @author Eric Bruneton
@@ -43,6 +44,8 @@ public class DecompiledMethod {
 
     private int lineCount;
 
+    private int firstSourceLine; // first source line, if any
+
     private MethodNode meth;
 
     private Frame[] frames;
@@ -51,12 +54,9 @@ public class DecompiledMethod {
 
     private int errorInsn;
 
-    private final BitSet modes;
-
     public DecompiledMethod(final String owner, final List inputText,
         final Map lineNumbers, final List localVariables,
         final MethodNode meth, final ClassLoader cl, BitSet modes) {
-        this.modes = modes;
         this.text = new ArrayList();
         this.localVariables = localVariables;
         this.sourceLines = new HashMap();
@@ -66,16 +66,27 @@ public class DecompiledMethod {
         this.insnLines = new HashMap();
 
         this.meth = meth;
-
         formatText(inputText, new HashMap(), new StringBuffer(), this.text);
         computeMaps(lineNumbers);
 
-        if (meth != null &&
+        if (meth != null && modes.get(BCOConstants.F_SHOW_ANALYZER) &&
             (meth.access & Opcodes.ACC_ABSTRACT)==0) {
             analyzeMethod(owner, cl);
         } else {
 //            System.out.println("\nabstr:" + (meth.access & Opcodes.ACC_ABSTRACT));
         }
+    }
+
+    public boolean hasSourceLinesInfo(){
+        return ! sourceLines.isEmpty();
+    }
+
+    public boolean hasLocalVariablesInfo(){
+        return ! localVariables.isEmpty();
+    }
+
+    public String getSignature(){
+        return meth.name + meth.desc;
     }
 
     /**
@@ -171,9 +182,9 @@ public class DecompiledMethod {
     private void updateLocals(final Index index, final Map locals) {
         for (int i = 0; i < localVariables.size(); ++i) {
             LocalVariableNode lvNode = (LocalVariableNode) localVariables.get(i);
-            if (lvNode.start == index.label) {
+            if (lvNode.start.getLabel() == index.label) {
                 locals.put(new Integer(lvNode.index), lvNode.name);
-            } else if (lvNode.end == index.label) {
+            } else if (lvNode.end.getLabel() == index.label) {
                 locals.remove(new Integer(lvNode.index));
             }
         }
@@ -184,6 +195,7 @@ public class DecompiledMethod {
         int currentDecompiledLine = 0;
         int currentInsn = -1;
         int currentOpcode = -1;
+        int firstLine = -1;
         for (int i = 0; i < text.size(); ++i) {
             Object o = text.get(i);
             if (o instanceof Index) {
@@ -191,6 +203,9 @@ public class DecompiledMethod {
                 Integer sourceLine = (Integer) lineNumbers.get(index.label);
                 if (sourceLine != null) {
                     currentSourceLine = sourceLine.intValue();
+                    if(firstLine == -1 || currentSourceLine < firstLine){
+                        firstLine = currentSourceLine;
+                    }
                 }
                 currentInsn = index.insn;
                 currentOpcode = index.opcode;
@@ -212,6 +227,7 @@ public class DecompiledMethod {
             }
         }
         lineCount = currentDecompiledLine;
+        firstSourceLine = firstLine;
     }
 
     public String getText() {
@@ -301,6 +317,10 @@ public class DecompiledMethod {
         } else {
             buf.append(v.toString());
         }
+    }
+
+    public int getFirstSourceLine(){
+        return firstSourceLine;
     }
 
     public int getSourceLine(final int decompiledLine) {

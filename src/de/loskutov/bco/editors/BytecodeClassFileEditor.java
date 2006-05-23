@@ -1,49 +1,140 @@
-/* $Id: BytecodeClassFileEditor.java,v 1.3 2006-04-09 15:06:59 andrei Exp $ */
+/* $Id: BytecodeClassFileEditor.java,v 1.4 2006-05-23 21:12:28 andrei Exp $ */
 
 package de.loskutov.bco.editors;
 
+import java.lang.reflect.Constructor;
+import java.util.BitSet;
+
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.debug.core.DebugException;
+import org.eclipse.debug.ui.actions.IToggleBreakpointsTarget;
 import org.eclipse.jdt.core.IBuffer;
+import org.eclipse.jdt.core.IBufferChangedListener;
 import org.eclipse.jdt.core.IClassFile;
+import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaModelStatusConstants;
 import org.eclipse.jdt.core.IMember;
+import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.ISourceReference;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.internal.core.BufferManager;
-import org.eclipse.jdt.internal.ui.javaeditor.ClassFileEditor;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.debug.core.IJavaReferenceType;
+import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.internal.ui.JavaUIStatus;
+import org.eclipse.jdt.internal.ui.javaeditor.ClassFileDocumentProvider;
+import org.eclipse.jdt.internal.ui.javaeditor.ExternalClassFileEditorInput;
 import org.eclipse.jdt.internal.ui.javaeditor.IClassFileEditorInput;
+import org.eclipse.jdt.internal.ui.javaeditor.InternalClassFileEditorInput;
+import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
+import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.IRegion;
+import org.eclipse.jface.text.ITextSelection;
+import org.eclipse.jface.text.ITextViewerExtension5;
+import org.eclipse.jface.text.Region;
+import org.eclipse.jface.text.TextSelection;
+import org.eclipse.jface.text.source.IOverviewRuler;
+import org.eclipse.jface.text.source.ISourceViewer;
+import org.eclipse.jface.text.source.IVerticalRuler;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.ISelectionProvider;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.StackLayout;
+import org.eclipse.swt.custom.StyledText;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.IEditorSite;
+import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.part.FileEditorInput;
+import org.eclipse.ui.texteditor.IDocumentProvider;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
+import de.loskutov.bco.preferences.BCOConstants;
+import de.loskutov.bco.ui.JdtUtils;
 
 /**
  * A "better" way to hook into JDT...
- *
- * @author Eugene Kuleshov, V. Grishchenko, Jochen Klein
+ * @author Eugene Kuleshov, V. Grishchenko, Jochen Klein, Andrei Loskutov
  */
-public class BytecodeClassFileEditor extends ClassFileEditor {
-    public static final String ID = "de.loskutov.bco.editors.BytecodeClassFileEditor";
-    public static final String MARK = "// class";
-    // private static final char[] MARK_ARRAY = MARK.toCharArray();
+public class BytecodeClassFileEditor extends JavaEditor
+    implements
+        ClassFileDocumentProvider.InputChangeListener {
 
-    private BytecodeSourceMapper sourceMapper;
+    private StackLayout fStackLayout;
+    private Composite fParent;
+    private Composite fViewerComposite;
+    private InputUpdater fInputUpdater;
+    public static final String ID = "de.loskutov.bco.editors.BytecodeClassFileEditor";
+    public static final String MARK = "// class version ";
+    /** the modes (flags) for the decompiler */
+    private BitSet decompilerFlags;
+    /** is not null only on class files with decompiled source */
+    private static BytecodeSourceMapper sourceMapper;
+    private static BytecodeDocumentProvider fClassFileDocumentProvider;
+    private boolean hasMappedSource;
+    private boolean decompiled;
 
     /**
      * Constructor for JadclipseClassFileEditor.
      */
     public BytecodeClassFileEditor() {
         super();
+        if (sourceMapper == null) {
+            sourceMapper = new BytecodeSourceMapper();
+        }
+        fInputUpdater = new InputUpdater();
+        setDocumentProvider(getClassFileDocumentProvider());
+        setEditorContextMenuId("#ClassFileEditorContext"); //$NON-NLS-1$
+        setRulerContextMenuId("#ClassFileRulerContext"); //$NON-NLS-1$
+        setOutlinerContextMenuId("#ClassFileOutlinerContext"); //$NON-NLS-1$
+        // don't set help contextId, we install our own help context
+
+        decompilerFlags = new BitSet();
+        // TODO take from preferences and/or last editor memento
+        decompilerFlags.set(BCOConstants.F_SHOW_LINE_INFO, true);
+        decompilerFlags.set(BCOConstants.F_SHOW_VARIABLES, true);
+        decompilerFlags.set(BCOConstants.F_SHOW_RAW_BYTECODE, false);
     }
 
-    protected BytecodeBufferManager getBufferManager() {
-        BufferManager defManager = BufferManager.getDefaultBufferManager();
-        if (defManager instanceof BytecodeBufferManager) {
-            return (BytecodeBufferManager) defManager;
+    /**
+     * @return the hasMappedSource
+     */
+    protected boolean hasMappedSource() {
+        return hasMappedSource;
+    }
+
+    /**
+     * @param hasMappedSource the hasMappedSource to set
+     */
+    protected void setHasMappedSource(boolean hasMappedSource) {
+        this.hasMappedSource = hasMappedSource;
+    }
+
+    private static ClassFileDocumentProvider getClassFileDocumentProvider() {
+        if (fClassFileDocumentProvider == null) {
+            fClassFileDocumentProvider = new BytecodeDocumentProvider();
         }
-        return new BytecodeBufferManager(defManager);
+        return fClassFileDocumentProvider;
+    }
+
+    public void setDecompilerFlag(int flag, boolean value) {
+        decompilerFlags.set(flag, value);
+    }
+
+    public boolean getDecompilerFlag(int flag) {
+        return decompilerFlags.get(flag);
     }
 
     /*
@@ -51,19 +142,19 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
      */
     public void init(IEditorSite site, IEditorInput input)
         throws PartInitException {
-        doOpenBuffer(input, false);
+        input = doOpenBuffer(input, false, true);
         super.init(site, input);
     }
 
     /**
-     * Sets edditor input only if buffer was actually opened.
-     *
-     * @param force
-     *            if <code>true</code> initialize no matter what
+     * Sets editor input only if buffer was actually opened.
+     * @param force if <code>true</code> initialize no matter what
+     * @param reuseSource true to show source code if available
      */
-    public void doSetInput(boolean force) {
+    public void doSetInput(boolean force, boolean reuseSource) {
         IEditorInput input = getEditorInput();
-        if (doOpenBuffer(input, force)) {
+        input = doOpenBuffer(input, force, reuseSource);
+        if (input != null) {
             try {
                 doSetInput(input);
             } catch (Exception e) {
@@ -72,133 +163,865 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
         }
     }
 
-    /**
-     * @return <code>true</code> if this editor displays decompiled source,
-     *         <code>false</code> otherwise
+    /*
+     * @see AbstractTextEditor#doSetInput(IEditorInput)
+     * ClassFileDocumentProvider.setDocumentContent(IDocument, IEditorInput, String) line:
+     * 202 ClassFileDocumentProvider(StorageDocumentProvider).createDocument(Object) line:
+     * 228 ClassFileDocumentProvider.createDocument(Object) line: 247
+     * ClassFileDocumentProvider.createElementInfo(Object) line: 275
+     * ClassFileDocumentProvider(AbstractDocumentProvider).connect(Object) line: 398
+     * BytecodeClassFileEditor(AbstractTextEditor).doSetInput(IEditorInput) line: 3063
+     * BytecodeClassFileEditor(StatusTextEditor).doSetInput(IEditorInput) line: 173
+     * BytecodeClassFileEditor(AbstractDecoratedTextEditor).doSetInput(IEditorInput) line:
+     * 1511 BytecodeClassFileEditor(JavaEditor).internalDoSetInput(IEditorInput) line:
+     * 2370 BytecodeClassFileEditor(JavaEditor).doSetInput(IEditorInput) line: 2343
+     * BytecodeClassFileEditor.doSetInput(IEditorInput) line: 201
+     * AbstractTextEditor$17.run(IProgressMonitor) line: 2396
      */
-    public boolean containsDecompiled() {
-        return (sourceMapper != null);
+    protected void doSetInput(IEditorInput input) throws CoreException {
+
+        input = transformEditorInput(input);
+        if (!(input instanceof IClassFileEditorInput))
+            throw new CoreException(JavaUIStatus.createError(
+                IJavaModelStatusConstants.INVALID_RESOURCE_TYPE,
+                "invalid input", // JavaEditorMessages.ClassFileEditor_error_invalid_input_message,
+                null));
+
+        IDocumentProvider documentProvider = getDocumentProvider();
+        if (documentProvider instanceof ClassFileDocumentProvider) {
+            ((ClassFileDocumentProvider) documentProvider)
+                .removeInputChangeListener(this);
+        }
+
+        super.doSetInput(input);
+
+        documentProvider = getDocumentProvider();
+        if (documentProvider instanceof ClassFileDocumentProvider) {
+            ((ClassFileDocumentProvider) documentProvider)
+                .addInputChangeListener(this);
+        }
     }
 
-    private boolean doOpenBuffer(IEditorInput input, boolean force) {
+    /**
+     * @return <code>true</code> if this editor displays decompiled source,
+     * <code>false</code> otherwise
+     */
+    public boolean isDecompiled() {
+        return decompiled;
+    }
+
+    private IEditorInput doOpenBuffer(IJavaReferenceType type,
+        IClassFile parent, boolean externalClass) {
+        IEditorInput input = null;
+        IType javaType;
+        try {
+            javaType = JdtUtils.getInnerType(parent, type.getName());
+        } catch (DebugException e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+            return null;
+        }
+        if(javaType == null){
+            // TODO if inner class was not found, then it could be simply a non public class
+            // defined in the same source class - we need to take the same path as for
+            // "parent" class file but with the name of requested class
+            return null;
+        }
+        IClassFile classFile = (IClassFile) javaType
+            .getAncestor(IJavaElement.CLASS_FILE);
+        if (classFile == null) {
+            return null;
+        }
+        if (externalClass) {
+            // TODO create external input, but we need a file object here...
+        } else {
+            input = transformEditorInput(classFile);
+        }
+        return doOpenBuffer(input, false, true);
+    }
+
+    private IEditorInput doOpenBuffer(IEditorInput input, boolean force,
+        boolean reuseSource) {
         if (input instanceof IClassFileEditorInput) {
-            try {
-                boolean opened = false;
-                IClassFile cf = ((IClassFileEditorInput) input).getClassFile();
-                // IPreferenceStore prefs = JadclipsePlugin.getDefault().getPreferenceStore();
-                // boolean reuseBuf = prefs.getBoolean(JadclipsePlugin.REUSE_BUFFER);
-                // boolean always = prefs.getBoolean(JadclipsePlugin.IGNORE_EXISTING);
-                boolean reuseBuf = false;
-                boolean always = false;
+            IClassFile cf = ((IClassFileEditorInput) input).getClassFile();
+            String origSrc = getAttachedJavaSource(cf, force);
+            if (origSrc != null && !hasMappedSource) {
+                // remember, that the JDT knows where the real source is and can show it
+                setHasMappedSource(true);
+            }
 
-                String origSrc = cf.getSource();
-
-                // have to check our mark since all line comments are stripped
-                // in debug align mode
-                if (origSrc == null
-                    || always && !origSrc.startsWith(MARK)
-                    || (origSrc.startsWith(MARK) && (!reuseBuf || force))) {
-                    if (sourceMapper == null)
-                        sourceMapper = new BytecodeSourceMapper();
-                    char[] src = sourceMapper.findSource(cf.getType());
-
-                    if (src == null) {
-                        src = new char[]{'\n', '/', '/', 'E', 'r', 'r', 'o', 'r', '!'};
-                    }
-
-                    // char[] markedSrc = new char[MARK_ARRAY.length + src.length];
-                    // // next time we know this is decompiled source
-                    // System.arraycopy(MARK_ARRAY, 0, markedSrc, 0, MARK_ARRAY.length);
-                    // System.arraycopy(src, 0, markedSrc, MARK_ARRAY.length, src.length);
-
-                    IBuffer buffer = getBufferManager().createBuffer(cf);
-                    buffer.setContents(src);
-                    getBufferManager().addBuffer(buffer);
-                    // buffer.addBufferChangedListener((IBufferChangedListener)cf);
-                    sourceMapper.mapSource(cf.getType(), src, true);
-                    opened = true;
+            if (origSrc == null || (force && !reuseSource)) {
+                setDecompiled(true);
+                char[] src;
+                if (input instanceof ExternalClassFileEditorInput) {
+                    ExternalClassFileEditorInput extInput = (ExternalClassFileEditorInput) input;
+                    src = getSourceMapper().getSource(
+                        extInput.getFile(), cf, decompilerFlags);
+                } else {
+                    src = getSourceMapper().getSource(cf, decompilerFlags);
                 }
-                return opened;
-            } catch (Exception e) {
-                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+                changeBufferContent(cf, src);
+            } else {
+                setDecompiled(false);
+            }
+        } else if (input instanceof FileEditorInput) {
+            FileEditorInput fileEditorInput = (FileEditorInput) input;
+            // make class file from that
+            IClassFileEditorInput cfi = transformEditorInput(input);
+            // return changed reference
+            input = cfi;
+            setDecompiled(true);
+            IClassFile cf = cfi.getClassFile();
+            char[] src = getSourceMapper().getSource(
+                fileEditorInput.getFile(), cf, decompilerFlags);
+            changeBufferContent(cf, src);
+        }
+        return input;
+    }
+
+    private void setDecompiled(boolean decompiled) {
+        this.decompiled = decompiled;
+    }
+
+    private String getAttachedJavaSource(IClassFile cf, boolean force) {
+        String origSrc = null;
+        if (force) {
+            IBuffer buffer = BytecodeBufferManager.getBuffer(cf);
+            if (buffer != null) {
+                BytecodeBufferManager.removeBuffer(buffer);
             }
         }
-        return false;
+        try {
+            origSrc = cf.getSource();
+            if (origSrc != null && origSrc.startsWith(MARK)) {
+                // this is NOT orig. sourse, but cached content
+                origSrc = null;
+            }
+        } catch (JavaModelException e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+        }
+        return origSrc;
+    }
+
+    private void changeBufferContent(IClassFile cf, char[] src) {
+        IBuffer buffer = BytecodeBufferManager.getBuffer(cf);
+
+        // TODO i'm not sure if we need to create buffer each time -
+        // couldn't we reuse existing one (if any)?
+        // - seems that without "create" some listener didn't get notifications about
+        // changed content
+        boolean addBuffer = false;
+
+        // if(buffer == null) {
+        buffer = BytecodeBufferManager.createBuffer(cf);
+        addBuffer = true;
+        // }
+        if (src == null) {
+            src = new char[]{'\n', '/', '/', 'E', 'r', 'r', 'o', 'r'};
+        }
+        buffer.setContents(src);
+        if (addBuffer) {
+            BytecodeBufferManager.addBuffer(buffer);
+            buffer.addBufferChangedListener((IBufferChangedListener) cf);
+        }
     }
 
     /*
      * @see JavaEditor#getElementAt(int)
      */
     protected IJavaElement getElementAt(int offset) {
-        IJavaElement result = super.getElementAt(offset);
 
-        if (result == null && getEditorInput() instanceof IClassFileEditorInput
-            && containsDecompiled()) {
+        IClassFile classFile = getClassFile();
+        if (classFile == null) {
+            return null;
+        }
+        IJavaElement result = null;
+        if (isDecompiled()) {
+            IDocument document = getDocumentProvider().getDocument(
+                getEditorInput());
             try {
-                IClassFileEditorInput input = (IClassFileEditorInput) getEditorInput();
-                result = sourceMapper.findElement(input.getClassFile().getType(), offset);
-            } catch (JavaModelException x) {
-                BytecodeOutlinePlugin.log(x, IStatus.ERROR);
+                int lineAtOffset = document.getLineOfOffset(offset);
+                // get DecompiledMethod from line, then get JavaElement with same
+                // signature, because we do not have offsets or lines in the class file,
+                // only java elements...
+                result = getSourceMapper().findElement(classFile, lineAtOffset);
+            } catch (BadLocationException e) {
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+            }
+        } else {
+            try {
+                result = classFile.getElementAt(offset);
+            } catch (JavaModelException e) {
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
         }
+
         return result;
     }
 
-    // protected IClassFile findClassFileParent(IJavaElement jElement)
-    // {
-    // IJavaElement parent = jElement.getParent();
-    // if (parent == null)
-    // return null;
-    // else if (parent instanceof IClassFile)
-    // return (IClassFile)parent;
-    // else
-    // return findClassFileParent(jElement);
-    // }
+    public IClassFile getClassFile() {
+        IEditorInput editorInput = getEditorInput();
+        if (!(editorInput instanceof IClassFileEditorInput)) {
+            return null;
+        }
+        return ((IClassFileEditorInput) editorInput).getClassFile();
+    }
 
     protected void setSelection(ISourceReference reference, boolean moveCursor) {
-        if (reference != null) {
-            try {
-                ISourceRange range = null;
-
-                if ((reference instanceof IJavaElement) && containsDecompiled()) {
-                    range = sourceMapper.getSourceRange((IJavaElement) reference);
-                } else {
-                    range = reference.getSourceRange();
-                }
-
-                int offset = range.getOffset();
-                int length = range.getLength();
-
-                if (offset > -1 && length > 0) {
-                    setHighlightRange(offset, length, moveCursor);
-                }
-
-                if (moveCursor && (reference instanceof IMember)) {
-                    IMember member = (IMember) reference;
-                    range = containsDecompiled()
-                        ? sourceMapper.getNameRange(member)
-                        : member.getNameRange();
-                    if(range != null){
-                        offset = range.getOffset();
-                        length = range.getLength();
-    
-                        if (offset > -1 && length > 0) {
-                            if (getSourceViewer() != null) {
-                                getSourceViewer().revealRange(offset, length);
-                                getSourceViewer().setSelectedRange(offset, length);
-                            }
-                        }
-                    }
-                }
-                return;
-            } catch (Exception e) {
-                BytecodeOutlinePlugin.error("", e);
+        if (reference == null) {
+            if (moveCursor) {
+                resetHighlightRange();
             }
+            return;
+        }
+        try {
+            ISourceRange range = null;
+            int offset;
+            int length;
+            if (isDecompiled() && isSupportedMember(reference)) {
+
+                // document lines count starts with 1 and not with 0
+                int decompLine = -1
+                    + getSourceMapper().getDecompiledLine(
+                        (IMember) reference, getClassFile());
+
+                IRegion region = ((BytecodeDocumentProvider) getDocumentProvider())
+                    .getDecompiledLineInfo(getEditorInput(), decompLine);
+                if (region == null) {
+                    return;
+                }
+                offset = region.getOffset();
+                length = region.getLength();
+            } else if (!isDecompiled()) {
+                range = reference.getSourceRange();
+                if (range == null) {
+                    return;
+                }
+                offset = range.getOffset();
+                length = range.getLength();
+            } else {
+                return;
+            }
+
+            if (offset > -1 && length > 0) {
+                setHighlightRange(offset, length, moveCursor);
+            }
+
+            if ((reference instanceof IMember) && !isDecompiled()) {
+                IMember member = (IMember) reference;
+                range = member.getNameRange();
+                if (range != null) {
+                    offset = range.getOffset();
+                    length = range.getLength();
+                }
+            }
+            if (moveCursor && offset > -1 && length > 0) {
+                ISourceViewer sourceViewer = getSourceViewer();
+                if (sourceViewer != null) {
+                    sourceViewer.revealRange(offset, length);
+                    sourceViewer.setSelectedRange(offset, length);
+                }
+            }
+            return;
+        } catch (Exception e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
 
         if (moveCursor) {
             resetHighlightRange();
         }
     }
-}
 
+    private boolean isSupportedMember(ISourceReference reference) {
+        // TODO this condition is not enough. We could have inner/anon. classes
+        // as selection source (they are displayed in the outline),
+        // but they are not in the decompiled class,
+        // so we need to filter "external" elements too, even if they are methods...
+
+        // we could also later point to the IField's, but currently it is not supported
+        return reference instanceof IMethod
+            || reference instanceof IInitializer;
+    }
+
+    public Object getAdapter(Class required) {
+        if (IToggleBreakpointsTarget.class == required) {
+
+            // TODO implement own adapter for toggle breakpoints, because the default one
+            // could not find java elements in our document and therefore could not
+            // create a Java breakpoint.
+            // see org.eclipse.jdt.internal.debug.ui.actions.ToggleBreakpointAdapter
+            // IMember member =
+            // ActionDelegateHelper.getDefault().getCurrentMember(selection);
+            // and the ActionDelegateHelper looks with the given offset at classfile or
+            // compilation unit, but our offset is completely different to Java source
+            // code
+            super.getAdapter(required);
+        }
+
+        return super.getAdapter(required);
+    }
+
+    /*
+     * Overriden to prevent NPE on SourceReference objects without associated source
+     * ranges, see https://bugs.eclipse.org/bugs/show_bug.cgi?id=142936
+     * @see JavaEditor#adjustHighlightRange(int, int)
+     */
+    protected void adjustHighlightRange(int offset, int length) {
+        try {
+
+            IJavaElement element = getElementAt(offset);
+            while (element instanceof ISourceReference) {
+                ISourceRange range = ((ISourceReference) element)
+                    .getSourceRange();
+                // range != null is the only one change we need here
+                if (range != null
+                    && (offset < range.getOffset() + range.getLength() && range
+                        .getOffset() < offset + length)) {
+
+                    ISourceViewer viewer = getSourceViewer();
+                    if (viewer instanceof ITextViewerExtension5) {
+                        ITextViewerExtension5 extension = (ITextViewerExtension5) viewer;
+                        extension.exposeModelRange(new Region(
+                            range.getOffset(), range.getLength()));
+                    }
+
+                    setHighlightRange(
+                        range.getOffset(), range.getLength(), true);
+                    if (fOutlinePage != null) {
+                        fOutlineSelectionChangedListener
+                            .uninstall(fOutlinePage);
+                        fOutlinePage.select((ISourceReference) element);
+                        fOutlineSelectionChangedListener.install(fOutlinePage);
+                    }
+
+                    return;
+                }
+                element = element.getParent();
+            }
+
+        } catch (JavaModelException x) {
+            JavaPlugin.log(x.getStatus());
+        }
+
+        ISourceViewer viewer = getSourceViewer();
+        if (viewer instanceof ITextViewerExtension5) {
+            ITextViewerExtension5 extension = (ITextViewerExtension5) viewer;
+            extension.exposeModelRange(new Region(offset, length));
+        } else {
+            resetHighlightRange();
+        }
+
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#computeHighlightRangeSourceReference()
+     */
+    protected ISourceReference computeHighlightRangeSourceReference() {
+        if (!isDecompiled()) {
+            return super.computeHighlightRangeSourceReference();
+        }
+
+        ISourceViewer sourceViewer = getSourceViewer();
+        if (sourceViewer == null) {
+            return null;
+        }
+        StyledText styledText = sourceViewer.getTextWidget();
+        if (styledText == null) {
+            return null;
+        }
+
+        int caret = 0;
+        if (sourceViewer instanceof ITextViewerExtension5) {
+            ITextViewerExtension5 extension = (ITextViewerExtension5) sourceViewer;
+            caret = extension.widgetOffset2ModelOffset(styledText
+                .getCaretOffset());
+        } else {
+            int offset = sourceViewer.getVisibleRegion().getOffset();
+            caret = offset + styledText.getCaretOffset();
+        }
+
+        IJavaElement element = getElementAt(caret);
+
+        if (!(element instanceof ISourceReference)) {
+            return null;
+        }
+        return (ISourceReference) element;
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#createJavaSourceViewer(org.eclipse.swt.widgets.Composite,
+     * org.eclipse.jface.text.source.IVerticalRuler,
+     * org.eclipse.jface.text.source.IOverviewRuler, boolean, int,
+     * org.eclipse.jface.preference.IPreferenceStore)
+     */
+    protected ISourceViewer createJavaSourceViewer(Composite parent,
+        IVerticalRuler verticalRuler, IOverviewRuler overviewRuler,
+        boolean isOverviewRulerVisible, int styles, IPreferenceStore store) {
+
+        return super.createJavaSourceViewer(
+            parent, verticalRuler, overviewRuler, isOverviewRulerVisible,
+            styles, store);
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#doSelectionChanged(org.eclipse.jface.viewers.SelectionChangedEvent)
+     */
+    protected void doSelectionChanged(SelectionChangedEvent event) {
+
+        super.doSelectionChanged(event);
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#doSetSelection(org.eclipse.jface.viewers.ISelection)
+     */
+    protected void doSetSelection(ISelection selection) {
+
+        super.doSetSelection(selection);
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#getSignedSelection(org.eclipse.jface.text.source.ISourceViewer)
+     */
+    protected IRegion getSignedSelection(ISourceViewer sourceViewer) {
+
+        return super.getSignedSelection(sourceViewer);
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#synchronizeOutlinePage(org.eclipse.jdt.core.ISourceReference,
+     * boolean)
+     */
+    protected void synchronizeOutlinePage(ISourceReference element,
+        boolean checkIfOutlinePageActive) {
+
+        super.synchronizeOutlinePage(element, checkIfOutlinePageActive);
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#synchronizeOutlinePage(org.eclipse.jdt.core.ISourceReference)
+     */
+    protected void synchronizeOutlinePage(ISourceReference element) {
+
+        super.synchronizeOutlinePage(element);
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#synchronizeOutlinePageSelection()
+     */
+    public void synchronizeOutlinePageSelection() {
+
+        super.synchronizeOutlinePageSelection();
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.eclipse.ui.texteditor.AbstractTextEditor#getSelectionProvider()
+     */
+    public ISelectionProvider getSelectionProvider() {
+
+        return super.getSelectionProvider();
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.eclipse.ui.texteditor.AbstractTextEditor#selectAndReveal(int, int, int,
+     * int)
+     */
+    protected void selectAndReveal(int selectionStart, int selectionLength,
+        int revealStart, int revealLength) {
+
+        super.selectAndReveal(
+            selectionStart, selectionLength, revealStart, revealLength);
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.eclipse.ui.texteditor.AbstractTextEditor#selectAndReveal(int, int)
+     */
+    public void selectAndReveal(int start, int length) {
+
+        super.selectAndReveal(start, length);
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.eclipse.ui.texteditor.AbstractTextEditor#setHighlightRange(int, int,
+     * boolean)
+     */
+    public void setHighlightRange(int offset, int length, boolean moveCursor) {
+        super.setHighlightRange(offset, length, moveCursor);
+
+    }
+
+    public void showHighlightRangeOnly(boolean showHighlightRangeOnly) {
+        // TODO disabled as we currently do not support "partial" view on selected
+        // elements
+        // super.showHighlightRangeOnly(showHighlightRangeOnly);
+    }
+
+    protected void updateOccurrenceAnnotations(ITextSelection selection,
+        CompilationUnit astRoot) {
+        // TODO disabled as we currently do not support "occurencies" highlighting
+        // super.updateOccurrenceAnnotations(selection, astRoot);
+    }
+
+    /**
+     * Updater that takes care of minimizing changes of the editor input.
+     */
+    private class InputUpdater implements Runnable {
+
+        /** Has the runnable already been posted? */
+        private boolean fPosted = false;
+        /** Editor input */
+        private IClassFileEditorInput fClassFileEditorInput;
+
+        public InputUpdater() {
+            //
+        }
+
+        /*
+         * @see Runnable#run()
+         */
+        public void run() {
+
+            IClassFileEditorInput input;
+            synchronized (this) {
+                input = fClassFileEditorInput;
+            }
+
+            try {
+                if (getSourceViewer() != null) {
+                    setInput(input);
+                }
+            } finally {
+                synchronized (this) {
+                    fPosted = false;
+                }
+            }
+        }
+
+        /**
+         * Posts this runnable into the event queue if not already there.
+         * @param input the input to be set when executed
+         */
+        public void post(IClassFileEditorInput input) {
+
+            synchronized (this) {
+                if (fPosted) {
+                    if (input != null && input.equals(fClassFileEditorInput))
+                        fClassFileEditorInput = input;
+                    return;
+                }
+            }
+
+            if (input != null && input.equals(getEditorInput())) {
+                ISourceViewer viewer = getSourceViewer();
+                if (viewer != null) {
+                    StyledText textWidget = viewer.getTextWidget();
+                    if (textWidget != null && !textWidget.isDisposed()) {
+                        synchronized (this) {
+                            fPosted = true;
+                            fClassFileEditorInput = input;
+                        }
+                        textWidget.getDisplay().asyncExec(this);
+                    }
+                }
+            }
+        }
+    }
+
+    /*
+     * @see AbstractTextEditor#createActions()
+     */
+    protected void createActions() {
+        super.createActions();
+
+        // setAction(ITextEditorActionConstants.SAVE, null);
+        // setAction(ITextEditorActionConstants.REVERT_TO_SAVED, null);
+
+        /*
+         * 1GF82PL: ITPJUI:ALL - Need to be able to add bookmark to classfile // replace
+         * default action with class file specific ones
+         * setAction(ITextEditorActionConstants.BOOKMARK, new
+         * AddClassFileMarkerAction("AddBookmark.", this, IMarker.BOOKMARK, true));
+         * //$NON-NLS-1$ setAction(ITextEditorActionConstants.ADD_TASK, new
+         * AddClassFileMarkerAction("AddTask.", this, IMarker.TASK, false)); //$NON-NLS-1$
+         * setAction(ITextEditorActionConstants.RULER_MANAGE_BOOKMARKS, new
+         * ClassFileMarkerRulerAction("ManageBookmarks.", getVerticalRuler(), this,
+         * IMarker.BOOKMARK, true)); //$NON-NLS-1$
+         * setAction(ITextEditorActionConstants.RULER_MANAGE_TASKS, new
+         * ClassFileMarkerRulerAction("ManageTasks.", getVerticalRuler(), this,
+         * IMarker.TASK, true)); //$NON-NLS-1$
+         */
+    }
+
+    /*
+     * @see JavaEditor#getCorrespondingElement(IJavaElement)
+     */
+    protected IJavaElement getCorrespondingElement(IJavaElement element) {
+        IClassFile classFile = getClassFile();
+        if (classFile == null) {
+            return null;
+        }
+        if (classFile.equals(element.getAncestor(IJavaElement.CLASS_FILE))) {
+            return element;
+        }
+        return null;
+    }
+
+    /*
+     * 1GEPKT5: ITPJUI:Linux - Source in editor for external classes is editable Removed
+     * methods isSaveOnClosedNeeded and isDirty. Added method isEditable.
+     */
+    /*
+     * @see org.eclipse.ui.texteditor.AbstractTextEditor#isEditable()
+     */
+    public boolean isEditable() {
+        return isDecompiled();
+    }
+
+    /*
+     * @see org.eclipse.ui.texteditor.AbstractTextEditor#isEditorInputReadOnly()
+     * @since 3.2
+     */
+    public boolean isEditorInputReadOnly() {
+        return !isDecompiled();
+    }
+
+    /*
+     * @see ITextEditorExtension2#isEditorInputModifiable()
+     * @since 2.1
+     */
+    public boolean isEditorInputModifiable() {
+        return isDecompiled();
+    }
+
+    public boolean isSaveAsAllowed() {
+        return isDecompiled();
+    }
+
+    /**
+     * Translates the given object into an <code>IClassFileEditorInput</code>
+     * @param input the object to be transformed if necessary
+     * @return the transformed editor input
+     */
+    protected IClassFileEditorInput transformEditorInput(Object input) {
+
+        if (input instanceof IFileEditorInput) {
+            IFile file = ((IFileEditorInput) input).getFile();
+            Constructor cons;
+            try {
+                cons = ExternalClassFileEditorInput.class
+                    .getDeclaredConstructor(new Class[]{IFile.class});
+                cons.setAccessible(true);
+                IClassFileEditorInput classFileInput = (IClassFileEditorInput) cons
+                    .newInstance(new Object[]{file});
+                return classFileInput;
+            } catch (Exception e) {
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+            }
+        } else if (input instanceof IClassFileEditorInput) {
+            return (IClassFileEditorInput) input;
+        } else if (input instanceof IClassFile) {
+            return new InternalClassFileEditorInput((IClassFile) input);
+        }
+
+        return null;
+    }
+
+    /*
+     * @see IWorkbenchPart#createPartControl(Composite)
+     */
+    public void createPartControl(Composite parent) {
+
+        fParent = new Composite(parent, SWT.NONE);
+        fStackLayout = new StackLayout();
+        fParent.setLayout(fStackLayout);
+
+        fViewerComposite = new Composite(fParent, SWT.NONE);
+        fViewerComposite.setLayout(new FillLayout());
+
+        super.createPartControl(fViewerComposite);
+
+        fStackLayout.topControl = fViewerComposite;
+        fParent.layout();
+    }
+
+    /*
+     * @see ClassFileDocumentProvider.InputChangeListener#inputChanged(IClassFileEditorInput)
+     */
+    public void inputChanged(IClassFileEditorInput input) {
+        fInputUpdater.post(input);
+        IClassFile cf = input.getClassFile();
+        String source;
+        try {
+            source = cf.getSource();
+            setDecompiled(source != null && source.startsWith(MARK));
+        } catch (JavaModelException e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+        }
+
+    }
+
+    /*
+     * @see org.eclipse.ui.IWorkbenchPart#dispose()
+     */
+    public void dispose() {
+        // http://bugs.eclipse.org/bugs/show_bug.cgi?id=18510
+        IDocumentProvider documentProvider = getDocumentProvider();
+        if (documentProvider instanceof ClassFileDocumentProvider)
+            ((ClassFileDocumentProvider) documentProvider)
+                .removeInputChangeListener(this);
+
+        IClassFile classFile = getClassFile();
+        BytecodeBufferManager.removeBuffer(BytecodeBufferManager
+            .getBuffer(classFile));
+        super.dispose();
+    }
+
+    public static BytecodeSourceMapper getSourceMapper() {
+        return sourceMapper;
+    }
+
+    /**
+     * Check if we can show an inner class, which was declared in the source code of the
+     * given parent class and which could have the bytecode for the given source line.
+     *
+     * If both are true, then this method changes the input of the bytecode editor
+     * with the given class file (if any) to the inner class, or opens a new editor with
+     * the inner class.
+     *
+     * @param sourceLine requested source line (from debugger)
+     * @param parent expected parent class file
+     * @return The region in the inner class (if inner class could be found), or an empty
+     * zero-based region.
+     */
+    public static IRegion checkForInnerClass(int sourceLine, IClassFile parent) {
+        IRegion region = new Region(0, 0);
+
+        // get the editor with given class file, if any
+        BytecodeClassFileEditor editor = getBytecodeEditor(parent);
+        if (editor == null) {
+            return region;
+        }
+
+        // get the inner class type according to the debugger stack frame, if any
+        IJavaReferenceType debugType = sourceMapper.getLastTypeInDebugger();
+        if (debugType == null) {
+            return region;
+        }
+
+        // check if it is a inner class from the class in editor
+        if (!hasInnerClass(debugType, parent)) {
+            // TODO not only inner classes could be defined in the same source file.
+            return region;
+        }
+
+        boolean externalClass = editor.getEditorInput() instanceof ExternalClassFileEditorInput;
+
+        // if both exists, replace the input to the inner class
+        // TODO it seems that we open each time the same buffer for inner classes
+        IEditorInput input = editor.doOpenBuffer(
+            debugType, parent, externalClass);
+        if (input == null) {
+            return region;
+        }
+
+        try {
+            editor.doSetInput(input);
+        } catch (CoreException e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+            return region;
+        }
+
+        // and then map given source line to the decompiled code
+        int decompiledLine = sourceMapper.mapToDecompiled(
+            sourceLine + 1, editor.getClassFile());
+
+        if (decompiledLine >= 0) {
+            // and get the requested line information
+            try {
+                region = editor.getDocumentProvider().getDocument(input)
+                    .getLineInformation(decompiledLine);
+            } catch (BadLocationException e) {
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+            }
+        }
+        return region;
+    }
+
+    private static boolean hasInnerClass(IJavaReferenceType debugType,
+        IClassFile parent) {
+        try {
+            String parentName = parent.getType().getFullyQualifiedName();
+            String childName = debugType.getName();
+            return childName != null && childName.startsWith(parentName + "$");
+        } catch (Exception e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+        }
+        return false;
+    }
+
+    private static BytecodeClassFileEditor getBytecodeEditor(IClassFile parent) {
+        IEditorReference[] editorReferences = PlatformUI.getWorkbench()
+            .getActiveWorkbenchWindow().getActivePage().getEditorReferences();
+        for (int i = 0; i < editorReferences.length; i++) {
+            IEditorPart editor = editorReferences[i].getEditor(false);
+            if (editor instanceof BytecodeClassFileEditor) {
+                BytecodeClassFileEditor bytecodeEditor = (BytecodeClassFileEditor) editor;
+                if (parent.equals((bytecodeEditor).getClassFile())) {
+                    return bytecodeEditor;
+                }
+            }
+        }
+        return null;
+    }
+
+    public ITextSelection convertSelection(ITextSelection textSelection,
+        boolean toDecompiled) {
+        int startLine = textSelection.getStartLine();
+        int newLine;
+        if (toDecompiled) {
+            newLine = sourceMapper.mapToDecompiled(
+                startLine + 1, getClassFile()) + 1;
+        } else {
+            newLine = sourceMapper.mapToSource(startLine, getClassFile()) - 1;
+        }
+        IDocument document = getDocumentProvider()
+            .getDocument(getEditorInput());
+        try {
+            int lineOffset = document.getLineOffset(newLine);
+            return new TextSelection(lineOffset, 0);
+        } catch (BadLocationException e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+        }
+        return null;
+    }
+
+    public int getSourceLine(ITextSelection bytecodeSelection) {
+        int startLine = bytecodeSelection.getStartLine();
+        return sourceMapper.mapToSource(startLine, getClassFile()) - 1;
+    }
+
+    public ITextSelection convertLine(int sourceLine) {
+        int newLine = sourceMapper.mapToDecompiled(
+            sourceLine + 1, getClassFile()) + 1;
+        IDocument document = getDocumentProvider()
+            .getDocument(getEditorInput());
+        try {
+            int lineOffset = document.getLineOffset(newLine);
+            return new TextSelection(lineOffset, 0);
+        } catch (BadLocationException e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+        }
+        return null;
+    }
+
+}

@@ -129,6 +129,32 @@
 
    </extension>
 
+   <extension
+         point="org.eclipse.ui.editors">
+      <editor
+            class="de.loskutov.bco.editors.BytecodeClassFileEditor"
+            icon="icons/bytecodeview.gif"
+            contributorClass="de.loskutov.bco.editors.BytecodeActionBarContributor"
+            name="Class File Bytecode Viewer"
+            id="de.loskutov.bco.editors.BytecodeClassFileEditor"
+            extensions="class">
+      </editor>
+   </extension>
+   <!-- replacement for org.eclipse.debug.ui.actions.RulerToggleBreakpointActionDelegate -->
+   <extension
+         point="org.eclipse.ui.editorActions">
+      <editorContribution
+            targetID="de.loskutov.bco.editors.BytecodeClassFileEditor"
+            id="de.loskutov.bco.editors.BreakpointRulerActions">
+         <action
+               label="?"
+               class="org.eclipse.debug.ui.actions.RulerToggleBreakpointActionDelegate"
+               style="push"
+               actionID="RulerDoubleClick"
+               id="de.loskutov.bco.editors.ManageBreakpointRulerAction">
+         </action>
+      </editorContribution>
+   </extension>
   <extension point="org.eclipse.help.toc">
     <toc file="doc/toc.xml" primary="true" />
   </extension>

@@ -10,6 +10,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodAdapter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.AbstractVisitor;
@@ -173,7 +174,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
         final String signature, final Label start, final Label end,
         final int index) {
         localVariables.add(new LocalVariableNode(
-            name, desc, signature, start, end, index));
+            name, desc, signature, new LabelNode(start), new LabelNode(end), index));
         super.visitLocalVariable(name, desc, signature, start, end, index);
         if (meth != null) {
             meth.visitLocalVariable(name, desc, signature, start, end, index);

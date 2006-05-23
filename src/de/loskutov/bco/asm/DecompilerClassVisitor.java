@@ -179,9 +179,9 @@ public class DecompilerClassVisitor extends ClassAdapter {
             return null;
         }
         MethodNode meth = null;
-        if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
+//        if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
             meth = new MethodNode(access, name1, desc, signature, exceptions);
-        }
+//        }
         List text = ((AbstractVisitor) cv).getText();
         int size = text.size();
         MethodVisitor mv = cv.visitMethod(
