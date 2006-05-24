@@ -182,9 +182,9 @@ public class DecompiledMethod {
     private void updateLocals(final Index index, final Map locals) {
         for (int i = 0; i < localVariables.size(); ++i) {
             LocalVariableNode lvNode = (LocalVariableNode) localVariables.get(i);
-            if (lvNode.start.getLabel() == index.label) {
+            if (lvNode.start == index.label) {
                 locals.put(new Integer(lvNode.index), lvNode.name);
-            } else if (lvNode.end.getLabel() == index.label) {
+            } else if (lvNode.end == index.label) {
                 locals.remove(new Integer(lvNode.index));
             }
         }

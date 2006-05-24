@@ -1,6 +1,5 @@
 package de.loskutov.bco.asm;
 
-import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
@@ -10,8 +9,6 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodAdapter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.AbstractVisitor;
 
@@ -33,8 +30,6 @@ public class DecompilerMethodVisitor extends MethodAdapter {
 
     private Map lineNumbers;
 
-    private List localVariables;
-
     private final BitSet modes;
 
     public DecompilerMethodVisitor(final String owner, final MethodNode meth,
@@ -45,12 +40,11 @@ public class DecompilerMethodVisitor extends MethodAdapter {
         this.text = ((AbstractVisitor) mv).getText();
         this.meth = meth;
         this.lineNumbers = new HashMap();
-        this.localVariables = new ArrayList();
     }
 
     public DecompiledMethod getResult(final ClassLoader cl) {
         return new DecompiledMethod(
-            owner, text, lineNumbers, localVariables, meth, cl, modes);
+            owner, text, lineNumbers, meth.localVariables, meth, cl, modes);
     }
 
     public void visitInsn(final int opcode) {
@@ -173,8 +167,8 @@ public class DecompilerMethodVisitor extends MethodAdapter {
     public void visitLocalVariable(final String name, final String desc,
         final String signature, final Label start, final Label end,
         final int index) {
-        localVariables.add(new LocalVariableNode(
-            name, desc, signature, new LabelNode(start), new LabelNode(end), index));
+        // localVariables.add(new LocalVariableNode(
+        //     name, desc, signature, new LabelNode(start), new LabelNode(end), index));
         super.visitLocalVariable(name, desc, signature, start, end, index);
         if (meth != null) {
             meth.visitLocalVariable(name, desc, signature, start, end, index);
