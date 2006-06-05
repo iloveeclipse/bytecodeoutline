@@ -8,6 +8,7 @@ import java.util.Map;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IJavaElement;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.ClassNode;
 
 import de.loskutov.bco.ui.JdtUtils;
 
@@ -29,6 +30,7 @@ public class DecompiledClass {
      */
     private Map classAttributesMap = new HashMap();
     private String value;
+    private ClassNode classNode;
 
     public DecompiledClass(final List text) {
         this.text = text;
@@ -318,5 +320,13 @@ public class DecompiledClass {
             }
         }
         return bestMatch;
+    }
+
+    public void setClassNode(ClassNode classNode) {
+        this.classNode = classNode;
+    }
+
+    public ClassNode getClassNode(){
+        return classNode;
     }
 }

@@ -1,4 +1,4 @@
-/* $Id: BytecodeClassFileEditor.java,v 1.4 2006-05-23 21:12:28 andrei Exp $ */
+/* $Id: BytecodeClassFileEditor.java,v 1.5 2006-06-05 11:45:48 andrei Exp $ */
 
 package de.loskutov.bco.editors;
 
@@ -85,6 +85,7 @@ public class BytecodeClassFileEditor extends JavaEditor
     private static BytecodeDocumentProvider fClassFileDocumentProvider;
     private boolean hasMappedSource;
     private boolean decompiled;
+    private boolean initDone;
 
     /**
      * Constructor for JadclipseClassFileEditor.
@@ -212,22 +213,18 @@ public class BytecodeClassFileEditor extends JavaEditor
 
     private IEditorInput doOpenBuffer(IJavaReferenceType type,
         IClassFile parent, boolean externalClass) {
-        IEditorInput input = null;
-        IType javaType;
+        IClassFile classFile = null;
         try {
-            javaType = JdtUtils.getInnerType(parent, type.getName());
+            classFile = JdtUtils.getInnerType(parent, getSourceMapper()
+                .getDecompiledClass(parent), type.getSignature());
         } catch (DebugException e) {
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-            return null;
         }
-        if(javaType == null){
-            // TODO if inner class was not found, then it could be simply a non public class
-            // defined in the same source class - we need to take the same path as for
-            // "parent" class file but with the name of requested class
-            return null;
-        }
-        IClassFile classFile = (IClassFile) javaType
-            .getAncestor(IJavaElement.CLASS_FILE);
+        return doOpenBuffer(classFile, externalClass);
+    }
+
+    private IEditorInput doOpenBuffer(IClassFile classFile, boolean externalClass) {
+        IEditorInput input = null;
         if (classFile == null) {
             return null;
         }
@@ -279,7 +276,17 @@ public class BytecodeClassFileEditor extends JavaEditor
     }
 
     private void setDecompiled(boolean decompiled) {
+        boolean oldDecompiled = this.decompiled;
         this.decompiled = decompiled;
+        if(initDone && oldDecompiled != decompiled) {
+            if(decompiled) {
+                // prevent multiple errors in ASTProvider which fails to work without source
+                uninstallOccurrencesFinder();
+            } else {
+                // install again if source is available
+                installOccurrencesFinder(true);
+            }
+        }
     }
 
     private String getAttachedJavaSource(IClassFile cf, boolean force) {
@@ -305,7 +312,7 @@ public class BytecodeClassFileEditor extends JavaEditor
     private void changeBufferContent(IClassFile cf, char[] src) {
         IBuffer buffer = BytecodeBufferManager.getBuffer(cf);
 
-        // TODO i'm not sure if we need to create buffer each time -
+        // i'm not sure if we need to create buffer each time -
         // couldn't we reuse existing one (if any)?
         // - seems that without "create" some listener didn't get notifications about
         // changed content
@@ -383,7 +390,9 @@ public class BytecodeClassFileEditor extends JavaEditor
                 int decompLine = -1
                     + getSourceMapper().getDecompiledLine(
                         (IMember) reference, getClassFile());
-
+                if(decompLine < 0){
+                    return;
+                }
                 IRegion region = ((BytecodeDocumentProvider) getDocumentProvider())
                     .getDecompiledLineInfo(getEditorInput(), decompLine);
                 if (region == null) {
@@ -661,14 +670,14 @@ public class BytecodeClassFileEditor extends JavaEditor
     }
 
     public void showHighlightRangeOnly(boolean showHighlightRangeOnly) {
-        // TODO disabled as we currently do not support "partial" view on selected
+        // disabled as we currently do not support "partial" view on selected
         // elements
         // super.showHighlightRangeOnly(showHighlightRangeOnly);
     }
 
     protected void updateOccurrenceAnnotations(ITextSelection selection,
         CompilationUnit astRoot) {
-        // TODO disabled as we currently do not support "occurencies" highlighting
+        // disabled as we currently do not support "occurencies" highlighting
         // super.updateOccurrenceAnnotations(selection, astRoot);
     }
 
@@ -852,6 +861,7 @@ public class BytecodeClassFileEditor extends JavaEditor
 
         fStackLayout.topControl = fViewerComposite;
         fParent.layout();
+        initDone = true;
     }
 
     /*
@@ -876,9 +886,10 @@ public class BytecodeClassFileEditor extends JavaEditor
     public void dispose() {
         // http://bugs.eclipse.org/bugs/show_bug.cgi?id=18510
         IDocumentProvider documentProvider = getDocumentProvider();
-        if (documentProvider instanceof ClassFileDocumentProvider)
+        if (documentProvider instanceof ClassFileDocumentProvider) {
             ((ClassFileDocumentProvider) documentProvider)
                 .removeInputChangeListener(this);
+        }
 
         IClassFile classFile = getClassFile();
         BytecodeBufferManager.removeBuffer(BytecodeBufferManager
@@ -918,22 +929,30 @@ public class BytecodeClassFileEditor extends JavaEditor
             return region;
         }
 
+        boolean externalClass = editor.getEditorInput() instanceof ExternalClassFileEditorInput;
+        IEditorInput input = null;
         // check if it is a inner class from the class in editor
         if (!hasInnerClass(debugType, parent)) {
-            // TODO not only inner classes could be defined in the same source file.
-            return region;
+            // not only inner classes could be defined in the same source file, but also
+            // local types (non public non inner classes in the same source file)
+            IClassFile classFile = getLocalTypeClass(debugType, parent);
+            if(classFile != null){
+                input = editor.doOpenBuffer(classFile, externalClass);
+            }
+        } else {
+            // if both exists, replace the input to the inner class
+            input = editor.doOpenBuffer(debugType, parent, externalClass);
         }
 
-        boolean externalClass = editor.getEditorInput() instanceof ExternalClassFileEditorInput;
-
-        // if both exists, replace the input to the inner class
-        // TODO it seems that we open each time the same buffer for inner classes
-        IEditorInput input = editor.doOpenBuffer(
-            debugType, parent, externalClass);
         if (input == null) {
             return region;
         }
 
+        /*
+         * Now we change editor input from parent class to child class.
+         * It will change editor title too, so the user will see a new class.
+         * After this change, we could finally compute right source line for current stack
+         */
         try {
             editor.doSetInput(input);
         } catch (CoreException e) {
@@ -955,6 +974,36 @@ public class BytecodeClassFileEditor extends JavaEditor
             }
         }
         return region;
+    }
+
+    /**
+     * @param debugType
+     * @param parent
+     * @return non public class (local type class) with the name from "debugType" and
+     * which source was in the "parent" class. Null if no class file could be found.
+     */
+    private static IClassFile getLocalTypeClass(IJavaReferenceType debugType, IClassFile parent) {
+        try {
+            IType type = parent.getType();
+            if((type.isLocal()) || (type.isMember())) {
+                // local type could not be defined in local or inner classes
+                return null;
+            }
+            // debugType.getSignature() == Lpackage/name/with/slashes/className;
+            String binarySignature = debugType.getSignature();
+            // get only type name from binary signature
+            int idx = binarySignature.lastIndexOf('/');
+            if(idx > 0 && idx < binarySignature.length() - 1){
+                String name = binarySignature.substring(idx + 1);
+                if(name.charAt(name.length() - 1) == ';'){
+                    name = name.substring(0, name.length() - 1);
+                }
+                return type.getPackageFragment().getClassFile(name + ".class");
+            }
+        } catch (Exception e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+        }
+        return null;
     }
 
     private static boolean hasInnerClass(IJavaReferenceType debugType,

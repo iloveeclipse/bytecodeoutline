@@ -49,8 +49,11 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
 import org.eclipse.jface.text.ITextSelection;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InnerClassNode;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
+import de.loskutov.bco.asm.DecompiledClass;
 
 /**
  * @author Andrei
@@ -370,41 +373,52 @@ public class JdtUtils {
     }
 
     /**
-     * @param parent
+     * @param cf
+     * @param dc
      * @return inner type which has the same name as the given string, or null
      */
-    public static IType getInnerType(IParent parent, String fullTypeName) {
-        try {
-            IJavaElement[] children = parent.getChildren();
-            for (int i = 0; i < children.length; i++) {
-                if(children[i].getElementType() == IJavaElement.TYPE){
-                    String name = ((IType)children[i]).getFullyQualifiedName(TYPE_SEPARATOR);
-                    /*
-                     * TODO for inner and anonymous classes from the blocks or methods
-                     * getFullyQualifiedName() does not work and will never match the
-                     * fullTypeName... I'm not sure if it is intended or if it is a bug
-                     * in Eclipse: instead of A$1B we get A$B for B class from a method in A
-                     */
-                    if(name != null && name.equals(fullTypeName)){
-                        return (IType) children[i];
+    public static IClassFile getInnerType(IClassFile cf, DecompiledClass dc,
+        String typeSignature) {
+        if(typeSignature.endsWith(";")){
+            typeSignature = typeSignature.substring(0, typeSignature.length()-1);
+            if(typeSignature.startsWith("L")){
+                typeSignature = typeSignature.substring(1, typeSignature.length());
+            }
+        }
+        /*
+         * For inner and anonymous classes from the blocks or methods
+         * getFullyQualifiedName() does not work if class was compiled with 1.5
+         * and will never match the fullTypeName...
+         * I'm not sure if it is intended or if it is a bug
+         * in Eclipse: instead of A$1B we get A$B for B class from a method in A
+         *
+         * NB: for binary types without source attachment the method elements doesn't
+         * contain source and therefore could not resolve child elements.
+         * So the search for local types will never work...
+         *
+         * Therefore we do not use Eclipse API and use ClassNode->InnerClassNode elements
+         */
+        ClassNode cn = dc.getClassNode();
+        List/*<InnerClassNode>*/ innerClasses = cn.innerClasses;
+
+        for (int i = 0; i < innerClasses.size(); i++) {
+            InnerClassNode in = (InnerClassNode) innerClasses.get(i);
+            if(typeSignature.equals(in.name)){
+                try {
+                    int idx = typeSignature.lastIndexOf(PACKAGE_SEPARATOR);
+                    String className = typeSignature;
+                    if (idx > 0) {
+                        className = typeSignature.substring(idx + 1, typeSignature.length());
                     }
-                }
-                if(children[i] instanceof IParent){
-                    IType type = getInnerType((IParent) children[i], fullTypeName);
-                    if(type != null){
-                        return type;
-                    }
+                    className += ".class";
+                    return cf.getType().getPackageFragment().getClassFile(className);
+                } catch (JavaModelException e) {
+                    BytecodeOutlinePlugin.log(e, IStatus.ERROR);
                 }
             }
-        } catch (JavaModelException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
-
         return null;
     }
-
-
 
     /**
      * Modified copy from org.eclipse.jdt.internal.ui.actions.SelectionConverter
@@ -629,9 +643,12 @@ public class JdtUtils {
      * @return true, if given element is anonymous inner class
      */
     private static boolean isAnonymousType(IJavaElement javaElement) {
-        // TODO why not to use type.isAnonymous here? Check binary/source types response
-        return javaElement instanceof IType
-            && "".equals(javaElement.getElementName()); //$NON-NLS-1$
+        try {
+            return javaElement instanceof IType && ((IType)javaElement).isAnonymous();
+        } catch (JavaModelException e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+        }
+        return false;
     }
 
     /**
@@ -639,10 +656,12 @@ public class JdtUtils {
      * @return true, if given element is inner class from initializer block or method body
      */
     private static boolean isInnerFromBlock(IJavaElement innerType) {
-        IJavaElement parent = innerType.getParent();
-        return innerType instanceof IType
-            && (parent != null && (parent.getElementType() == IJavaElement.INITIALIZER || parent
-                .getElementType() == IJavaElement.METHOD));
+        try {
+            return innerType instanceof IType && ((IType)innerType).isLocal();
+        } catch (JavaModelException e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+        }
+        return false;
     }
 
     /**
@@ -771,7 +790,7 @@ public class JdtUtils {
         try {
             packagePath = getPackageOutputPath(javaElement);
         } catch (JavaModelException e) {
-            BytecodeOutlinePlugin.error(null, e);
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
         IJavaElement ancestor = getLastAncestor(javaElement, IJavaElement.TYPE);
         StringBuffer sb = new StringBuffer(packagePath);
@@ -1003,7 +1022,7 @@ public class JdtUtils {
         try {
             collectAllAnonymous(list, declaringType, allowNested);
         } catch (JavaModelException e) {
-            BytecodeOutlinePlugin.error(null, e);
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
     }
 
@@ -1084,7 +1103,7 @@ public class JdtUtils {
             try {
                 flags = init.getFlags();
             } catch (JavaModelException e) {
-                BytecodeOutlinePlugin.error(null, e);
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
             if (!Flags.isStatic(flags)) {
                 if (firstAncestor == topAncestor) {
@@ -1258,7 +1277,7 @@ public class JdtUtils {
                 idx1 = sr1.getOffset();
                 idx2 = sr2.getOffset();
             } catch (JavaModelException e) {
-                BytecodeOutlinePlugin.error(null, e);
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
                 return 0;
             }
             if (idx1 < idx2) {

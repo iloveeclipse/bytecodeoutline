@@ -43,6 +43,7 @@ public class BytecodeSourceMapper implements IDebugContextListener {
     /** key is IClassFile, value is DecompiledClass */
     private WeakHashMap classToDecompiled;
     private IJavaReferenceType lastTypeInDebugger;
+    private String lastMethodInDebugger;
 
     public BytecodeSourceMapper() {
         super();
@@ -231,6 +232,18 @@ public class BytecodeSourceMapper implements IDebugContextListener {
         return 0;
     }
 
+    /**
+     *
+     * @param cf
+     * @return mapped class or null
+     */
+    public DecompiledClass getDecompiledClass(IClassFile cf){
+        if(cf == null){
+            return null;
+        }
+        return (DecompiledClass) classToDecompiled.get(cf);
+    }
+
     public int mapToDecompiled(int sourceLine, IClassFile cf) {
         if (cf == null) {
             return 0;
@@ -253,6 +266,7 @@ public class BytecodeSourceMapper implements IDebugContextListener {
                 JDIStackFrame frame = (JDIStackFrame) element;
                 try {
                     lastTypeInDebugger = frame.getReferenceType();
+                    lastMethodInDebugger = frame.getMethodName() + frame.getSignature();
                 } catch (DebugException e) {
                     BytecodeOutlinePlugin.log(e, IStatus.ERROR);
                 }
@@ -266,6 +280,17 @@ public class BytecodeSourceMapper implements IDebugContextListener {
 
     public IJavaReferenceType getLastTypeInDebugger() {
         return lastTypeInDebugger;
+    }
+
+    public int mapDebuggerToDecompiled(IClassFile cf) {
+        if(cf == null || lastMethodInDebugger == null){
+            return -1;
+        }
+        DecompiledClass dc = (DecompiledClass) classToDecompiled.get(cf);
+        if (dc != null) {
+            return dc.getDecompiledLine(lastMethodInDebugger);
+        }
+        return -1;
     }
 
 }

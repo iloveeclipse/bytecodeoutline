@@ -13,9 +13,12 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.AbstractVisitor;
 
+import de.loskutov.bco.asm.CommentedClassVisitor.CommentedAnnotationVisitor;
+import de.loskutov.bco.asm.CommentedClassVisitor.CommentedFieldVisitor;
 import de.loskutov.bco.preferences.BCOConstants;
 
 /**
@@ -40,9 +43,12 @@ public class DecompilerClassVisitor extends ClassAdapter {
 
     private int accessFlags;
 
+    private ClassNode classNode;
+
     public DecompilerClassVisitor(final ClassVisitor cv, final String field,
         final String method, final BitSet modes) {
         super(cv);
+        this.classNode = new ClassNode();
         this.fieldFilter = field;
         this.methodFilter = method;
         this.modes = modes;
@@ -78,6 +84,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
         DecompiledClass dc = new DecompiledClass(text);
         dc.setAttribute(DecompiledClass.ATTR_JAVA_VERSION, javaVersion);
         dc.setAttribute(DecompiledClass.ATTR_ACCESS_FLAGS, String.valueOf(accessFlags));
+        dc.setClassNode(classNode);
         return dc;
     }
 
@@ -112,6 +119,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
         if (methodFilter == null && fieldFilter == null) {
             super
                 .visit(version, access, name1, signature, superName, interfaces);
+            classNode.visit(version, access, name1, signature, superName, interfaces);
         }
         this.name = name1;
         int major = version & 0xFFFF;
@@ -128,6 +136,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
     public void visitSource(final String source, final String debug) {
         if (methodFilter == null && fieldFilter == null) {
             super.visitSource(source, debug);
+            classNode.visitSource(source, debug);
         }
     }
 
@@ -135,13 +144,20 @@ public class DecompilerClassVisitor extends ClassAdapter {
         final String desc) {
         if (methodFilter == null && fieldFilter == null) {
             super.visitOuterClass(owner, name1, desc);
+            classNode.visitOuterClass(owner, name1, desc);
         }
     }
 
     public AnnotationVisitor visitAnnotation(final String desc,
         final boolean visible) {
         if (methodFilter == null && fieldFilter == null) {
-            return super.visitAnnotation(desc, visible);
+            AnnotationVisitor cav = classNode.visitAnnotation(desc, visible);
+            AnnotationVisitor av = super.visitAnnotation(desc, visible);
+            if(av instanceof CommentedAnnotationVisitor){
+                CommentedAnnotationVisitor visitor = (CommentedAnnotationVisitor) av;
+                visitor.setAnnotationVisitor(cav);
+            }
+            return av;
         }
         return getDummyAnnotationVisitor();
     }
@@ -149,6 +165,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
     public void visitAttribute(final Attribute attr) {
         if (methodFilter == null && fieldFilter == null) {
             super.visitAttribute(attr);
+            classNode.visitAttribute(attr);
         }
     }
 
@@ -156,6 +173,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
         final String innerName, final int access) {
         if (methodFilter == null && fieldFilter == null) {
             super.visitInnerClass(name1, outerName, innerName, access);
+            classNode.visitInnerClass(name1, outerName, innerName, access);
         }
     }
 
@@ -167,7 +185,13 @@ public class DecompilerClassVisitor extends ClassAdapter {
         if (fieldFilter != null && !name1.equals(fieldFilter)) {
             return null;
         }
-        return super.visitField(access, name1, desc, signature, value);
+        FieldVisitor cfv = classNode.visitField(access, name1, desc, signature, value);
+        FieldVisitor fieldVisitor = super.visitField(access, name1, desc, signature, value);
+        if(fieldVisitor instanceof CommentedFieldVisitor){
+            CommentedFieldVisitor visitor = (CommentedFieldVisitor) fieldVisitor;
+            visitor.setFieldVisitor(cfv);
+        }
+        return fieldVisitor;
     }
 
     public MethodVisitor visitMethod(final int access, final String name1,
@@ -178,10 +202,8 @@ public class DecompilerClassVisitor extends ClassAdapter {
         if (methodFilter != null && !(name1 + desc).equals(methodFilter)) {
             return null;
         }
-        MethodNode meth = null;
-//        if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
-            meth = new MethodNode(access, name1, desc, signature, exceptions);
-//        }
+        MethodNode meth = (MethodNode) classNode.visitMethod(
+            access, name1, desc, signature, exceptions);
         List text = ((AbstractVisitor) cv).getText();
         int size = text.size();
         MethodVisitor mv = cv.visitMethod(
@@ -198,6 +220,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
 
     public void visitEnd() {
         if (methodFilter == null && fieldFilter == null) {
+            classNode.visitEnd();
             super.visitEnd();
         }
     }

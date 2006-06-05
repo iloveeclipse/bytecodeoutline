@@ -55,10 +55,9 @@ public class DecompiledMethod {
     private int errorInsn;
 
     public DecompiledMethod(final String owner, final List inputText,
-        final Map lineNumbers, final List localVariables,
-        final MethodNode meth, final ClassLoader cl, BitSet modes) {
+        final Map lineNumbers, final MethodNode meth, final ClassLoader cl, BitSet modes) {
         this.text = new ArrayList();
-        this.localVariables = localVariables;
+        this.localVariables = meth.localVariables;
         this.sourceLines = new HashMap();
         this.decompiledLines = new HashMap();
         this.insns = new HashMap();
@@ -69,11 +68,9 @@ public class DecompiledMethod {
         formatText(inputText, new HashMap(), new StringBuffer(), this.text);
         computeMaps(lineNumbers);
 
-        if (meth != null && modes.get(BCOConstants.F_SHOW_ANALYZER) &&
-            (meth.access & Opcodes.ACC_ABSTRACT)==0) {
+        if (modes.get(BCOConstants.F_SHOW_ANALYZER)
+            && (meth.access & Opcodes.ACC_ABSTRACT) == 0) {
             analyzeMethod(owner, cl);
-        } else {
-//            System.out.println("\nabstr:" + (meth.access & Opcodes.ACC_ABSTRACT));
         }
     }
 
@@ -182,9 +179,9 @@ public class DecompiledMethod {
     private void updateLocals(final Index index, final Map locals) {
         for (int i = 0; i < localVariables.size(); ++i) {
             LocalVariableNode lvNode = (LocalVariableNode) localVariables.get(i);
-            if (lvNode.start == index.label) {
+            if (lvNode.start == index.labelNode) {
                 locals.put(new Integer(lvNode.index), lvNode.name);
-            } else if (lvNode.end == index.label) {
+            } else if (lvNode.end == index.labelNode) {
                 locals.remove(new Integer(lvNode.index));
             }
         }
@@ -200,7 +197,10 @@ public class DecompiledMethod {
             Object o = text.get(i);
             if (o instanceof Index) {
                 Index index = (Index) o;
-                Integer sourceLine = (Integer) lineNumbers.get(index.label);
+                Integer sourceLine = null;
+                if(index.labelNode != null) {
+                    sourceLine = (Integer) lineNumbers.get(index.labelNode.getLabel());
+                }
                 if (sourceLine != null) {
                     currentSourceLine = sourceLine.intValue();
                     if(firstLine == -1 || currentSourceLine < firstLine){

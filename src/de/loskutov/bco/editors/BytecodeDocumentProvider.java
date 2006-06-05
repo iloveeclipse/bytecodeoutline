@@ -172,18 +172,29 @@ public class BytecodeDocumentProvider extends ClassFileDocumentProvider {
             BytecodeSourceMapper mapper = BytecodeClassFileEditor
                 .getSourceMapper();
 
-            // SourceLookupFacility decrement source line by 1
-            int decompiledLine = mapper.mapToDecompiled(line + 1, cf);
-            if(decompiledLine == -1){
-                // the mapper does not work for inner/anon. classes, as the debugger
-                // expect that their source code is in our editor which is not the case for
-                // bytecode of inner classes => for inner classes we use another strategy
-                return BytecodeClassFileEditor.checkForInnerClass(line, cf);
+            int decompiledLine;
+            if(line < -1){
+                /* this is the case if debugger does not have line information in bytecode
+                 * if bytecode does not contain line info, we should at least
+                 * return the line with the first method instruction.
+                 */
+                decompiledLine = mapper.mapDebuggerToDecompiled(cf);
+            } else {
+                // SourceLookupFacility decrement source line by 1
+                decompiledLine = mapper.mapToDecompiled(line + 1, cf);
+                if(decompiledLine == -1){
+                    /*
+                     * The line is from inner class (it is in another class file)
+                     * the mapping does not work for inner/anon. classes, as the debugger
+                     * expect that their source code is in our editor which is not the case for
+                     * bytecode of inner classes => for inner classes we use another strategy
+                     */
+                    return BytecodeClassFileEditor.checkForInnerClass(line, cf);
+                }
             }
             // editor start lines with 1
             return delegate.getLineInformation(decompiledLine + 1);
         }
-
     }
 
 }

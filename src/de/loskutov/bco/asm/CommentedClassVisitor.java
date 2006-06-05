@@ -2,6 +2,8 @@ package de.loskutov.bco.asm;
 
 import java.util.BitSet;
 
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.util.TraceAnnotationVisitor;
@@ -170,6 +172,10 @@ public class CommentedClassVisitor extends TraceClassVisitor {
 
     class CommentedAnnotationVisitor extends TraceAnnotationVisitor {
 
+        public void setAnnotationVisitor(AnnotationVisitor av){
+            this.av = av;
+        }
+
         protected TraceAnnotationVisitor createTraceAnnotationVisitor() {
             return new CommentedAnnotationVisitor();
         }
@@ -180,6 +186,9 @@ public class CommentedClassVisitor extends TraceClassVisitor {
     }
 
     class CommentedFieldVisitor extends TraceFieldVisitor {
+        public void setFieldVisitor(FieldVisitor fv){
+            this.fv = fv;
+        }
 
         protected void appendDescriptor(final int type, final String desc) {
             CommentedClassVisitor.this.appendDescriptor(buf, type, desc, raw);
@@ -198,7 +207,7 @@ public class CommentedClassVisitor extends TraceClassVisitor {
                 Object o = text.get(i);
                 if(o  instanceof Index){
                     index = (Index)o;
-                    if(index.label == label){
+                    if(index.labelNode != null && index.labelNode.getLabel() == label){
                         return index;
                     }
                 }

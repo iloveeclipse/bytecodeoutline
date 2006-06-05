@@ -1,6 +1,6 @@
 package de.loskutov.bco.asm;
 
-import org.objectweb.asm.Label;
+import org.objectweb.asm.tree.LabelNode;
 
 /**
  * @author Eric Bruneton
@@ -8,14 +8,14 @@ import org.objectweb.asm.Label;
 
 public class Index {
 
-    public final Label label;
+    public final LabelNode labelNode;
 
     public final int insn;
 
     public final int opcode;
 
-    public Index(final Label label, final int insn, final int opcode) {
-        this.label = label;
+    public Index(final LabelNode label, final int insn, final int opcode) {
+        this.labelNode = label;
         this.insn = insn;
         this.opcode = opcode;
     }
