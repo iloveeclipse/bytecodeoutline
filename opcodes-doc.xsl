@@ -28,6 +28,30 @@
 </xsl:result-document>
 
 
+<!-- opcodes -->
+
+<xsl:result-document format="html" href="opcodes.html">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<xsl:call-template name="head"/>
+<body>
+<ul>
+<xsl:for-each select='opcode'>
+  <xsl:sort/>
+
+  <li><a>
+    <xsl:attribute name='href'>ref-<xsl:value-of select="name/text()"/>.html</xsl:attribute>
+    <xsl:value-of select="name/text()"/>
+  </a></li>
+
+</xsl:for-each>
+</ul>
+</body>
+</html>
+
+</xsl:result-document>
+
+
+
 <!-- Details -->
 <xsl:apply-templates select="*">
   <xsl:sort/>
@@ -41,40 +65,15 @@
 <xsl:result-document format="html" href="{$filename}">
 
 <html>
-<head>
-<style type="text/css">
-dt {
-  font-style: italic;
-  margin-top: 15px;
-  margin-bottom: 3px;
-  margin-left: 0px;
-  border-bottom: 1px dotted black;
-}
-dd {
-  margin-left: 10px;
-}
-table {
-  border-collapse:collapse;
-  border: 1px solid black;
-  margin-top: 7px;
-}
-th {
-  border: 1px solid black;
-  padding: 3 7 3 7;
-}
-td {
-  border: 1px solid black;
-  padding: 3 7 3 7;
-}
-</style>  
-</head>
+<xsl:call-template name="head"/>
 <body>
 
 <p>
   <a><xsl:attribute name='name'><xsl:value-of select="name"/></xsl:attribute></a>
   <b><xsl:value-of select="name"/></b> : 
   <xsl:apply-templates select="short/text()"/>
-  <xsl:value-of select="string(' -- ')"/>
+  <xsl:value-of select="string(' : ')"/><a href="opcodes.html">index</a>
+  <xsl:value-of select="string(' : ')"/>
   <xsl:variable name="nm"><xsl:value-of select="name"/></xsl:variable>
   <xsl:choose>
     <xsl:when test="contains('getstatic putstatic getfield putfield', $nm)">
@@ -92,7 +91,7 @@ td {
     <xsl:when test="contains('ifeq ifne iflt ifge ifgt ifle if_icmpeq if_icmpne if_icmplt if_icmpge if_icmpgt if_icmple if_acmpeq if_acmpne goto jsr ifnull ifnonnull', $nm)">
       <a href="http://asm.objectweb.org/current/doc/javadoc/user/org/objectweb/asm/MethodVisitor.html#visitJumpInsn(int,%20org.objectweb.asm.Label)">visitJumpInsn()</a>
     </xsl:when>
-    <xsl:when test="contains('ldc', $nm)">
+    <xsl:when test="contains('ldc ldc_w ldc2_w', $nm)">
       <a href="http://asm.objectweb.org/current/doc/javadoc/user/org/objectweb/asm/MethodVisitor.html#visitLdcInsn(java.lang.Object)">visitLdcInsn()</a>
     </xsl:when>
     <xsl:when test="contains('lookupswitch', $nm)">
@@ -244,6 +243,37 @@ td {
       <xsl:value-of select="string( ' ')"/>
     </xsl:otherwise>
   </xsl:choose>      
+</xsl:template>
+
+
+<xsl:template name='head'>
+<head>
+<style type="text/css">
+dt {
+  font-style: italic;
+  margin-top: 15px;
+  margin-bottom: 3px;
+  margin-left: 0px;
+  border-bottom: 1px dotted black;
+}
+dd {
+  margin-left: 10px;
+}
+table {
+  border-collapse:collapse;
+  border: 1px solid black;
+  margin-top: 7px;
+}
+th {
+  border: 1px solid black;
+  padding: 3 7 3 7;
+}
+td {
+  border: 1px solid black;
+  padding: 3 7 3 7;
+}
+</style>
+</head>
 </xsl:template>
 
 
