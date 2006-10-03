@@ -37,11 +37,13 @@ public class TypedElement extends BufferedContent
         ITypedElement,
         IStructureComparator {
 
-    private String name;
+    private final String name;
 
     private String type;
 
-    private IJavaElement element;
+    private final String methodName;
+
+    private final IJavaElement element;
 
     /** used by Eclipse to recognize appropriated viewer */
     public static final String TYPE_BYTECODE = "bytecode";
@@ -58,9 +60,10 @@ public class TypedElement extends BufferedContent
      * @param element
      * @param modes
      */
-    public TypedElement(String name, String type, IJavaElement element, BitSet modes) {
+    public TypedElement(String name, String methodName, String type, IJavaElement element, BitSet modes) {
         super();
         this.name = name;
+        this.methodName = methodName;
         this.type = type;
         this.element = element;
         this.modes = modes;
@@ -73,12 +76,6 @@ public class TypedElement extends BufferedContent
         return name;
     }
 
-    /**
-     * @param name The name to set.
-     */
-    protected void setName(String name) {
-        this.name = name;
-    }
 
     /**
      * @see org.eclipse.compare.ITypedElement#getType()
@@ -120,7 +117,7 @@ public class TypedElement extends BufferedContent
         DecompiledClass decompiledClass = null;
         try {
             decompiledClass = DecompilerClassVisitor.getDecompiledClass(
-                stream, null, null, modes, null);
+                stream, null, methodName, modes, null);
         } catch (IOException e) {
             throw new CoreException(new Status(
                 IStatus.ERROR, "de.loskutov.bco", -1,

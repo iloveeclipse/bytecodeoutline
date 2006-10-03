@@ -68,7 +68,7 @@ public class OpenAction extends BytecodeAction implements IObjectActionDelegate 
     /**
      * @author Andrei
      */
-    public class OpenClassFileDialog extends ResourceListSelectionDialog {
+    private static final class OpenClassFileDialog extends ResourceListSelectionDialog {
 
         /**
          * @param parentShell

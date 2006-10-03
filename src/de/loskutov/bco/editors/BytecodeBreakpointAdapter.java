@@ -26,7 +26,6 @@ import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.TypeDeclaration;
 import org.eclipse.jdt.debug.core.IJavaBreakpoint;
 import org.eclipse.jdt.debug.core.IJavaFieldVariable;
 import org.eclipse.jdt.debug.core.IJavaLineBreakpoint;
@@ -41,7 +40,6 @@ import org.eclipse.jdt.internal.debug.ui.actions.BreakpointFieldLocator;
 import org.eclipse.jdt.internal.debug.ui.actions.BreakpointLocationVerifierJob;
 import org.eclipse.jdt.internal.debug.ui.actions.BreakpointMethodLocator;
 import org.eclipse.jdt.internal.debug.ui.actions.ToggleBreakpointAdapter;
-import org.eclipse.jdt.internal.debug.ui.actions.ValidBreakpointLocationLocator;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
@@ -262,7 +260,7 @@ public class BytecodeBreakpointAdapter extends ToggleBreakpointAdapter {
                                 fieldName = javaField.getElementName();
                                 int f = javaField.getFlags();
                                 boolean fin = Flags.isFinal(f);
-                                allowed = !(fin) & !(Flags.isStatic(f) & fin);
+                                allowed = !fin && !(Flags.isStatic(f) && fin);
                             } else if (element instanceof IJavaFieldVariable) {
                                 var = (IJavaFieldVariable) element;
                                 typeName = var.getDeclaringType().getName();

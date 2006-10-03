@@ -969,28 +969,33 @@ public class JdtUtils {
         IJavaElement topAncestor) {
         StringBuffer sb = new StringBuffer();
         if (!javaElement.equals(topAncestor)) {
-            boolean is50OrHigher = is50OrHigher(javaElement);
-            if (!is50OrHigher &&
-                (isAnonymousType(javaElement) || isInnerFromBlock(javaElement))) {
-                sb.append(getElementName(topAncestor));
-                sb.append(TYPE_SEPARATOR);
-            } else {
-                /*
-                 * TODO there is an issue with < 1.5 compiler setting and with inner
-                 * classes with the same name but defined in different methods in the same
-                 * source file. Then compiler needs to generate *different* content for
-                 *  A$1$B and A$1$B, which is not possible so therefore compiler generates
-                 *  A$1$B and A$2$B. The naming order is the source range order of inner
-                 *  classes, so the first inner B class will get A$1$B and the second
-                 *  inner B class A$2$B etc.
-                 */
+            if(javaElement.getElementType() == IJavaElement.TYPE){
+                boolean is50OrHigher = is50OrHigher(javaElement);
+                if (!is50OrHigher &&
+                    (isAnonymousType(javaElement) || isInnerFromBlock(javaElement))) {
+                    sb.append(getElementName(topAncestor));
+                    sb.append(TYPE_SEPARATOR);
+                } else {
+                    /*
+                     * TODO there is an issue with < 1.5 compiler setting and with inner
+                     * classes with the same name but defined in different methods in the same
+                     * source file. Then compiler needs to generate *different* content for
+                     *  A$1$B and A$1$B, which is not possible so therefore compiler generates
+                     *  A$1$B and A$2$B. The naming order is the source range order of inner
+                     *  classes, so the first inner B class will get A$1$B and the second
+                     *  inner B class A$2$B etc.
+                     */
 
-                // override top ancestor with immediate ancestor
-                topAncestor = getFirstAncestor(javaElement);
-                while (topAncestor != null) {
-                    sb.insert(0, getElementName(topAncestor) + TYPE_SEPARATOR);
-                    topAncestor = getFirstAncestor(topAncestor);
+                    // override top ancestor with immediate ancestor
+                    topAncestor = getFirstAncestor(javaElement);
+                    while (topAncestor != null) {
+                        sb.insert(0, getElementName(topAncestor) + TYPE_SEPARATOR);
+                        topAncestor = getFirstAncestor(topAncestor);
+                    }
                 }
+            } else {
+                // it's field or method
+                javaElement = getFirstAncestor(javaElement);
             }
         }
         sb.append(getElementName(javaElement));
@@ -1117,7 +1122,6 @@ public class JdtUtils {
             return 7; // from inner from class init
         }
         // test for anon. classes from "regular" code
-        lastAncestor = getLastAncestor(javaElement, IJavaElement.TYPE);
         if (firstAncestor == topAncestor) {
             return 5; // regular anonyme classes
         }

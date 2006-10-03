@@ -157,7 +157,7 @@ public class BytecodeDocumentProvider extends ClassFileDocumentProvider {
      * This class is non-functional replacement for IDocument. The only one purpose is to
      * override getLineInformation() implementation for debug purposes
      */
-    private class DocumentProxy4Debugger extends AbstractDocument {
+    private static final class DocumentProxy4Debugger extends AbstractDocument {
 
         private final IDocument delegate;
         private final IClassFile cf;
