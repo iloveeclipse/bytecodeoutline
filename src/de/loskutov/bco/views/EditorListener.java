@@ -40,13 +40,11 @@ public class EditorListener implements ISelectionListener, IFileBufferListener,
     /**
      * @param part
      * @param selection
-     *
      */
     public void selectionChanged(IWorkbenchPart part, ISelection selection) {
-        if(!(selection instanceof ITextSelection)){
-            return;
+        if(selection instanceof ITextSelection){
+            view.handleSelectionChanged(part, (ITextSelection) selection);
         }
-        view.handleSelectionChanged(part, selection);
     }
 
     /**
