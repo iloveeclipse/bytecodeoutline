@@ -11,8 +11,10 @@ package de.loskutov.bco.views;
 import org.eclipse.core.filebuffers.IFileBuffer;
 import org.eclipse.core.filebuffers.IFileBufferListener;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IPartListener2;
 import org.eclipse.ui.ISelectionListener;
@@ -40,11 +42,33 @@ public class EditorListener implements ISelectionListener, IFileBufferListener,
     /**
      * @param part
      * @param selection
+     *
      */
     public void selectionChanged(IWorkbenchPart part, ISelection selection) {
-        if(selection instanceof ITextSelection){
-            view.handleSelectionChanged(part, (ITextSelection) selection);
+        if(!(selection instanceof ITextSelection)){
+            if(selection instanceof IStructuredSelection){
+                IStructuredSelection ssel = (IStructuredSelection) selection;
+                if(ssel.isEmpty()){
+                    return;
+                }
+                if(ssel.getFirstElement() instanceof IJavaElement){
+                    /*
+                     * this may be selection in outline view. If so, the editor selection
+                     * would be changed but no event would be sent :(
+                     * So we just delay the call and wait for new selection in editor
+                     */
+                    Display display = Display.getDefault();
+                    // fork
+                    display.asyncExec(new Runnable() {
+                        public void run() {
+                            view.checkOpenEditors(true);
+                        }
+                    });
+                }
+            }
+            return;
         }
+        view.handleSelectionChanged(part, selection);
     }
 
     /**

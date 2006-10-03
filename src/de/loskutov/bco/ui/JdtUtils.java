@@ -969,10 +969,17 @@ public class JdtUtils {
         IJavaElement topAncestor) {
         StringBuffer sb = new StringBuffer();
         if (!javaElement.equals(topAncestor)) {
-            if(javaElement.getElementType() == IJavaElement.TYPE){
+            int elementType = javaElement.getElementType();
+            if(elementType == IJavaElement.FIELD
+                || elementType == IJavaElement.METHOD
+                 || elementType == IJavaElement.INITIALIZER) {
+                // it's field or method
+                javaElement = getFirstAncestor(javaElement);
+            } else {
                 boolean is50OrHigher = is50OrHigher(javaElement);
                 if (!is50OrHigher &&
                     (isAnonymousType(javaElement) || isInnerFromBlock(javaElement))) {
+                    // it's inner type
                     sb.append(getElementName(topAncestor));
                     sb.append(TYPE_SEPARATOR);
                 } else {
@@ -993,9 +1000,6 @@ public class JdtUtils {
                         topAncestor = getFirstAncestor(topAncestor);
                     }
                 }
-            } else {
-                // it's field or method
-                javaElement = getFirstAncestor(javaElement);
             }
         }
         sb.append(getElementName(javaElement));
