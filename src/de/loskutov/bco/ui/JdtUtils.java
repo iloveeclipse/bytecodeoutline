@@ -718,6 +718,14 @@ public class JdtUtils {
         }
 
         if (path == null) {
+            // check the default location if not already included
+            IPath def = project.getOutputLocation();
+            if (def != null && def.isPrefixOf(resource.getFullPath())){
+                path = def;
+            }
+        }
+
+        if(path == null){
             return dir;
         }
 

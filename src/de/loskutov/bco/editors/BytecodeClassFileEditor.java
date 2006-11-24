@@ -1,4 +1,4 @@
-/* $Id: BytecodeClassFileEditor.java,v 1.5 2006-06-05 11:45:48 andrei Exp $ */
+/* $Id: BytecodeClassFileEditor.java,v 1.6 2006-11-24 10:14:51 andrei Exp $ */
 
 package de.loskutov.bco.editors;
 
@@ -677,8 +677,10 @@ public class BytecodeClassFileEditor extends JavaEditor
 
     protected void updateOccurrenceAnnotations(ITextSelection selection,
         CompilationUnit astRoot) {
-        // disabled as we currently do not support "occurencies" highlighting
-        // super.updateOccurrenceAnnotations(selection, astRoot);
+        // disabled for bytecode as we currently do not support "occurencies" highlighting
+        if(hasMappedSource()) {
+            super.updateOccurrenceAnnotations(selection, astRoot);
+        }
     }
 
     /**
@@ -1071,6 +1073,14 @@ public class BytecodeClassFileEditor extends JavaEditor
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
         return null;
+    }
+
+    /*
+     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#installOverrideIndicator(boolean)
+     * @since 3.0
+     */
+    protected void installOverrideIndicator(boolean provideAST) {
+        super.installOverrideIndicator(true);
     }
 
 }

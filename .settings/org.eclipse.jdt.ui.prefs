@@ -1,4 +1,4 @@
-#Sun Apr 09 20:12:00 EDT 2006
+#Tue Apr 11 23:11:33 CEST 2006
 comment_clear_blank_lines=true
 comment_format_comments=true
 comment_format_header=true
@@ -15,3 +15,4 @@ internal.default.compliance=default
 org.eclipse.jdt.ui.exception.name=e
 org.eclipse.jdt.ui.gettersetter.use.is=true
 org.eclipse.jdt.ui.keywordthis=false
+org.eclipse.jdt.ui.overrideannotation=true

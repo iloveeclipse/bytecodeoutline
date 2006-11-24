@@ -165,11 +165,13 @@
          point="org.eclipse.ui.editors">
       <editor
             class="de.loskutov.bco.editors.BytecodeClassFileEditor"
-            icon="icons/bytecodeview.gif"
             contributorClass="de.loskutov.bco.editors.BytecodeActionBarContributor"
-            name="Class File Bytecode Viewer"
+            default="true"
+            icon="icons/bytecodeview.gif"
             id="de.loskutov.bco.editors.BytecodeClassFileEditor"
-            extensions="class">
+            name="Class File Bytecode Viewer"
+            symbolicFontName="org.eclipse.jdt.ui.editors.textfont">
+         <contentTypeBinding contentTypeId="org.eclipse.jdt.core.javaClass"/>
       </editor>
    </extension>
    <!-- replacement for org.eclipse.debug.ui.actions.RulerToggleBreakpointActionDelegate -->
@@ -191,4 +193,13 @@
     <toc file="doc/toc.xml" primary="true" />
   </extension>
 
+ <!-- because of org.eclipse.jdt.internal.ui.javaeditor.ClassFileEditor replacement -->
+  <extension point="org.eclipse.core.runtime.adapters">
+         <factory
+            class="org.eclipse.jdt.internal.debug.ui.actions.RetargettableActionAdapterFactory"
+            adaptableType="de.loskutov.bco.editors.BytecodeClassFileEditor">
+            <adapter type="org.eclipse.debug.ui.actions.IRunToLineTarget"/>
+            <adapter type="org.eclipse.debug.ui.actions.IToggleBreakpointsTarget"/>
+         </factory>
+  </extension>
 </plugin>
