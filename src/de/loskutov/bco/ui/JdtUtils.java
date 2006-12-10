@@ -38,6 +38,7 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IInitializer;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
@@ -483,29 +484,25 @@ public class JdtUtils {
      */
     public static boolean is50OrHigher(IJavaElement javaElt) {
         IJavaProject project = javaElt.getJavaProject();
-        boolean result = JavaCore.VERSION_1_5.equals(project.getOption(
-            JavaCore.COMPILER_COMPLIANCE, true));
+        String option = project.getOption(JavaCore.COMPILER_COMPLIANCE, true);
+        boolean result = JavaCore.VERSION_1_5.equals(option);
         if(result){
             return result;
         }
         // probably > 1.5?
-        result = JavaCore.VERSION_1_4.equals(project.getOption(
-            JavaCore.COMPILER_COMPLIANCE, true));
+        result = JavaCore.VERSION_1_4.equals(option);
         if(result){
             return false;
         }
-        result = JavaCore.VERSION_1_3.equals(project.getOption(
-            JavaCore.COMPILER_COMPLIANCE, true));
+        result = JavaCore.VERSION_1_3.equals(option);
         if(result){
             return false;
         }
-        result = JavaCore.VERSION_1_2.equals(project.getOption(
-            JavaCore.COMPILER_COMPLIANCE, true));
+        result = JavaCore.VERSION_1_2.equals(option);
         if(result){
             return false;
         }
-        result = JavaCore.VERSION_1_1.equals(project.getOption(
-            JavaCore.COMPILER_COMPLIANCE, true));
+        result = JavaCore.VERSION_1_1.equals(option);
         if(result){
             return false;
         }
@@ -541,7 +538,7 @@ public class JdtUtils {
             return Integer.toString(idx);
         }
         String name = javaElement.getElementName();
-        if (isInnerFromBlock(javaElement)) {
+        if (isLocal(javaElement)) {
             /*
              * Compiler have different naming conventions for inner non-anon. classes in
              * static blocks or any methods, this difference was introduced with 1.5 JDK.
@@ -655,7 +652,7 @@ public class JdtUtils {
      * @param innerType should be inner type.
      * @return true, if given element is inner class from initializer block or method body
      */
-    private static boolean isInnerFromBlock(IJavaElement innerType) {
+    private static boolean isLocal(IJavaElement innerType) {
         try {
             return innerType instanceof IType && ((IType)innerType).isLocal();
         } catch (JavaModelException e) {
@@ -672,6 +669,20 @@ public class JdtUtils {
     private static boolean isNonStaticInner(IType type) throws JavaModelException {
         if(type.isMember()){
             return !Flags.isStatic(type.getFlags());
+        }
+        return false;
+    }
+
+    /**
+     * @param innerType should be inner type.
+     * @return true, if given element is inner class from initializer block
+     */
+    private static boolean isInnerFromBlock(IType type) {
+        try {
+            IJavaElement ancestor = type.getAncestor(IJavaElement.INITIALIZER);
+            return type.isLocal() && ancestor != null;
+        } catch (JavaModelException e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
         return false;
     }
@@ -799,6 +810,7 @@ public class JdtUtils {
             packagePath = getPackageOutputPath(javaElement);
         } catch (JavaModelException e) {
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+            return "";
         }
         IJavaElement ancestor = getLastAncestor(javaElement, IJavaElement.TYPE);
         StringBuffer sb = new StringBuffer(packagePath);
@@ -986,7 +998,7 @@ public class JdtUtils {
             } else {
                 boolean is50OrHigher = is50OrHigher(javaElement);
                 if (!is50OrHigher &&
-                    (isAnonymousType(javaElement) || isInnerFromBlock(javaElement))) {
+                    (isAnonymousType(javaElement) || isLocal(javaElement))) {
                     // it's inner type
                     sb.append(getElementName(topAncestor));
                     sb.append(TYPE_SEPARATOR);
@@ -1109,35 +1121,85 @@ public class JdtUtils {
      * @throws JavaModelException
      */
     static int getAnonCompilePriority(IJavaElement javaElement,
-        IJavaElement firstAncestor, IJavaElement topAncestor) {
+        IJavaElement firstAncestor, IJavaElement topAncestor, boolean is50OrHigher) {
+
         // search for initializer block
         IJavaElement lastAncestor = getLastAncestor(
             javaElement, IJavaElement.INITIALIZER);
         // test is for anon. classes from initializer blocks
         if (lastAncestor != null) {
             IInitializer init = (IInitializer) lastAncestor;
-            int flags = 0;
+            int initFlags = 0;
             try {
-                flags = init.getFlags();
+                initFlags = init.getFlags();
             } catch (JavaModelException e) {
                 BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
-            if (!Flags.isStatic(flags)) {
-                if (firstAncestor == topAncestor) {
-                    return 10; // instance init
+
+            if(is50OrHigher){
+                if (!Flags.isStatic(initFlags)) {
+                    if (firstAncestor == topAncestor) {
+                        return 10; // instance init
+                    }
+                    return 9; // from inner from instance init
                 }
-                return 9; // from inner from instance init
+
+                if (firstAncestor == topAncestor) {
+                    return 8; // class init
+                }
+                return 7; // from inner from class init
             }
-            if (firstAncestor == topAncestor) {
-                return 8; // class init
+
+            /*
+             * crazy 1.4 logic
+             */
+            if (Flags.isStatic(initFlags)) {
+                return 10;
             }
-            return 7; // from inner from class init
+            IJavaElement firstNonAnon = getFirstNonAnonymous(javaElement, topAncestor);
+            if (isStatic((IMember)firstNonAnon)) {
+                return 9;
+            }
+
+            return 6; // class init
         }
+        // from inner from main type
+        if(!is50OrHigher){
+            /*
+             * crazy 1.4 logic
+             */
+            int topFlags = 0;
+            IJavaElement firstNonAnon = getFirstNonAnonymous(javaElement, topAncestor);
+            try {
+                topFlags = ((IType)firstNonAnon).getFlags();
+            } catch (JavaModelException e) {
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+            }
+            if (Flags.isStatic(topFlags)) {
+                return 8;
+            }
+
+            if (firstAncestor == topAncestor) {
+                return 6; // regular anonyme classes
+            }
+            return 6; // the same prio as regular anonyme classes
+        }
+
         // test for anon. classes from "regular" code
         if (firstAncestor == topAncestor) {
             return 5; // regular anonyme classes
         }
-        return 6; // from inner from main type
+        return 6;
+    }
+
+    private static boolean isStatic(IMember firstNonAnon) {
+        int topFlags = 0;
+        try {
+            topFlags = firstNonAnon.getFlags();
+        } catch (JavaModelException e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+        }
+        return Flags.isStatic(topFlags);
     }
 
     /**
@@ -1309,6 +1371,7 @@ public class JdtUtils {
 
         private IType topAncestorType;
         private SourceOffsetComparator sourceComparator;
+        private boolean is50OrHigher;
 
         /**
          * @param javaElement
@@ -1317,6 +1380,7 @@ public class JdtUtils {
         public AnonymClassComparator(IType javaElement,
             SourceOffsetComparator sourceComparator) {
             this.sourceComparator = sourceComparator;
+            is50OrHigher = is50OrHigher(javaElement);
             topAncestorType = (IType) getLastAncestor(
                 javaElement, IJavaElement.TYPE);
         }
@@ -1335,18 +1399,24 @@ public class JdtUtils {
          * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
          */
         public int compare(Object o1, Object o2) {
+            if(o1 == o2){
+                return 0;
+            }
             IType m1 = (IType) o1;
             IType m2 = (IType) o2;
-            IJavaElement firstAncestor1 = getFirstAncestor(m1);
-            IJavaElement firstAncestor2 = getFirstAncestor(m2);
             // both have the same ancestor as immediate ancestor
-            if (firstAncestor1 == firstAncestor2) {
+            if (!is50OrHigher && isInnerFromBlock(m1) && isInnerFromBlock(m2)) {
                 return sourceComparator.compare(o1, o2);
             }
+            IJavaElement firstAncestor1 = getFirstAncestor(m1);
+            IJavaElement firstAncestor2 = getFirstAncestor(m2);
             int compilePrio1 = getAnonCompilePriority(
-                m1, firstAncestor1, topAncestorType);
+                m1, firstAncestor1, topAncestorType, is50OrHigher);
             int compilePrio2 = getAnonCompilePriority(
-                m2, firstAncestor2, topAncestorType);
+                m2, firstAncestor2, topAncestorType, is50OrHigher);
+
+//            System.out.println("" + compilePrio1 + " -> " + o1.toString().substring(0, 50));
+//            System.out.println("" + compilePrio2 + " -> " + o2.toString().substring(0, 50));
 
             if (compilePrio1 > compilePrio2) {
                 return -1;
@@ -1373,6 +1443,11 @@ public class JdtUtils {
                         return sourceComparator.compare(o1, o2);
                     }
                 }
+
+//                if(!is50OrHigher && !isStatic(m1) && !isStatic(m2)){
+//                    return sourceComparator.compare(o1, o2);
+//                }
+
                 /*
                  * for anonymous classes which have first non-common non-anonymous ancestor,
                  * the order is the reversed definition order
