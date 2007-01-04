@@ -11,7 +11,7 @@
             id="de.loskutov.bco.views.BytecodeOutlineView"/>
       <view
             name="Bytecode Reference"
-            icon="icons/bytecodeview.gif"
+            icon="icons/reference.gif"
             category="org.eclipse.jdt.ui.java"
             class="de.loskutov.bco.views.BytecodeReferenceView"
             id="de.loskutov.bco.views.BytecodeReferenceView"/>
@@ -144,6 +144,22 @@
          </action>
        </objectContribution>
 
+   </extension>
+
+   <extension
+         point="org.eclipse.ui.popupMenus">
+      <viewerContribution
+            targetID="de.loskutov.bco.views.BytecodeOutlineView#ContextMenu"
+            id="de.loskutov.bco.OpenBytecodeReference">
+
+         <action
+               enablesFor="*"
+               label="Open bytecode reference"
+               icon="icons/reference.gif"
+               class="de.loskutov.bco.ui.actions.OpenBytecodeReferenceAction"
+               menubarPath="additions"
+               id="de.loskutov.bco.OpenReferenceAction"/>
+      </viewerContribution>
    </extension>
 
    <extension
