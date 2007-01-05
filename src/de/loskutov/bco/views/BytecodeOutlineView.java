@@ -1118,6 +1118,19 @@ public class BytecodeOutlineView extends ViewPart {
         int sourceLine = currentSelection.getStartLine() + 1;
         int decompiledLine = lastDecompiledResult.getDecompiledLine(sourceLine);
 
+        if(decompiledLine < 0 && !modes.get(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT)
+            && lastChildElement != null){
+            /*
+             * May be this is the selection in outline view, if complete class is shown.
+             * Because there are no bytecode instructions/offset for method name, we need
+             * to find and select first method line. See cr 306011
+             */
+            String methodName = JdtUtils.getMethodSignature(lastChildElement);
+            if(methodName != null) {
+                decompiledLine = lastDecompiledResult.getDecompiledLine(methodName) - 1;
+            }
+        }
+
         if (decompiledLine > 0) {
             try {
                 if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
