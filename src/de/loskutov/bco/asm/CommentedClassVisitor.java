@@ -64,8 +64,9 @@ public class CommentedClassVisitor extends TraceClassVisitor {
             return;
         }
         if (raw1) {
-            if(type == CLASS_SIGNATURE || type == FIELD_SIGNATURE || type == METHOD_SIGNATURE) {
-                buf1.append( "// signature ").append( desc ).append('\n');
+            if (type == CLASS_SIGNATURE || type == FIELD_SIGNATURE
+                || type == METHOD_SIGNATURE) {
+                buf1.append("// signature ").append(desc).append('\n');
             } else {
                 buf1.append(desc);
             }
@@ -102,7 +103,7 @@ public class CommentedClassVisitor extends TraceClassVisitor {
                 case METHOD_SIGNATURE :
                 case FIELD_SIGNATURE :
                     // fine tuning of identation - we have two tabs in this case
-                    if(buf.lastIndexOf(tab) == buf.length() - tab.length()){
+                    if (buf.lastIndexOf(tab) == buf.length() - tab.length()) {
                         buf.delete(buf.lastIndexOf(tab), buf.length());
                     }
                     break;
@@ -126,7 +127,6 @@ public class CommentedClassVisitor extends TraceClassVisitor {
     }
 
     /**
-     *
      * @param t
      * @return simply class name without any package/outer class information
      */
@@ -136,14 +136,13 @@ public class CommentedClassVisitor extends TraceClassVisitor {
     }
 
     /**
-     *
      * @param name Java type name(s).
-     * @return simply class name(s) without any package/outer class information,
-     * but with "generics" information from given name parameter.
+     * @return simply class name(s) without any package/outer class information, but with
+     * "generics" information from given name parameter.
      */
-    private  static String eatPackageNames(String name, char separator){
+    private static String eatPackageNames(String name, char separator) {
         int lastPoint = name.lastIndexOf(separator);
-        if(lastPoint < 0){
+        if (lastPoint < 0) {
             return name;
         }
         StringBuffer sb = new StringBuffer(name);
@@ -155,19 +154,21 @@ public class CommentedClassVisitor extends TraceClassVisitor {
 
         return sb.toString();
     }
-    private static int lastIndexOf(StringBuffer chars, char c, int lastPoint){
+
+    private static int lastIndexOf(StringBuffer chars, char c, int lastPoint) {
         for (int i = lastPoint - 1; i > 0; i--) {
-            if(chars.charAt(i) == c){
+            if (chars.charAt(i) == c) {
                 return i;
             }
         }
         return -1;
     }
 
-    private static int getPackageStartIndex(StringBuffer chars, char c, int firstPoint){
+    private static int getPackageStartIndex(StringBuffer chars, char c,
+        int firstPoint) {
         for (int i = firstPoint - 1; i >= 0; i--) {
             char curr = chars.charAt(i);
-            if(curr != c && !Character.isJavaIdentifierPart(curr)){
+            if (curr != c && !Character.isJavaIdentifierPart(curr)) {
                 return i + 1;
             }
         }
@@ -176,7 +177,7 @@ public class CommentedClassVisitor extends TraceClassVisitor {
 
     class CommentedAnnotationVisitor extends TraceAnnotationVisitor {
 
-        public void setAnnotationVisitor(AnnotationVisitor av){
+        public void setAnnotationVisitor(AnnotationVisitor av) {
             this.av = av;
         }
 
@@ -190,7 +191,8 @@ public class CommentedClassVisitor extends TraceClassVisitor {
     }
 
     class CommentedFieldVisitor extends TraceFieldVisitor {
-        public void setFieldVisitor(FieldVisitor fv){
+
+        public void setFieldVisitor(FieldVisitor fv) {
             this.fv = fv;
         }
 
@@ -203,15 +205,25 @@ public class CommentedClassVisitor extends TraceClassVisitor {
         }
     }
 
+    /**
+     * control chars names
+     */
+    private static final String[] CHAR_NAMES = {"NUL", "SOH", "STX", "ETX",
+        "EOT", "ENQ", "ACK", "BEL", "BS", "HT", "LF", "VT", "FF", "CR", "SO",
+        "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN",
+        "EM", "SUB", "ESC", "FS", "GS", "RS", "US", // "Sp"
+    };
+
     class CommentedMethodVisitor extends TraceMethodVisitor {
 
-        private Index getIndex(Label label){
+        private Index getIndex(Label label) {
             Index index;
             for (int i = 0; i < text.size(); i++) {
                 Object o = text.get(i);
-                if(o  instanceof Index){
-                    index = (Index)o;
-                    if(index.labelNode != null && index.labelNode.getLabel() == label){
+                if (o instanceof Index) {
+                    index = (Index) o;
+                    if (index.labelNode != null
+                        && index.labelNode.getLabel() == label) {
                         return index;
                     }
                 }
@@ -219,18 +231,15 @@ public class CommentedClassVisitor extends TraceClassVisitor {
             return null;
         }
 
-        public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
-            if(showStackMap) {
+        public void visitFrame(int type, int nLocal, Object[] local,
+            int nStack, Object[] stack) {
+            if (showStackMap) {
                 super.visitFrame(type, nLocal, local, nStack, stack);
             }
         }
 
-        public void visitMethodInsn (
-            final int opcode,
-            final String owner,
-            final String name,
-            final String desc)
-          {
+        public void visitMethodInsn(final int opcode, final String owner,
+            final String name, final String desc) {
             buf.setLength(0);
             buf.append(tab2).append(OPCODES[opcode]).append(' ');
             appendDescriptor(INTERNAL_NAME, owner);
@@ -238,7 +247,7 @@ public class CommentedClassVisitor extends TraceClassVisitor {
             appendDescriptor(METHOD_DESCRIPTOR, desc);
             buf.append('\n');
             text.add(buf.toString());
-          }
+        }
 
         public void visitVarInsn(final int opcode, final int var) {
             text.add(tab2 + OPCODES[opcode] + " " + var);
@@ -253,7 +262,7 @@ public class CommentedClassVisitor extends TraceClassVisitor {
             buf.append(ltab);
             appendLabel(label);
             Index index = getIndex(label);
-            if(index != null){
+            if (index != null) {
                 buf.append(" (").append(index.insn).append(")");
             }
             buf.append('\n');
@@ -270,13 +279,10 @@ public class CommentedClassVisitor extends TraceClassVisitor {
 
         public void visitIntInsn(int opcode, int operand) {
             buf.setLength(0);
-            buf.append(tab2)
-                    .append(OPCODES[opcode])
-                    .append(' ')
-                    .append(opcode == Opcodes.NEWARRAY
-                            ? TYPES[operand]
-                            : formatValue(operand))
-                    .append('\n');
+            buf.append(tab2).append(OPCODES[opcode]).append(' ').append(
+                opcode == Opcodes.NEWARRAY
+                    ? TYPES[operand]
+                    : formatValue(operand)).append('\n');
             text.add(buf.toString());
 
             if (mv != null) {
@@ -285,24 +291,68 @@ public class CommentedClassVisitor extends TraceClassVisitor {
         }
 
         private String formatValue(int operand) {
-            if(showHex){
-                return Integer.toHexString(operand).toUpperCase();
+            if (showHex) {
+                String intStr = Integer.toHexString(operand).toUpperCase();
+                return intStr + getAsCharComment(operand);
             }
             return Integer.toString(operand);
         }
 
+        /**
+         * @param value
+         * @return char value from int, together with char name if it is a control char,
+         * or an empty string
+         */
+        private String getAsCharComment(int value) {
+            if (Character.MAX_VALUE < value || Character.MIN_VALUE > value) {
+                return "";
+            }
+            StringBuffer sb = new StringBuffer("    // '");
+            switch (value) {
+                case '\t' :
+                    sb.append("\\t");
+                    break;
+                case '\r' :
+                    sb.append("\\r");
+                    break;
+                case '\n' :
+                    sb.append("\\n");
+                    break;
+                case '\f' :
+                    sb.append("\\f");
+                    break;
+                default :
+                    sb.append((char) value);
+                    break;
+            }
+
+            if (value >= CHAR_NAMES.length) {
+                if (value == 127) {
+                    return sb.append("' (DEL)").toString();
+                }
+                return sb.append("'").toString();
+            }
+            return sb.append("' (").append(CHAR_NAMES[value]).append(")")
+                .toString();
+        }
+
         private String formatValue(Object operand) {
-            if(showHex){
-                if(operand instanceof Integer) {
-                    return Integer.toHexString(((Integer)operand).intValue()).toUpperCase();
-                } else if(operand instanceof Long) {
-                    return Long.toHexString(((Long)operand).longValue()).toUpperCase();
-                } else if(operand instanceof Double) {
-                    return Double.toHexString(((Double)operand).doubleValue()).toUpperCase();
-                } else if(operand instanceof Float) {
-                    return Float.toHexString(((Float)operand).floatValue()).toUpperCase();
-                } else {
-                    return operand.toString();
+            if (operand == null) {
+                return "null";
+            }
+            if (showHex) {
+                if (operand instanceof Integer) {
+                    String intStr = Integer.toHexString(
+                        ((Integer) operand).intValue()).toUpperCase();
+                    return intStr
+                        + getAsCharComment(((Integer) operand).intValue());
+                } else if (operand instanceof Long) {
+                    return Long.toHexString(((Long) operand).longValue())
+                        .toUpperCase();
+                } else if (operand instanceof Double) {
+                    return Double.toHexString(((Double) operand).doubleValue());
+                } else if (operand instanceof Float) {
+                    return Float.toHexString(((Float) operand).floatValue());
                 }
             }
             return operand.toString();
@@ -355,6 +405,5 @@ public class CommentedClassVisitor extends TraceClassVisitor {
             CommentedClassVisitor.this.appendDescriptor(buf, type, desc, raw);
         }
     }
-
 
 }
