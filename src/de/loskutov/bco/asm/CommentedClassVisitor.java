@@ -5,7 +5,9 @@ import java.util.BitSet;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.util.AbstractVisitor;
 import org.objectweb.asm.util.TraceAnnotationVisitor;
 import org.objectweb.asm.util.TraceClassVisitor;
 import org.objectweb.asm.util.TraceFieldVisitor;
@@ -24,6 +26,7 @@ public class CommentedClassVisitor extends TraceClassVisitor {
     protected boolean showLines;
     protected boolean showLocals;
     protected boolean showStackMap;
+    protected boolean showHex;
 
     public CommentedClassVisitor(final BitSet modes) {
         super(null);
@@ -32,6 +35,7 @@ public class CommentedClassVisitor extends TraceClassVisitor {
         showLines = modes.get(BCOConstants.F_SHOW_LINE_INFO);
         showLocals = modes.get(BCOConstants.F_SHOW_VARIABLES);
         showStackMap = modes.get(BCOConstants.F_SHOW_STACKMAP);
+        showHex = modes.get(BCOConstants.F_SHOW_HEX_VALUES);
     }
 
     public void visitEnd() {
@@ -264,12 +268,70 @@ public class CommentedClassVisitor extends TraceClassVisitor {
             text.add(" " + increment + "\n");
         }
 
+        public void visitIntInsn(int opcode, int operand) {
+            buf.setLength(0);
+            buf.append(tab2)
+                    .append(OPCODES[opcode])
+                    .append(' ')
+                    .append(opcode == Opcodes.NEWARRAY
+                            ? TYPES[operand]
+                            : formatValue(operand))
+                    .append('\n');
+            text.add(buf.toString());
+
+            if (mv != null) {
+                mv.visitIntInsn(opcode, operand);
+            }
+        }
+
+        private String formatValue(int operand) {
+            if(showHex){
+                return Integer.toHexString(operand).toUpperCase();
+            }
+            return Integer.toString(operand);
+        }
+
+        private String formatValue(Object operand) {
+            if(showHex){
+                if(operand instanceof Integer) {
+                    return Integer.toHexString(((Integer)operand).intValue()).toUpperCase();
+                } else if(operand instanceof Long) {
+                    return Long.toHexString(((Long)operand).longValue()).toUpperCase();
+                } else if(operand instanceof Double) {
+                    return Double.toHexString(((Double)operand).doubleValue()).toUpperCase();
+                } else if(operand instanceof Float) {
+                    return Float.toHexString(((Float)operand).floatValue()).toUpperCase();
+                } else {
+                    return operand.toString();
+                }
+            }
+            return operand.toString();
+        }
+
         public void visitLocalVariable(final String name, final String desc,
             final String signature, final Label start, final Label end,
             final int index) {
             if (showLocals) {
                 super.visitLocalVariable(
                     name, desc, signature, start, end, index);
+            }
+        }
+
+        public void visitLdcInsn(Object cst) {
+            buf.setLength(0);
+            buf.append(tab2).append("LDC ");
+            if (cst instanceof String) {
+                AbstractVisitor.appendString(buf, (String) cst);
+            } else if (cst instanceof Type) {
+                buf.append(((Type) cst).getDescriptor() + ".class");
+            } else {
+                buf.append(formatValue(cst));
+            }
+            buf.append('\n');
+            text.add(buf.toString());
+
+            if (mv != null) {
+                mv.visitLdcInsn(cst);
             }
         }
 

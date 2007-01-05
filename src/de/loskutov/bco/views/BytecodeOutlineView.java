@@ -152,6 +152,7 @@ public class BytecodeOutlineView extends ViewPart {
     protected Action hideLineInfoAction;
     protected Action hideLocalsAction;
     protected Action hideStackMapAction;
+    protected Action showHexValuesAction;
     protected Action expandStackMapAction;
     protected Action toggleVerifierAction;
     protected StatusLineManager statusLineManager;
@@ -236,6 +237,7 @@ public class BytecodeOutlineView extends ViewPart {
         hideLocalsAction.setEnabled(on);
         hideLineInfoAction.setEnabled(on);
         hideStackMapAction.setEnabled(on);
+        showHexValuesAction.setEnabled(on);
         toggleASMifierModeAction.setEnabled(on);
         setRawModeAction.setEnabled(on && !toggleASMifierModeAction.isChecked());
         boolean showAnalyzer = on && toggleVerifierAction.isChecked();
@@ -398,6 +400,7 @@ public class BytecodeOutlineView extends ViewPart {
         modes.set(BCOConstants.F_EXPAND_STACKMAP, store.getBoolean(BCOConstants.EXPAND_STACKMAP));
         modes.set(BCOConstants.F_SHOW_ASMIFIER_CODE, store.getBoolean(BCOConstants.SHOW_ASMIFIER_CODE));
         modes.set(BCOConstants.F_SHOW_ANALYZER, store.getBoolean(BCOConstants.SHOW_ANALYZER));
+        modes.set(BCOConstants.F_SHOW_HEX_VALUES, store.getBoolean(BCOConstants.SHOW_HEX_VALUES));
     }
 
     private void createToolbarActions() {
@@ -425,7 +428,7 @@ public class BytecodeOutlineView extends ViewPart {
             new IPropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent event) {
                     if (IAction.CHECKED.equals(event.getProperty())) {
-                        modes.set(BCOConstants.F_LINK_VIEW_TO_EDITOR, Boolean.TRUE == event.getNewValue());
+                        setMode(BCOConstants.F_LINK_VIEW_TO_EDITOR, Boolean.TRUE == event.getNewValue());
                         if(modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR)) {
                             showSelectedOnlyAction.setEnabled(true);
                             toggleVerifierAction.setEnabled(true);
@@ -446,7 +449,7 @@ public class BytecodeOutlineView extends ViewPart {
             new IPropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent event) {
                     if (IAction.CHECKED.equals(event.getProperty())) {
-                        modes.set(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT, Boolean.TRUE == event.getNewValue());
+                        setMode(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT, Boolean.TRUE == event.getNewValue());
                         inputChanged = true;
                         refreshView();
                     }
@@ -457,7 +460,7 @@ public class BytecodeOutlineView extends ViewPart {
             new IPropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent event) {
                     if (IAction.CHECKED.equals(event.getProperty())) {
-                        modes.set(BCOConstants.F_SHOW_RAW_BYTECODE, Boolean.TRUE == event.getNewValue());
+                        setMode(BCOConstants.F_SHOW_RAW_BYTECODE, Boolean.TRUE == event.getNewValue());
                         inputChanged = true;
                         refreshView();
                     }
@@ -468,7 +471,7 @@ public class BytecodeOutlineView extends ViewPart {
             new IPropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent event) {
                     if (IAction.CHECKED.equals(event.getProperty())) {
-                        modes.set(BCOConstants.F_SHOW_LINE_INFO, Boolean.TRUE == event.getNewValue());
+                        setMode(BCOConstants.F_SHOW_LINE_INFO, Boolean.TRUE == event.getNewValue());
                         inputChanged = true;
                         refreshView();
                     }
@@ -479,7 +482,7 @@ public class BytecodeOutlineView extends ViewPart {
             new IPropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent event) {
                     if (IAction.CHECKED.equals(event.getProperty())) {
-                        modes.set(BCOConstants.F_SHOW_VARIABLES, Boolean.TRUE == event.getNewValue());
+                        setMode(BCOConstants.F_SHOW_VARIABLES, Boolean.TRUE == event.getNewValue());
                         inputChanged = true;
                         refreshView();
                     }
@@ -490,7 +493,7 @@ public class BytecodeOutlineView extends ViewPart {
             new IPropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent event) {
                     if (IAction.CHECKED.equals(event.getProperty())) {
-                        modes.set(BCOConstants.F_SHOW_STACKMAP, Boolean.TRUE == event.getNewValue());
+                        setMode(BCOConstants.F_SHOW_STACKMAP, Boolean.TRUE == event.getNewValue());
                         inputChanged = true;
                         refreshView();
                     }
@@ -501,7 +504,18 @@ public class BytecodeOutlineView extends ViewPart {
             new IPropertyChangeListener() {
             public void propertyChange(PropertyChangeEvent event) {
                 if (IAction.CHECKED.equals(event.getProperty())) {
-                    modes.set(BCOConstants.F_EXPAND_STACKMAP, Boolean.TRUE == event.getNewValue());
+                    setMode(BCOConstants.F_EXPAND_STACKMAP, Boolean.TRUE == event.getNewValue());
+                    inputChanged = true;
+                    refreshView();
+                }
+            }
+        });
+
+        showHexValuesAction = new DefaultToggleAction(BCOConstants.SHOW_HEX_VALUES,
+            new IPropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent event) {
+                if (IAction.CHECKED.equals(event.getProperty())) {
+                    setMode(BCOConstants.F_SHOW_HEX_VALUES, Boolean.TRUE == event.getNewValue());
                     inputChanged = true;
                     refreshView();
                 }
@@ -513,9 +527,9 @@ public class BytecodeOutlineView extends ViewPart {
                 public void propertyChange(PropertyChangeEvent event) {
                     if (IAction.CHECKED.equals(event.getProperty())) {
                         boolean checked = Boolean.TRUE == event.getNewValue();
-                        modes.set(BCOConstants.F_SHOW_ASMIFIER_CODE, checked);
+                        setMode(BCOConstants.F_SHOW_ASMIFIER_CODE, checked);
                         if(checked) {
-                            modes.set(BCOConstants.F_SHOW_RAW_BYTECODE, true);
+                            setMode(BCOConstants.F_SHOW_RAW_BYTECODE, true);
                             setRawModeAction.setEnabled(false);
                         } else {
                             setRawModeAction.setEnabled(true);
@@ -543,6 +557,7 @@ public class BytecodeOutlineView extends ViewPart {
         mmanager.add(setRawModeAction);
         mmanager.add(hideLineInfoAction);
         mmanager.add(hideLocalsAction);
+        mmanager.add(showHexValuesAction);
         mmanager.add(hideStackMapAction);
         mmanager.add(expandStackMapAction);
         mmanager.add(toggleASMifierModeAction);
@@ -749,6 +764,7 @@ public class BytecodeOutlineView extends ViewPart {
         hideLineInfoAction = null;
         hideLocalsAction = null;
         hideStackMapAction = null;
+        showHexValuesAction = null;
         expandStackMapAction = null;
         toggleVerifierAction = null;
         lastDecompiledResult = null;
@@ -1461,8 +1477,22 @@ public class BytecodeOutlineView extends ViewPart {
         }
     }
 
+    /**
+     * Set the bit with given index to given value and remembers it in the preferences
+     * @param bitIndex
+     * @param value
+     */
+    protected void setMode(int bitIndex, boolean value) {
+        modes.set(bitIndex, value);
+        IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
+        String key = (String) BCOConstants.FLAG_TO_NAME_MAP.get(Integer.valueOf(bitIndex));
+        if(key != null) {
+            store.setValue(key, value);
+        }
+    }
+
     protected void toggleVerifyMode(final IMenuManager mmanager, boolean showAnalyzer) {
-        modes.set(BCOConstants.F_SHOW_ANALYZER, showAnalyzer);
+        setMode(BCOConstants.F_SHOW_ANALYZER, showAnalyzer);
         if(modes.get(BCOConstants.F_SHOW_ANALYZER)) {
             ((StackLayout) stackComposite.getLayout()).topControl = verifyControl;
             viewSelectionProvider.setCurrentSelectionProvider(tableControlViewer);

@@ -8,6 +8,9 @@
  *******************************************************************************/
 package de.loskutov.bco.preferences;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 /**
  * Keys for preferences store used in BCO
@@ -53,7 +56,7 @@ public interface BCOConstants {
      * expand stackmap frames
      */
     String EXPAND_STACKMAP = "expandStackmap";
-    
+
     /**
      * recalculate stackmap (to see computed frames, works for all classes even before MUSTANG)
      */
@@ -64,6 +67,10 @@ public interface BCOConstants {
      */
     String SHOW_ANALYZER = "showAnalyzer";
 
+    /**
+     * Show non decimal values for numeric constants in the bytecode
+     */
+    String SHOW_HEX_VALUES = "showHexValues";
 
     int F_LINK_VIEW_TO_EDITOR = 0;
     int F_SHOW_ONLY_SELECTED_ELEMENT = 1;
@@ -75,5 +82,30 @@ public interface BCOConstants {
     int F_EXPAND_STACKMAP = 7;
     int F_SHOW_ANALYZER = 8;
     int F_SHOW_STACKMAP = 9;
-    
+    int F_SHOW_HEX_VALUES = 10;
+
+    /**
+     * Key is Integer value from one of F_* constants, value is the String value of one of corresponding
+     * preference keys. It is not intended that the map would be modified by clients.
+     */
+    Map/*<Integer,String>*/ FLAG_TO_NAME_MAP = new ConstantsMap();
+
+    final class ConstantsMap extends HashMap {
+        private static final long serialVersionUID = 1L;
+
+        private ConstantsMap() {
+            super();
+            put(Integer.valueOf(F_EXPAND_STACKMAP), EXPAND_STACKMAP);
+            put(Integer.valueOf(F_LINK_VIEW_TO_EDITOR), LINK_VIEW_TO_EDITOR);
+            put(Integer.valueOf(F_RECALCULATE_STACKMAP), RECALCULATE_STACKMAP);
+            put(Integer.valueOf(F_SHOW_ANALYZER), SHOW_ANALYZER);
+            put(Integer.valueOf(F_SHOW_ASMIFIER_CODE), SHOW_ASMIFIER_CODE);
+            put(Integer.valueOf(F_SHOW_HEX_VALUES), SHOW_HEX_VALUES);
+            put(Integer.valueOf(F_SHOW_LINE_INFO), SHOW_LINE_INFO);
+            put(Integer.valueOf(F_SHOW_ONLY_SELECTED_ELEMENT), SHOW_ONLY_SELECTED_ELEMENT);
+            put(Integer.valueOf(F_SHOW_RAW_BYTECODE), SHOW_RAW_BYTECODE);
+            put(Integer.valueOf(F_SHOW_STACKMAP), SHOW_STACKMAP);
+            put(Integer.valueOf(F_SHOW_VARIABLES), SHOW_VARIABLES);
+        }
+    }
 }

@@ -38,6 +38,7 @@ public class BCOPreferenceInitializer extends AbstractPreferenceInitializer {
         store.setDefault(BCOConstants.SHOW_STACKMAP, true);
         store.setDefault(BCOConstants.EXPAND_STACKMAP, false);
         store.setDefault(BCOConstants.RECALCULATE_STACKMAP, false);
+        store.setDefault(BCOConstants.SHOW_HEX_VALUES, false);
     }
 
 }
