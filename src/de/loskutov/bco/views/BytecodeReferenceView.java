@@ -6,37 +6,74 @@ package de.loskutov.bco.views;
 
 import java.net.URL;
 
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.help.internal.appserver.WebappManager;
 import org.eclipse.help.internal.base.BaseHelpSystem;
+import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.text.ITextSelection;
+import org.eclipse.jface.util.IPropertyChangeListener;
+import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IPartListener2;
 import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.ISelectionService;
+import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IViewReference;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.ViewPart;
 import org.objectweb.asm.util.AbstractVisitor;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
+import de.loskutov.bco.preferences.BCOConstants;
+import de.loskutov.bco.ui.actions.DefaultToggleAction;
 
 
 public class BytecodeReferenceView extends ViewPart implements IPartListener2, ISelectionListener {
 
     private static final String NLS_PREFIX = "BytecodeReferenceView.";
     private Browser browser;
+    private DefaultToggleAction linkWithViewAction;
+    private boolean linkWithView = true;
 
     public void createPartControl(Composite parent) {
         browser = new Browser(parent, SWT.BORDER);
         browser.setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
             + "empty.selection.text"));
-        getSite().getWorkbenchWindow().getPartService().addPartListener(this);
+        final IWorkbenchWindow workbenchWindow = getSite().getWorkbenchWindow();
+        workbenchWindow.getPartService().addPartListener(this);
+
+        linkWithViewAction = new DefaultToggleAction(BCOConstants.LINK_VIEW_TO_EDITOR,
+            new IPropertyChangeListener() {
+                public void propertyChange(PropertyChangeEvent event) {
+                    if (IAction.CHECKED.equals(event.getProperty())) {
+                        linkWithView = Boolean.TRUE == event.getNewValue();
+                        if(linkWithView){
+                            ISelectionService selectionService = workbenchWindow
+                            .getSelectionService();
+                            try {
+                                IViewPart part = workbenchWindow.getActivePage().showView("de.loskutov.bco.views.BytecodeOutlineView");
+                                ISelection selection = selectionService
+                                .getSelection("de.loskutov.bco.views.BytecodeOutlineView");
+                                selectionChanged(part, selection);
+                            } catch (PartInitException e) {
+                                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+                            }
+                        }
+                    }
+                }
+            });
+        final IActionBars bars = getViewSite().getActionBars();
+        final IToolBarManager tmanager = bars.getToolBarManager();
+        tmanager.add(linkWithViewAction);
 
         // TODO run this in background!
         BaseHelpSystem.ensureWebappRunning();
@@ -44,6 +81,8 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
 
     public void dispose() {
         getSite().getWorkbenchWindow().getPartService().removePartListener(this);
+        browser = null;
+        linkWithViewAction = null;
         super.dispose();
     }
 
@@ -105,7 +144,7 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
     }
 
     public void selectionChanged(IWorkbenchPart part, ISelection selection) {
-        if(!(part instanceof BytecodeOutlineView)){
+        if(!linkWithView || !(part instanceof BytecodeOutlineView)){
             return;
         }
         int line = -1;
