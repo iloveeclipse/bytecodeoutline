@@ -4,6 +4,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jdt.core.IBuffer;
 import org.eclipse.jdt.core.IClassFile;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.core.BufferManager;
 import org.eclipse.jdt.internal.ui.javaeditor.ClassFileDocumentProvider;
 import org.eclipse.jdt.internal.ui.javaeditor.IClassFileEditorInput;
@@ -39,7 +40,13 @@ public class BytecodeDocumentProvider extends ClassFileDocumentProvider {
             IClassFile classFile = ((IClassFileEditorInput) editorInput)
                 .getClassFile();
 
-            String source = classFile.getSource();
+            String source = null;
+            try {
+                source = classFile.getSource();
+            } catch (JavaModelException e) {
+                // ignore, this may happen if *class* file is not on class path but inside
+                // of source tree without associated source
+            }
             if (source == null) {
                 // this could be the case for class files which are not on the class path
                 // buffer should be already opened and created in our editor->doOpenBuffer
