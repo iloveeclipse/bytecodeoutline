@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.core.runtime.IStatus;
 import org.objectweb.asm.Opcodes;
@@ -32,19 +33,42 @@ public class DecompiledMethod {
 
     private List localVariables;
 
-    private Map sourceLines; // decompiled line -> source line
+    /**
+     * decompiled line -> source line
+     */
+    private Map sourceLines;
 
-    private Map decompiledLines; // source line -> decompiled line
+    /**
+     * source line -> decompiled line
+     */
+    private Map decompiledLines;
 
-    private Map insns; // decompiled line -> insn
+    /**
+     * decompiled line -> insn
+     */
+    private Map insns;
 
-    private Map opcodes; // decompiled line -> opcode
+    /**
+     *  decompiled line -> opcode
+     */
+    private Map opcodes;
 
-    private Map insnLines; // insn -> decompile line
+    /**
+     * insn -> decompile line
+     */
+    private Map insnLines;
 
     private int lineCount;
 
-    private int firstSourceLine; // first source line, if any
+    /**
+     * first source line, if any
+     */
+    private int firstSourceLine;
+
+    /**
+     * last source line, if any
+     */
+    private int lastSourceLine;
 
     private MethodNode meth;
 
@@ -54,8 +78,12 @@ public class DecompiledMethod {
 
     private int errorInsn;
 
+    private final String owner;
+
+
     public DecompiledMethod(final String owner, final List inputText,
         final Map lineNumbers, final MethodNode meth, final ClassLoader cl, BitSet modes) {
+        this.owner = owner;
         this.text = new ArrayList();
         this.localVariables = meth.localVariables;
         this.sourceLines = new HashMap();
@@ -70,8 +98,13 @@ public class DecompiledMethod {
 
         if (modes.get(BCOConstants.F_SHOW_ANALYZER)
             && (meth.access & Opcodes.ACC_ABSTRACT) == 0) {
-            analyzeMethod(owner, cl);
+            analyzeMethod(cl);
         }
+    }
+
+    public boolean isInit() {
+        return ("<init>".equals(meth.name) && "()V".equals(meth.desc))
+            || "<clinit>".equals(meth.name);
     }
 
     public boolean hasSourceLinesInfo(){
@@ -86,12 +119,49 @@ public class DecompiledMethod {
         return meth.name + meth.desc;
     }
 
+    public boolean containsSource(int sourceLine){
+        return sourceLine >= getFirstSourceLine() && sourceLine <= getLastSourceLine();
+    }
+
+    /**
+     * @param sourceLine
+     * @return nearest match above given source line or the given line for perfect match
+     * or -1 for no match. The return value is method-relative, and need to be transformed
+     * to class absolute
+     */
+    public int getBestDecompiledLine(final int sourceLine){
+        if(!containsSource(sourceLine)){
+            return -1;
+        }
+        Set set = decompiledLines.keySet();
+        if(set.size() == 0){
+            return -1;
+        }
+        int bestMatch = -1;
+        for (Iterator iter = set.iterator(); iter.hasNext();) {
+            int line = ((Integer) iter.next()).intValue();
+            int delta = sourceLine - line;
+            if(delta < 0){
+                continue;
+            } else if(delta == 0){
+                return line;
+            }
+            if(bestMatch < 0 || delta < sourceLine - bestMatch){
+                bestMatch = line;
+            }
+        }
+        if(bestMatch < 0){
+            return -1;
+        }
+        return ((Integer)decompiledLines.get(new Integer(bestMatch))).intValue();
+    }
+
     /**
      * @param owner
      * @param meth
      * @param cl
      */
-    private void analyzeMethod(final String owner, final ClassLoader cl) {
+    private void analyzeMethod(final ClassLoader cl) {
         Analyzer a = new Analyzer(new SimpleVerifier() {
 
             protected Class getClass(final Type t) {
@@ -188,12 +258,13 @@ public class DecompiledMethod {
     }
 
     private void computeMaps(final Map lineNumbers) {
-        int currentSourceLine = -1;
         int currentDecompiledLine = 0;
-        int currentInsn = -1;
-        int currentOpcode = -1;
         int firstLine = -1;
+        int lastLine = -1;
         for (int i = 0; i < text.size(); ++i) {
+            int currentOpcode = -1;
+            int currentInsn = -1;
+            int currentSourceLine = -1;
             Object o = text.get(i);
             if (o instanceof Index) {
                 Index index = (Index) o;
@@ -206,19 +277,24 @@ public class DecompiledMethod {
                     if(firstLine == -1 || currentSourceLine < firstLine){
                         firstLine = currentSourceLine;
                     }
+                    if(lastLine == -1 || currentSourceLine > lastLine){
+                        lastLine = currentSourceLine;
+                    }
                 }
                 currentInsn = index.insn;
                 currentOpcode = index.opcode;
             } else {
                 ++currentDecompiledLine;
             }
-            Integer csl = new Integer(currentSourceLine);
             Integer cdl = new Integer(currentDecompiledLine);
             Integer ci = new Integer(currentInsn);
             Integer co = new Integer(currentOpcode);
-            sourceLines.put(cdl, csl);
-            if (decompiledLines.get(csl) == null) {
-                decompiledLines.put(csl, cdl);
+            if(currentSourceLine >= 0){
+                Integer csl = new Integer(currentSourceLine);
+                sourceLines.put(cdl, csl);
+                if (decompiledLines.get(csl) == null) {
+                    decompiledLines.put(csl, cdl);
+                }
             }
             insns.put(cdl, ci);
             opcodes.put(cdl, co);
@@ -228,6 +304,7 @@ public class DecompiledMethod {
         }
         lineCount = currentDecompiledLine;
         firstSourceLine = firstLine;
+        lastSourceLine = lastLine;
     }
 
     public String getText() {
@@ -321,6 +398,10 @@ public class DecompiledMethod {
 
     public int getFirstSourceLine(){
         return firstSourceLine;
+    }
+
+    public int getLastSourceLine(){
+        return lastSourceLine;
     }
 
     public int getSourceLine(final int decompiledLine) {
@@ -503,4 +584,23 @@ public class DecompiledMethod {
             ? -1
             : i.intValue();
     }
+
+    /**
+     * Returns <code>true</code> if this <code>DecompiledMethod</code> is the same as the o argument.
+     *
+     * @return <code>true</code> if this <code>DecompiledMethod</code> is the same as the o argument.
+     */
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof DecompiledMethod)) {
+            return false;
+        }
+        DecompiledMethod another = (DecompiledMethod) o;
+        return getSignature().equals(another.getSignature())
+            && (owner != null? owner.equals(another.owner) : true);
+    }
+
+
 }
