@@ -405,17 +405,13 @@ public class JdtUtils {
         for (int i = 0; i < innerClasses.size(); i++) {
             InnerClassNode in = (InnerClassNode) innerClasses.get(i);
             if(typeSignature.equals(in.name)){
-                try {
-                    int idx = typeSignature.lastIndexOf(PACKAGE_SEPARATOR);
-                    String className = typeSignature;
-                    if (idx > 0) {
-                        className = typeSignature.substring(idx + 1, typeSignature.length());
-                    }
-                    className += ".class";
-                    return cf.getType().getPackageFragment().getClassFile(className);
-                } catch (JavaModelException e) {
-                    BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+                int idx = typeSignature.lastIndexOf(PACKAGE_SEPARATOR);
+                String className = typeSignature;
+                if (idx > 0) {
+                    className = typeSignature.substring(idx + 1, typeSignature.length());
                 }
+                className += ".class";
+                return cf.getType().getPackageFragment().getClassFile(className);
             }
         }
         return null;

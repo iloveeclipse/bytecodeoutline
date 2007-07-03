@@ -751,6 +751,11 @@ public class BytecodeOutlineView extends ViewPart {
                     selectionChangedAction.run();
                 }
             }
+            public void mouseUp(MouseEvent e) {
+                if (modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR)) {
+                    selectionChangedAction.run();
+                }
+            }
         });
 
         textControl.addKeyListener(new KeyListener() {
@@ -1319,23 +1324,41 @@ public class BytecodeOutlineView extends ViewPart {
             return;
         }
 
-        int decompiledLine;
+        int startDecLine;
+        int endDecLine = -1;
         if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
-            decompiledLine = tableControl.getSelectionIndex();
+            startDecLine = tableControl.getSelectionIndex();
         } else {
-            decompiledLine = textControl.getLineAtOffset(selection.x);
+            startDecLine = textControl.getLineAtOffset(selection.x);
+            endDecLine = textControl.getLineAtOffset(selection.y);
         }
-        int sourceLine = lastDecompiledResult.getSourceLine(decompiledLine);
+        int startSourceLine = lastDecompiledResult.getSourceLine(startDecLine);
+        int endSourceLine = -1;
+        if(endDecLine > 0){
+            endSourceLine = lastDecompiledResult.getSourceLine(endDecLine);
+        }
+
+        if(endSourceLine < startSourceLine){
+            int tmp = startSourceLine;
+            startSourceLine = endSourceLine;
+            endSourceLine = tmp;
+        }
 
         try {
-            if (sourceLine > 0) {
+            if (startSourceLine > 0) {
                 IDocument document = javaEditor.getDocumentProvider()
                     .getDocument(javaEditor.getEditorInput());
                 try {
                     IRegion lineInfo = document
-                        .getLineInformation(sourceLine - 1);
-                    EclipseUtils.selectInEditor(javaEditor, lineInfo
-                        .getOffset(), lineInfo.getLength());
+                        .getLineInformation(startSourceLine - 1);
+
+                    int startOffset = lineInfo.getOffset();
+                    int length = lineInfo.getLength();
+                    if(endSourceLine > 0){
+                        IRegion region = document.getLineInformation(endSourceLine - 1);
+                        length = region.getLength() + (region.getOffset() - startOffset);
+                    }
+                    EclipseUtils.selectInEditor(javaEditor, startOffset, length);
                 } catch (BadLocationException e) {
                     // do nothing. This could happens e.g. if editor does not contain
                     // full source code etc, so that line info is not exist in editor
@@ -1346,7 +1369,7 @@ public class BytecodeOutlineView extends ViewPart {
         }
 
         int bytecodeOffset = lastDecompiledResult
-            .getBytecodeOffset(decompiledLine);
+            .getBytecodeOffset(startDecLine);
         updateStatus(lastDecompiledResult, bytecodeOffset, -1);
     }
 

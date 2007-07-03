@@ -123,7 +123,7 @@ public class BytecodeBreakpointAdapter extends ToggleBreakpointAdapter {
                             compilationUnit.accept(locator);
                             String methodName = locator.getMethodName();
                             if (methodName == null) {
-                                report(ActionMessages.ManageMethodBreakpointActionDelegate_CantAdd, part);
+                                report("Method breakpoints can only be added to concrete methods.", part);
                                 return Status.OK_STATUS;
                             }
                             String typeName = locator.getTypeName();
@@ -220,7 +220,7 @@ public class BytecodeBreakpointAdapter extends ToggleBreakpointAdapter {
                             compilationUnit.accept(locator);
                             String fieldName = locator.getFieldName();
                             if (fieldName == null) {
-                                report(ActionMessages.ManageWatchpointActionDelegate_CantAdd, part);
+                                report("Watchpoints can only be added to field members.", part);
                                 return Status.OK_STATUS;
                             }
                             int idx = fieldName.indexOf("final"); //$NON-NLS-1$
@@ -233,7 +233,7 @@ public class BytecodeBreakpointAdapter extends ToggleBreakpointAdapter {
                             IJavaWatchpoint existing = getWatchpoint(typeName, fieldName);
                             if (existing == null) {
                                 if(!allowed) {
-                                    report(ActionMessages.ToggleBreakpointAdapter_8, part);
+                                    report("You cannot create create watchpoints on final or static final members.", part);
                                     return Status.OK_STATUS;
                                 }
                                 createWatchpoint(getResource((IEditorPart) part), typeName, fieldName, -1, -1, -1, 0, true, new HashMap(10));
@@ -270,7 +270,7 @@ public class BytecodeBreakpointAdapter extends ToggleBreakpointAdapter {
                             IJavaBreakpoint breakpoint = getWatchpoint(typeName, fieldName);
                             if (breakpoint == null) {
                                 if(!allowed) {
-                                    report(ActionMessages.ToggleBreakpointAdapter_8, part);
+                                    report("You cannot create create watchpoints on final or static final members.", part);
                                     return Status.OK_STATUS;
                                 }
                                 IResource resource = null;
@@ -359,7 +359,7 @@ public class BytecodeBreakpointAdapter extends ToggleBreakpointAdapter {
                                     if (offset < start || offset > end) {
                                         // not in the inner type
                                         IStatusLineManager statusLine = editor.getEditorSite().getActionBars().getStatusLineManager();
-                                        statusLine.setErrorMessage(MessageFormat.format(ActionMessages.ManageBreakpointRulerAction_Breakpoints_can_only_be_created_within_the_type_associated_with_the_editor___0___1, new String[] { type.getTypeQualifiedName() }));
+                                        statusLine.setErrorMessage(MessageFormat.format("Breakpoints can only be created within the type associated with the editor: {0}.", new String[] { type.getTypeQualifiedName() }));
                                         Display.getCurrent().beep();
                                         return Status.OK_STATUS;
                                     }

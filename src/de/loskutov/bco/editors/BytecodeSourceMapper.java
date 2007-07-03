@@ -13,7 +13,8 @@ import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.internal.ui.contexts.DebugContextManager;
-import org.eclipse.debug.internal.ui.contexts.provisional.IDebugContextListener;
+import org.eclipse.debug.ui.contexts.DebugContextEvent;
+import org.eclipse.debug.ui.contexts.IDebugContextListener;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
@@ -27,7 +28,6 @@ import org.eclipse.jdt.internal.core.BinaryType;
 import org.eclipse.jdt.internal.debug.core.model.JDIStackFrame;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.ui.IWorkbenchPart;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
@@ -53,13 +53,8 @@ public class BytecodeSourceMapper implements IDebugContextListener {
 
     public char[] getSource(IClassFile classFile, BitSet decompilerFlags) {
         IType type;
-        try {
-            type = classFile.getType();
-        } catch (JavaModelException e) {
-            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-            return null;
-        }
-        if (!type.isBinary()) {
+        type = classFile.getType();
+        if (type == null || !type.isBinary()) {
             return null;
         }
         IBinaryType info = null;
@@ -255,7 +250,26 @@ public class BytecodeSourceMapper implements IDebugContextListener {
         return 0;
     }
 
-    public void contextActivated(ISelection selection, IWorkbenchPart part) {
+    public IJavaReferenceType getLastTypeInDebugger() {
+        return lastTypeInDebugger;
+    }
+
+    public int mapDebuggerToDecompiled(IClassFile cf) {
+        if(cf == null || lastMethodInDebugger == null){
+            return -1;
+        }
+        DecompiledClass dc = (DecompiledClass) classToDecompiled.get(cf);
+        if (dc != null) {
+            return dc.getDecompiledLine(lastMethodInDebugger);
+        }
+        return -1;
+    }
+
+    /* (non-Javadoc)
+     * @see org.eclipse.debug.ui.contexts.IDebugContextListener#debugContextChanged(org.eclipse.debug.ui.contexts.DebugContextEvent)
+     */
+    public void debugContextChanged(DebugContextEvent event) {
+        ISelection selection = event.getContext();
         if(selection instanceof IStructuredSelection){
             IStructuredSelection sSelection = (IStructuredSelection) selection;
             if(sSelection.isEmpty()){
@@ -272,25 +286,6 @@ public class BytecodeSourceMapper implements IDebugContextListener {
                 }
             }
         }
-    }
-
-    public void contextChanged(ISelection selection, IWorkbenchPart part) {
-        contextActivated(selection, part);
-    }
-
-    public IJavaReferenceType getLastTypeInDebugger() {
-        return lastTypeInDebugger;
-    }
-
-    public int mapDebuggerToDecompiled(IClassFile cf) {
-        if(cf == null || lastMethodInDebugger == null){
-            return -1;
-        }
-        DecompiledClass dc = (DecompiledClass) classToDecompiled.get(cf);
-        if (dc != null) {
-            return dc.getDecompiledLine(lastMethodInDebugger);
-        }
-        return -1;
     }
 
 }
