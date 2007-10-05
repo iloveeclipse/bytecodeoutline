@@ -1,3 +1,10 @@
+/*****************************************************************************************
+ * Copyright (c) 2007 Andrei Loskutov. All rights reserved. This program and the
+ * accompanying materials are made available under the terms of the BSD License which
+ * accompanies this distribution, and is available at
+ * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrei Loskutov -
+ * initial API and implementation
+ ****************************************************************************************/
 package de.loskutov.bco.views;
 
 import java.util.ArrayList;

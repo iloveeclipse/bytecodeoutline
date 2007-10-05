@@ -183,6 +183,7 @@
             class="de.loskutov.bco.editors.BytecodeClassFileEditor"
             contributorClass="de.loskutov.bco.editors.BytecodeActionBarContributor"
             default="true"
+            extensions="class"
             icon="icons/bytecodeview.gif"
             id="de.loskutov.bco.editors.BytecodeClassFileEditor"
             name="Class File Bytecode Viewer"

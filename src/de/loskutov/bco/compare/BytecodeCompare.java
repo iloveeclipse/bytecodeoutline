@@ -8,6 +8,8 @@
 
 package de.loskutov.bco.compare;
 
+import java.lang.reflect.Field;
+
 import org.eclipse.compare.CompareConfiguration;
 import org.eclipse.compare.CompareEditorInput;
 import org.eclipse.compare.CompareUI;
@@ -18,11 +20,8 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jface.action.Action;
-import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.action.ToolBarManager;
-import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.IReusableEditor;
@@ -58,63 +57,54 @@ public class BytecodeCompare extends CompareEditorInput {
         super(new CompareConfiguration());
         this.left = left;
         this.right = right;
+        toggleAsmifierModeAction = new DefaultToggleAction(
+            BCOConstants.DIFF_SHOW_ASMIFIER_CODE) {
 
-        toggleAsmifierModeAction = new DefaultToggleAction(BCOConstants.SHOW_ASMIFIER_CODE,
-            new IPropertyChangeListener(){
-                public void propertyChange(PropertyChangeEvent event) {
-                    if(IAction.CHECKED.equals(event.getProperty())){
-                        boolean asmifier = Boolean.TRUE == event.getNewValue();
-                        toggleMode(BCOConstants.F_SHOW_ASMIFIER_CODE, asmifier, asmifier);
-                    }
-                }
-            });
+            public void run(boolean newState) {
+                toggleMode(
+                    BCOConstants.F_SHOW_ASMIFIER_CODE, newState, newState);
+            }
+        };
 
-        hideLineInfoAction = new DefaultToggleAction(BCOConstants.SHOW_LINE_INFO, new IPropertyChangeListener(){
-                public void propertyChange(PropertyChangeEvent event) {
-                    if(IAction.CHECKED.equals(event.getProperty())){
-                        toggleMode(
-                            BCOConstants.F_SHOW_LINE_INFO,
-                            Boolean.TRUE == event.getNewValue(),
-                            toggleAsmifierModeAction.isChecked());
-                    }
-                }
-            });
+        hideLineInfoAction = new DefaultToggleAction(
+            BCOConstants.DIFF_SHOW_LINE_INFO) {
 
-        hideLocalsAction = new DefaultToggleAction(BCOConstants.SHOW_VARIABLES,
-            new IPropertyChangeListener(){
-                public void propertyChange(PropertyChangeEvent event) {
-                    if(IAction.CHECKED.equals(event.getProperty())){
-                        toggleMode(
-                            BCOConstants.F_SHOW_VARIABLES,
-                            Boolean.TRUE == event.getNewValue(),
-                            toggleAsmifierModeAction.isChecked());
-                    }
-                }
-            });
+            public void run(boolean newState) {
+                toggleMode(
+                    BCOConstants.F_SHOW_LINE_INFO, newState,
+                    toggleAsmifierModeAction.isChecked());
+            }
+        };
 
-        hideStackMapAction = new DefaultToggleAction(BCOConstants.SHOW_STACKMAP,
-            new IPropertyChangeListener(){
-                public void propertyChange(PropertyChangeEvent event) {
-                    if(IAction.CHECKED.equals(event.getProperty())){
-                        toggleMode(
-                            BCOConstants.F_SHOW_STACKMAP,
-                            Boolean.TRUE == event.getNewValue(),
-                            toggleAsmifierModeAction.isChecked());
-                    }
-                }
-            });
+        hideLocalsAction = new DefaultToggleAction(
+            BCOConstants.DIFF_SHOW_VARIABLES) {
 
-        expandStackMapAction = new DefaultToggleAction(BCOConstants.EXPAND_STACKMAP,
-            new IPropertyChangeListener(){
-                public void propertyChange(PropertyChangeEvent event) {
-                    if(IAction.CHECKED.equals(event.getProperty())){
-                        toggleMode(
-                            BCOConstants.F_EXPAND_STACKMAP,
-                            Boolean.TRUE == event.getNewValue(),
-                            toggleAsmifierModeAction.isChecked());
-                    }
-                }
-            });
+            public void run(boolean newState) {
+                toggleMode(
+                    BCOConstants.F_SHOW_VARIABLES, newState,
+                    toggleAsmifierModeAction.isChecked());
+            }
+        };
+
+        hideStackMapAction = new DefaultToggleAction(
+            BCOConstants.DIFF_SHOW_STACKMAP) {
+
+            public void run(boolean newState) {
+                toggleMode(
+                    BCOConstants.F_SHOW_STACKMAP, newState,
+                    toggleAsmifierModeAction.isChecked());
+            }
+        };
+
+        expandStackMapAction = new DefaultToggleAction(
+            BCOConstants.DIFF_EXPAND_STACKMAP) {
+
+            public void run(boolean newState) {
+                toggleMode(
+                    BCOConstants.F_EXPAND_STACKMAP, newState,
+                    toggleAsmifierModeAction.isChecked());
+            }
+        };
     }
 
     /** @see CompareEditorInput#prepareInput(IProgressMonitor) */
@@ -160,13 +150,51 @@ public class BytecodeCompare extends CompareEditorInput {
             + left.getElementName() + " - " + right.getElementName()); //$NON-NLS-1$
     }
 
+    public CompareViewerSwitchingPane getInputPane() {
+        try {
+            Field field = CompareEditorInput.class.getDeclaredField("fContentInputPane");
+            field.setAccessible(true);
+            Object object = field.get(this);
+            if(object instanceof CompareViewerSwitchingPane) {
+                return (CompareViewerSwitchingPane) object;
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+
+        // does not work after changing content: this is a bug in CompareEditorInput, because
+        // navigator instance holds old (not up to date) instance of the input pane
+//        ICompareNavigator navigator = getNavigator();
+//        if(navigator instanceof CompareNavigator) {
+//            CompareNavigator compareNavigator = (CompareNavigator) navigator;
+//            try {
+//                Method method = compareNavigator.getClass().getDeclaredMethod(
+//                    "getPanes", null);
+//                method.setAccessible(true);
+//                Object object = method.invoke(compareNavigator, null);
+//                if(object instanceof Object[]) {
+//                    Object[] panes = (Object[]) object;
+//                    if(panes.length == 4 && panes[3] instanceof CompareViewerSwitchingPane) {
+//                        // there are 4 panels, last one is the input pane that we search for
+//                        // see org.eclipse.compare.CompareEditorInput.getNavigator()
+//                        return (CompareViewerSwitchingPane) panes[3];
+//                    }
+//                }
+//            } catch (Exception e) {
+//                // ignore.
+//            }
+//        }
+        return null;
+    }
 
     /**
      * @see org.eclipse.compare.CompareEditorInput#createContents(org.eclipse.swt.widgets.Composite)
      */
     public Control createContents(Composite parent) {
         Object obj = parent.getData();
-
+        if(obj == null) {
+            obj = parent.getParent().getData();
+        }
         // dirty hook on this place to get reference to editor
         // CompareEditor extends EditorPart implements IReusableEditor
         if(obj instanceof IReusableEditor){
@@ -175,72 +203,65 @@ public class BytecodeCompare extends CompareEditorInput {
 
         Control control = super.createContents(parent);
 
-        // dirty hook on this place to get reference to CompareViewerPane
-        // from CompareEditorInput: see field
-        // private CompareViewerSwitchingPane fContentInputPane;
-        // see also CompareEditorInput.createContents:
-        //  fComposite.setData("Nav", //$NON-NLS-1$
-        Object obj2 = control.getData("Nav");  //$NON-NLS-1$
-        if (obj2 instanceof CompareViewerSwitchingPane[]) {
-            // there are 4 panels, last one is the input pane that we search for
-            CompareViewerSwitchingPane[] panels = (CompareViewerSwitchingPane[])obj2;
-            if(panels.length > 0){
-                Composite comparePane = panels[panels.length-1];
-                ToolBarManager toolBarManager2 = CompareViewerPane
-                    .getToolBarManager(comparePane);
-                boolean separatorExist = false;
-                if (toolBarManager2.find(hideLineInfoAction.getId()) == null) {
-                    if(!separatorExist) {
-                        separatorExist = true;
-                        toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
-                    }
-                    toolBarManager2.insertBefore("bco", hideLineInfoAction); //$NON-NLS-1$
-                    toolBarManager2.update(true);
+        CompareViewerSwitchingPane inputPane = getInputPane();
+        if (inputPane != null) {
+            ToolBarManager toolBarManager2 = CompareViewerPane
+                .getToolBarManager(inputPane);
+            if(toolBarManager2 == null) {
+                return control;
+            }
+            boolean separatorExist = false;
+            if (toolBarManager2.find(hideLineInfoAction.getId()) == null) {
+                if(!separatorExist) {
+                    separatorExist = true;
+                    toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
                 }
-                if (toolBarManager2.find(hideLocalsAction.getId()) == null) {
-                    if(!separatorExist) {
-                        separatorExist = true;
-                        toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
-                    }
-                    toolBarManager2.insertBefore("bco", hideLocalsAction); //$NON-NLS-1$
-                    toolBarManager2.update(true);
+                toolBarManager2.insertBefore("bco", hideLineInfoAction); //$NON-NLS-1$
+//                toolBarManager2.update(true);
+            }
+            if (toolBarManager2.find(hideLocalsAction.getId()) == null) {
+                if(!separatorExist) {
+                    separatorExist = true;
+                    toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
                 }
+                toolBarManager2.insertBefore("bco", hideLocalsAction); //$NON-NLS-1$
+//                toolBarManager2.update(true);
+            }
 
-                if (toolBarManager2.find(hideStackMapAction.getId()) == null) {
-                    if(!separatorExist) {
-                        separatorExist = true;
-                        toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
-                    }
-                    toolBarManager2.insertBefore("bco", hideStackMapAction); //$NON-NLS-1$
-                    toolBarManager2.update(true);
+            if (toolBarManager2.find(hideStackMapAction.getId()) == null) {
+                if(!separatorExist) {
+                    separatorExist = true;
+                    toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
                 }
-                if (toolBarManager2.find(expandStackMapAction.getId()) == null) {
-                    if(!separatorExist) {
-                        separatorExist = true;
-                        toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
-                    }
-                    toolBarManager2.insertBefore("bco", expandStackMapAction); //$NON-NLS-1$
-                    toolBarManager2.update(true);
+                toolBarManager2.insertBefore("bco", hideStackMapAction); //$NON-NLS-1$
+//                toolBarManager2.update(true);
+            }
+            if (toolBarManager2.find(expandStackMapAction.getId()) == null) {
+                if(!separatorExist) {
+                    separatorExist = true;
+                    toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
                 }
+                toolBarManager2.insertBefore("bco", expandStackMapAction); //$NON-NLS-1$
+//                toolBarManager2.update(true);
+            }
 
-                if (toolBarManager2.find(toggleAsmifierModeAction.getId()) == null) {
-                    if(!separatorExist) {
-                        toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
-                        separatorExist = true;
-                    }
-                    toolBarManager2.insertBefore("bco", toggleAsmifierModeAction); //$NON-NLS-1$
-                    toolBarManager2.update(true);
+            if (toolBarManager2.find(toggleAsmifierModeAction.getId()) == null) {
+                if(!separatorExist) {
+                    toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
+                    separatorExist = true;
                 }
-                try {
-                    toolBarManager2.getControl().getParent().layout(true);
-                    toolBarManager2.getControl().getParent().update();
-                } catch (NullPointerException e) {
-                    // ignore, i'm just curios why we need this code in 3.2 and expect
-                    // some unwanted side effects...
-                }
+                toolBarManager2.insertBefore("bco", toggleAsmifierModeAction); //$NON-NLS-1$
+//                toolBarManager2.update(true);
+            }
+            try {
+                toolBarManager2.update(true);
+                toolBarManager2.getControl().getParent().layout(true);
+                toolBarManager2.getControl().getParent().update();
+            } catch (NullPointerException e) {
+                // ignore, i'm just curios why we need this code in 3.2 and expect
+                // some unwanted side effects...
             }
         }
-
         return control;
     }
 
@@ -256,6 +277,10 @@ public class BytecodeCompare extends CompareEditorInput {
         right.setMode(mode, value);
         right.setMode(BCOConstants.F_SHOW_ASMIFIER_CODE, isASMifierMode);
         right.setType(contentType);
-        CompareUI.reuseCompareEditor(this, myEditor);
+
+//        createDiffViewer.refresh();
+//        myEditor.setInput(this);
+        CompareUI.reuseCompareEditor(new BytecodeCompare(left, right), myEditor);
+//        CompareUI.reuseCompareEditor(this, myEditor);
     }
 }

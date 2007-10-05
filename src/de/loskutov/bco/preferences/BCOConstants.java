@@ -18,9 +18,14 @@ import java.util.Map;
  */
 public interface BCOConstants {
     /**
-     * toggle "view content/selection follows editor selection"
+     * toggle BCO "view content/selection follows editor selection"
      */
     String LINK_VIEW_TO_EDITOR = "linkViewToEditor";
+
+    /**
+     * toggle reference "view content/selection follows editor selection"
+     */
+    String LINK_REF_VIEW_TO_EDITOR = "linkRefViewToEditor";
 
     /**
      * show bytecode only for selected element in editor
@@ -33,6 +38,11 @@ public interface BCOConstants {
     String SHOW_ASMIFIER_CODE = "showASMifierCode";
 
     /**
+     * show ASMifier java code instead of bytecode in compare pane
+     */
+    String DIFF_SHOW_ASMIFIER_CODE = "diff_showASMifierCode";
+
+    /**
      * show raw bytecode (without any additional help like readable class names etc)
      */
     String SHOW_RAW_BYTECODE = "showRawBytecode";
@@ -43,9 +53,19 @@ public interface BCOConstants {
     String SHOW_LINE_INFO = "showLineInfo";
 
     /**
+     * show line information (if available) in compare pane
+     */
+    String DIFF_SHOW_LINE_INFO = "diff_showLineInfo";
+
+    /**
      * show variables information (if available)
      */
     String SHOW_VARIABLES = "showVariables";
+
+    /**
+     * show variables information (if available) in compare pane
+     */
+    String DIFF_SHOW_VARIABLES = "diff_showVariables";
 
     /**
      * recalculate stackmap (to see computed frames, works for all classes even before MUSTANG)
@@ -53,9 +73,19 @@ public interface BCOConstants {
     String SHOW_STACKMAP = "showStackmap";
 
     /**
+     * recalculate stackmap (to see computed frames, works for all classes even before MUSTANG) in compare
+     */
+    String DIFF_SHOW_STACKMAP = "diff_showStackmap";
+
+    /**
      * expand stackmap frames
      */
     String EXPAND_STACKMAP = "expandStackmap";
+
+    /**
+     * expand stackmap frames in compare pane
+     */
+    String DIFF_EXPAND_STACKMAP = "diff_expandStackmap";
 
     /**
      * recalculate stackmap (to see computed frames, works for all classes even before MUSTANG)

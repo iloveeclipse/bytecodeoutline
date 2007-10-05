@@ -10,7 +10,6 @@ package de.loskutov.bco.ui.actions;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.preference.IPreferenceStore;
-import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
@@ -23,44 +22,48 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
  * event name.
  * @author Andrei
  */
-public class DefaultToggleAction extends Action {
+public abstract class DefaultToggleAction extends Action {
 
     private static final String ACTION = "action";
-    private boolean isChecked;
 
-    public DefaultToggleAction(String id, IPropertyChangeListener listener) {
+    public DefaultToggleAction(String id) {
         super();
         setId(id);
         init();
 
         IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
 
-        isChecked = store.getBoolean(id);
+        boolean isChecked = store.getBoolean(id);
         setChecked(isChecked);
-        // as last action, after setChecked(), to prevent unexpected listener
-        // events during initialization
-        addPropertyChangeListener(listener);
     }
 
     private void init(){
+        String myId = getId();
+        if(myId != null && myId.startsWith("diff_")) {
+            myId = myId.substring("diff_".length());
+        }
         setImageDescriptor(AbstractUIPlugin
             .imageDescriptorFromPlugin(
                 BytecodeOutlinePlugin.getDefault().getBundle()
                     .getSymbolicName(),
                 BytecodeOutlinePlugin
-                    .getResourceString(ACTION + "." + getId() + "." + IMAGE)));
+                    .getResourceString(ACTION + "." + myId + "." + IMAGE)));
 
         setText(BytecodeOutlinePlugin
-            .getResourceString(ACTION + "." + getId() + "." + TEXT));
+            .getResourceString(ACTION + "." + myId + "." + TEXT));
         setToolTipText(BytecodeOutlinePlugin
-            .getResourceString(ACTION + "." + getId() + "." + TOOL_TIP_TEXT));
+            .getResourceString(ACTION + "." + myId + "." + TOOL_TIP_TEXT));
     }
 
     /**
      * @see org.eclipse.jface.action.IAction#run()
      */
-    public void run() {
-        isChecked = !isChecked;
-        setChecked(isChecked);
+    public final void run() {
+        boolean isChecked = isChecked();
+        IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
+        store.setValue(getId(), isChecked);
+        run(isChecked);
     }
+
+    public abstract void run(boolean newState);
 }

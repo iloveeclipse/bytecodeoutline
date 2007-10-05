@@ -41,8 +41,6 @@ import org.eclipse.jface.text.ITextOperationTarget;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.text.TextEvent;
 import org.eclipse.jface.text.TextViewer;
-import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
@@ -446,160 +444,118 @@ public class BytecodeOutlineView extends ViewPart {
         };
 
         linkWithEditorAction = new DefaultToggleAction(
-            BCOConstants.LINK_VIEW_TO_EDITOR, new IPropertyChangeListener() {
+            BCOConstants.LINK_VIEW_TO_EDITOR) {
 
-                public void propertyChange(PropertyChangeEvent event) {
-                    if (IAction.CHECKED.equals(event.getProperty())) {
-                        setMode(
-                            BCOConstants.F_LINK_VIEW_TO_EDITOR,
-                            Boolean.TRUE == event.getNewValue());
-                        if (modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR)) {
-                            showSelectedOnlyAction.setEnabled(true);
-                            toggleVerifierAction.setEnabled(true);
-                            hideLineInfoAction.setEnabled(true);
-                            hideLocalsAction.setEnabled(true);
-                            toggleASMifierModeAction.setEnabled(true);
-                            if (!toggleASMifierModeAction.isChecked()) {
-                                setRawModeAction.setEnabled(true);
-                            }
-                            checkOpenEditors(true);
-                            // refreshView();
-                        }
+            public void run(boolean newState) {
+                setMode(BCOConstants.F_LINK_VIEW_TO_EDITOR, newState);
+                if (modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR)) {
+                    showSelectedOnlyAction.setEnabled(true);
+                    toggleVerifierAction.setEnabled(true);
+                    hideLineInfoAction.setEnabled(true);
+                    hideLocalsAction.setEnabled(true);
+                    toggleASMifierModeAction.setEnabled(true);
+                    if (!toggleASMifierModeAction.isChecked()) {
+                        setRawModeAction.setEnabled(true);
                     }
+                    checkOpenEditors(true);
+                    // refreshView();
                 }
-            });
+            }
+        };
 
         showSelectedOnlyAction = new DefaultToggleAction(
-            BCOConstants.SHOW_ONLY_SELECTED_ELEMENT,
-            new IPropertyChangeListener() {
+            BCOConstants.SHOW_ONLY_SELECTED_ELEMENT) {
 
-                public void propertyChange(PropertyChangeEvent event) {
-                    if (IAction.CHECKED.equals(event.getProperty())) {
-                        setMode(
-                            BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT,
-                            Boolean.TRUE == event.getNewValue());
-                        inputChanged = true;
-                        refreshView();
-                    }
-                }
-            });
+            public void run(boolean newState) {
+                setMode(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT, newState);
+                inputChanged = true;
+                refreshView();
+            }
+        };
 
         setRawModeAction = new DefaultToggleAction(
-            BCOConstants.SHOW_RAW_BYTECODE, new IPropertyChangeListener() {
+            BCOConstants.SHOW_RAW_BYTECODE) {
 
-                public void propertyChange(PropertyChangeEvent event) {
-                    if (IAction.CHECKED.equals(event.getProperty())) {
-                        setMode(
-                            BCOConstants.F_SHOW_RAW_BYTECODE,
-                            Boolean.TRUE == event.getNewValue());
-                        inputChanged = true;
-                        refreshView();
-                    }
-                }
-            });
+            public void run(boolean newState) {
+                setMode(BCOConstants.F_SHOW_RAW_BYTECODE, newState);
+                inputChanged = true;
+                refreshView();
+            }
+        };
 
         hideLineInfoAction = new DefaultToggleAction(
-            BCOConstants.SHOW_LINE_INFO, new IPropertyChangeListener() {
+            BCOConstants.SHOW_LINE_INFO) {
 
-                public void propertyChange(PropertyChangeEvent event) {
-                    if (IAction.CHECKED.equals(event.getProperty())) {
-                        setMode(
-                            BCOConstants.F_SHOW_LINE_INFO,
-                            Boolean.TRUE == event.getNewValue());
-                        inputChanged = true;
-                        refreshView();
-                    }
-                }
-            });
+            public void run(boolean newState) {
+                setMode(BCOConstants.F_SHOW_LINE_INFO, newState);
+                inputChanged = true;
+                refreshView();
+            }
+        };
 
-        hideLocalsAction = new DefaultToggleAction(
-            BCOConstants.SHOW_VARIABLES, new IPropertyChangeListener() {
+        hideLocalsAction = new DefaultToggleAction(BCOConstants.SHOW_VARIABLES) {
 
-                public void propertyChange(PropertyChangeEvent event) {
-                    if (IAction.CHECKED.equals(event.getProperty())) {
-                        setMode(
-                            BCOConstants.F_SHOW_VARIABLES,
-                            Boolean.TRUE == event.getNewValue());
-                        inputChanged = true;
-                        refreshView();
-                    }
-                }
-            });
+            public void run(boolean newState) {
+                setMode(BCOConstants.F_SHOW_VARIABLES, newState);
+                inputChanged = true;
+                refreshView();
+            }
+        };
 
-        hideStackMapAction = new DefaultToggleAction(
-            BCOConstants.SHOW_STACKMAP, new IPropertyChangeListener() {
+        hideStackMapAction = new DefaultToggleAction(BCOConstants.SHOW_STACKMAP) {
 
-                public void propertyChange(PropertyChangeEvent event) {
-                    if (IAction.CHECKED.equals(event.getProperty())) {
-                        setMode(
-                            BCOConstants.F_SHOW_STACKMAP, Boolean.TRUE == event
-                                .getNewValue());
-                        inputChanged = true;
-                        refreshView();
-                    }
-                }
-            });
+            public void run(boolean newState) {
+                setMode(BCOConstants.F_SHOW_STACKMAP, newState);
+                inputChanged = true;
+                refreshView();
+            }
+        };
 
         expandStackMapAction = new DefaultToggleAction(
-            BCOConstants.EXPAND_STACKMAP, new IPropertyChangeListener() {
+            BCOConstants.EXPAND_STACKMAP) {
 
-                public void propertyChange(PropertyChangeEvent event) {
-                    if (IAction.CHECKED.equals(event.getProperty())) {
-                        setMode(
-                            BCOConstants.F_EXPAND_STACKMAP,
-                            Boolean.TRUE == event.getNewValue());
-                        inputChanged = true;
-                        refreshView();
-                    }
-                }
-            });
+            public void run(boolean newState) {
+                setMode(BCOConstants.F_EXPAND_STACKMAP, newState);
+                inputChanged = true;
+                refreshView();
+            }
+        };
 
         showHexValuesAction = new DefaultToggleAction(
-            BCOConstants.SHOW_HEX_VALUES, new IPropertyChangeListener() {
+            BCOConstants.SHOW_HEX_VALUES) {
 
-                public void propertyChange(PropertyChangeEvent event) {
-                    if (IAction.CHECKED.equals(event.getProperty())) {
-                        setMode(
-                            BCOConstants.F_SHOW_HEX_VALUES,
-                            Boolean.TRUE == event.getNewValue());
-                        inputChanged = true;
-                        refreshView();
-                    }
-                }
-            });
+            public void run(boolean newState) {
+                setMode(BCOConstants.F_SHOW_HEX_VALUES, newState);
+                inputChanged = true;
+                refreshView();
+            }
+        };
 
         toggleASMifierModeAction = new DefaultToggleAction(
-            BCOConstants.SHOW_ASMIFIER_CODE, new IPropertyChangeListener() {
+            BCOConstants.SHOW_ASMIFIER_CODE) {
 
-                public void propertyChange(PropertyChangeEvent event) {
-                    if (IAction.CHECKED.equals(event.getProperty())) {
-                        boolean checked = Boolean.TRUE == event.getNewValue();
-                        setMode(BCOConstants.F_SHOW_ASMIFIER_CODE, checked);
-                        if (checked) {
-                            setMode(BCOConstants.F_SHOW_RAW_BYTECODE, true);
-                            setRawModeAction.setEnabled(false);
-                        } else {
-                            setRawModeAction.setEnabled(true);
-                        }
-                        inputChanged = true;
-                        refreshView();
-                    }
+            public void run(boolean newState) {
+                setMode(BCOConstants.F_SHOW_ASMIFIER_CODE, newState);
+                if (newState) {
+                    setMode(BCOConstants.F_SHOW_RAW_BYTECODE, true);
+                    setRawModeAction.setEnabled(false);
+                } else {
+                    setRawModeAction.setEnabled(true);
                 }
-            });
+                inputChanged = true;
+                refreshView();
+            }
+        };
 
         toggleVerifierAction = new DefaultToggleAction(
-            BCOConstants.SHOW_ANALYZER, new IPropertyChangeListener() {
+            BCOConstants.SHOW_ANALYZER) {
 
-                public void propertyChange(PropertyChangeEvent event) {
-                    if (IAction.CHECKED.equals(event.getProperty())) {
-                        boolean showAnalyzer = Boolean.TRUE == event
-                            .getNewValue();
-                        toggleVerifyMode(mmanager, showAnalyzer);
-                        inputChanged = true;
-                        refreshView();
-                    }
-                }
-            });
+            public void run(boolean newState) {
+                toggleVerifyMode(mmanager, newState);
+                inputChanged = true;
+                refreshView();
+            }
+        };
 
         mmanager.add(linkWithEditorAction);
         mmanager.add(showSelectedOnlyAction);
@@ -695,7 +651,7 @@ public class BytecodeOutlineView extends ViewPart {
      */
     private void createTextContextMenu() {
         String id = "de.loskutov.bco.views.BytecodeOutlineView#ContextMenu"; //$NON-NLS-1$
-        contextMenuManager = new MenuManager("#ContextMenu", id); //$NON-NLS-1$//$NON-NLS-2$
+        contextMenuManager = new MenuManager("#ContextMenu", id); //$NON-NLS-1$
         contextMenuManager.setRemoveAllWhenShown(true);
         contextMenuManager.addMenuListener(new IMenuListener() {
 
@@ -706,7 +662,7 @@ public class BytecodeOutlineView extends ViewPart {
         Menu menu = contextMenuManager.createContextMenu(textControl);
         textControl.setMenu(menu);
 
-        getSite().registerContextMenu(id, contextMenuManager, textViewer); //$NON-NLS-1$
+        getSite().registerContextMenu(id, contextMenuManager, textViewer);
     }
 
     private void createTextControl() {
@@ -1647,13 +1603,6 @@ public class BytecodeOutlineView extends ViewPart {
      */
     protected void setMode(int bitIndex, boolean value) {
         modes.set(bitIndex, value);
-        IPreferenceStore store = BytecodeOutlinePlugin.getDefault()
-            .getPreferenceStore();
-        String key = (String) BCOConstants.FLAG_TO_NAME_MAP.get(Integer
-            .valueOf(bitIndex));
-        if (key != null) {
-            store.setValue(key, value);
-        }
     }
 
     protected void toggleVerifyMode(final IMenuManager mmanager,

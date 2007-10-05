@@ -1,19 +1,19 @@
-/*
- * Copyright area
- */
+/*****************************************************************************************
+ * Copyright (c) 2007 Andrei Loskutov. All rights reserved. This program and the
+ * accompanying materials are made available under the terms of the BSD License which
+ * accompanies this distribution, and is available at
+ * http://www.opensource.org/licenses/bsd-license.php
+ * Contributor: Eugene Kuleshov - initial API and implementation
+ ****************************************************************************************/
 
 package de.loskutov.bco.views;
 
 import java.net.URL;
 
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.help.internal.appserver.WebappManager;
 import org.eclipse.help.internal.base.BaseHelpSystem;
-import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.text.ITextSelection;
-import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.SWT;
@@ -33,6 +33,7 @@ import org.eclipse.ui.part.ViewPart;
 import org.objectweb.asm.util.AbstractVisitor;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
+import de.loskutov.bco.editors.BytecodeClassFileEditor;
 import de.loskutov.bco.preferences.BCOConstants;
 import de.loskutov.bco.ui.actions.DefaultToggleAction;
 
@@ -42,52 +43,53 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
     private static final String NLS_PREFIX = "BytecodeReferenceView.";
     private Browser browser;
     private DefaultToggleAction linkWithViewAction;
-    private boolean linkWithView = true;
+    private boolean linkWithView;
+
+    public BytecodeReferenceView() {
+        super();
+    }
 
     public void createPartControl(Composite parent) {
         browser = new Browser(parent, SWT.BORDER);
-        browser.setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
-            + "empty.selection.text"));
         final IWorkbenchWindow workbenchWindow = getSite().getWorkbenchWindow();
-        workbenchWindow.getPartService().addPartListener(this);
-
-        linkWithViewAction = new DefaultToggleAction(BCOConstants.LINK_VIEW_TO_EDITOR,
-            new IPropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent event) {
-                    if (IAction.CHECKED.equals(event.getProperty())) {
-                        linkWithView = Boolean.TRUE == event.getNewValue();
-                        if(linkWithView){
-                            ISelectionService selectionService = workbenchWindow
-                            .getSelectionService();
-                            try {
-                                IViewPart part = workbenchWindow.getActivePage().showView("de.loskutov.bco.views.BytecodeOutlineView");
-                                ISelection selection = selectionService
-                                .getSelection("de.loskutov.bco.views.BytecodeOutlineView");
-                                selectionChanged(part, selection);
-                            } catch (PartInitException e) {
-                                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-                            }
-                        }
+        linkWithView = BytecodeOutlinePlugin.getDefault().getPreferenceStore()
+            .getBoolean(BCOConstants.LINK_REF_VIEW_TO_EDITOR);
+        linkWithViewAction = new DefaultToggleAction(BCOConstants.LINK_REF_VIEW_TO_EDITOR){
+            public void run(boolean newState) {
+                linkWithView = newState;
+                if(linkWithView){
+                    ISelectionService selectionService = workbenchWindow
+                        .getSelectionService();
+                    try {
+                        IViewPart part = workbenchWindow.getActivePage()
+                            .showView(
+                                "de.loskutov.bco.views.BytecodeOutlineView");
+                        ISelection selection = selectionService
+                            .getSelection("de.loskutov.bco.views.BytecodeOutlineView");
+                        selectionChanged(part, selection);
+                    } catch (PartInitException e) {
+                        BytecodeOutlinePlugin.log(e, IStatus.ERROR);
                     }
                 }
-            });
+            }
+        };
         final IActionBars bars = getViewSite().getActionBars();
         final IToolBarManager tmanager = bars.getToolBarManager();
         tmanager.add(linkWithViewAction);
-
-        // TODO run this in background!
-        BaseHelpSystem.ensureWebappRunning();
+        shouDefaultEmptyPage();
+        workbenchWindow.getPartService().addPartListener(this);
     }
 
     public void dispose() {
         getSite().getWorkbenchWindow().getPartService().removePartListener(this);
+        browser.dispose();
         browser = null;
         linkWithViewAction = null;
         super.dispose();
     }
 
     public void setFocus() {
-        /* nothing to do */
+        browser.setFocus();
     }
 
     public void partActivated(IWorkbenchPartReference partRef) {
@@ -115,7 +117,7 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
     public void partHidden(IWorkbenchPartReference partRef) {
         if (partRef.getId().equals(getSite().getId())) {
             getSite().getWorkbenchWindow().getSelectionService()
-                .removePostSelectionListener(BytecodeOutlineView.class.getName(), this);
+                .removePostSelectionListener(this);
         }
     }
 
@@ -125,7 +127,8 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
             ISelectionService selectionService = workbenchWindow
                 .getSelectionService();
             String partId = BytecodeOutlineView.class.getName();
-            selectionService.addPostSelectionListener(partId, this);
+            selectionService.addPostSelectionListener(this);
+
 
             // perform initialization with already existing selection (if any)
             ISelection selection = selectionService.getSelection(partId);
@@ -144,7 +147,9 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
     }
 
     public void selectionChanged(IWorkbenchPart part, ISelection selection) {
-        if(!linkWithView || !(part instanceof BytecodeOutlineView)){
+        boolean isViewSelection = part instanceof BytecodeOutlineView;
+        if (!linkWithView || !(isViewSelection
+                || part instanceof BytecodeClassFileEditor)) {
             return;
         }
         int line = -1;
@@ -160,7 +165,12 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
         }
 
         if(line >= 0){
-            int opcode = ((BytecodeOutlineView)part).getBytecodeInstructionAtLine(line);
+            int opcode;
+            if(isViewSelection) {
+                opcode = ((BytecodeOutlineView)part).getBytecodeInstructionAtLine(line);
+            } else {
+                opcode = ((BytecodeClassFileEditor)part).getBytecodeInstructionAtLine(line);
+            }
             if (opcode != -1) {
                 opcodeName = AbstractVisitor.OPCODES[opcode];
             }
@@ -173,13 +183,16 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
             if (url != null) {
                 browser.setUrl(url.toString());
             } else {
-                browser.setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
-                    + "empty.selection.text"));
+                shouDefaultEmptyPage();
             }
         } else {
-            browser.setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
-                + "empty.selection.text"));
+            shouDefaultEmptyPage();
         }
+    }
+
+    private void shouDefaultEmptyPage() {
+        browser.setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
+            + "empty.selection.text"));
     }
 
     private String checkOpcodeName(String opcodeName) {
@@ -212,18 +225,10 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
 
     private URL getHelpResource(String name) {
         try {
-            // BaseHelpSystem.resolve() method is not awailable in 3.0
-            String host = WebappManager.getHost();
-            int port = WebappManager.getPort();
             String href = "/"
                 + BytecodeOutlinePlugin.getDefault().getBundle()
                     .getSymbolicName() + "/doc/ref-" + name + ".html";
-            return new URL("http://" + host + ":" + port + "/help/nftopic"
-                + href);
-            // return BaseHelpSystem.resolve( href, true);
-            // return new File(
-            // BytecodeOutlinePlugin.PLUGIN_PATH+"/doc/ref-"+name.toLowerCase()+".html").toURL();
-
+            return BaseHelpSystem.resolve(href, true);
         } catch (Exception e) {
             return null;
         }

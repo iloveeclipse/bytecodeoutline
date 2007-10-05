@@ -1,4 +1,4 @@
-/* $Id: BytecodeClassFileEditor.java,v 1.6 2006-11-24 10:14:51 andrei Exp $ */
+/* $Id: BytecodeClassFileEditor.java,v 1.7 2007-10-05 22:05:41 andrei Exp $ */
 
 package de.loskutov.bco.editors;
 
@@ -31,7 +31,6 @@ import org.eclipse.jdt.internal.ui.javaeditor.ExternalClassFileEditorInput;
 import org.eclipse.jdt.internal.ui.javaeditor.IClassFileEditorInput;
 import org.eclipse.jdt.internal.ui.javaeditor.InternalClassFileEditorInput;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
-import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
@@ -39,12 +38,7 @@ import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.text.ITextViewerExtension5;
 import org.eclipse.jface.text.Region;
 import org.eclipse.jface.text.TextSelection;
-import org.eclipse.jface.text.source.IOverviewRuler;
 import org.eclipse.jface.text.source.ISourceViewer;
-import org.eclipse.jface.text.source.IVerticalRuler;
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionProvider;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.custom.StyledText;
@@ -61,6 +55,7 @@ import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
+import de.loskutov.bco.asm.DecompiledClass;
 import de.loskutov.bco.preferences.BCOConstants;
 import de.loskutov.bco.ui.JdtUtils;
 
@@ -82,7 +77,7 @@ public class BytecodeClassFileEditor extends JavaEditor
     private BitSet decompilerFlags;
     /** is not null only on class files with decompiled source */
     private static BytecodeSourceMapper sourceMapper;
-    private static BytecodeDocumentProvider fClassFileDocumentProvider;
+    private BytecodeDocumentProvider fClassFileDocumentProvider;
     private boolean hasMappedSource;
     private boolean decompiled;
     private boolean initDone;
@@ -123,9 +118,9 @@ public class BytecodeClassFileEditor extends JavaEditor
         this.hasMappedSource = hasMappedSource;
     }
 
-    private static ClassFileDocumentProvider getClassFileDocumentProvider() {
+    private ClassFileDocumentProvider getClassFileDocumentProvider() {
         if (fClassFileDocumentProvider == null) {
-            fClassFileDocumentProvider = new BytecodeDocumentProvider();
+            fClassFileDocumentProvider = new BytecodeDocumentProvider(this);
         }
         return fClassFileDocumentProvider;
     }
@@ -182,11 +177,12 @@ public class BytecodeClassFileEditor extends JavaEditor
     protected void doSetInput(IEditorInput input) throws CoreException {
 
         input = transformEditorInput(input);
-        if (!(input instanceof IClassFileEditorInput))
+        if (!(input instanceof IClassFileEditorInput)) {
             throw new CoreException(JavaUIStatus.createError(
                 IJavaModelStatusConstants.INVALID_RESOURCE_TYPE,
                 "invalid input", // JavaEditorMessages.ClassFileEditor_error_invalid_input_message,
                 null));
+        }
 
         IDocumentProvider documentProvider = getDocumentProvider();
         if (documentProvider instanceof ClassFileDocumentProvider) {
@@ -557,118 +553,6 @@ public class BytecodeClassFileEditor extends JavaEditor
         return (ISourceReference) element;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#createJavaSourceViewer(org.eclipse.swt.widgets.Composite,
-     * org.eclipse.jface.text.source.IVerticalRuler,
-     * org.eclipse.jface.text.source.IOverviewRuler, boolean, int,
-     * org.eclipse.jface.preference.IPreferenceStore)
-     */
-    protected ISourceViewer createJavaSourceViewer(Composite parent,
-        IVerticalRuler verticalRuler, IOverviewRuler overviewRuler,
-        boolean isOverviewRulerVisible, int styles, IPreferenceStore store) {
-
-        return super.createJavaSourceViewer(
-            parent, verticalRuler, overviewRuler, isOverviewRulerVisible,
-            styles, store);
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#doSelectionChanged(org.eclipse.jface.viewers.SelectionChangedEvent)
-     */
-    protected void doSelectionChanged(SelectionChangedEvent event) {
-
-        super.doSelectionChanged(event);
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#doSetSelection(org.eclipse.jface.viewers.ISelection)
-     */
-    protected void doSetSelection(ISelection selection) {
-
-        super.doSetSelection(selection);
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#getSignedSelection(org.eclipse.jface.text.source.ISourceViewer)
-     */
-    protected IRegion getSignedSelection(ISourceViewer sourceViewer) {
-
-        return super.getSignedSelection(sourceViewer);
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#synchronizeOutlinePage(org.eclipse.jdt.core.ISourceReference,
-     * boolean)
-     */
-    protected void synchronizeOutlinePage(ISourceReference element,
-        boolean checkIfOutlinePageActive) {
-
-        super.synchronizeOutlinePage(element, checkIfOutlinePageActive);
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#synchronizeOutlinePage(org.eclipse.jdt.core.ISourceReference)
-     */
-    protected void synchronizeOutlinePage(ISourceReference element) {
-
-        super.synchronizeOutlinePage(element);
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#synchronizeOutlinePageSelection()
-     */
-    public void synchronizeOutlinePageSelection() {
-
-        super.synchronizeOutlinePageSelection();
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.ui.texteditor.AbstractTextEditor#getSelectionProvider()
-     */
-    public ISelectionProvider getSelectionProvider() {
-
-        return super.getSelectionProvider();
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.ui.texteditor.AbstractTextEditor#selectAndReveal(int, int, int,
-     * int)
-     */
-    protected void selectAndReveal(int selectionStart, int selectionLength,
-        int revealStart, int revealLength) {
-
-        super.selectAndReveal(
-            selectionStart, selectionLength, revealStart, revealLength);
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.ui.texteditor.AbstractTextEditor#selectAndReveal(int, int)
-     */
-    public void selectAndReveal(int start, int length) {
-
-        super.selectAndReveal(start, length);
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.ui.texteditor.AbstractTextEditor#setHighlightRange(int, int,
-     * boolean)
-     */
-    public void setHighlightRange(int offset, int length, boolean moveCursor) {
-        super.setHighlightRange(offset, length, moveCursor);
-
-    }
-
     public void showHighlightRangeOnly(boolean showHighlightRangeOnly) {
         // disabled as we currently do not support "partial" view on selected
         // elements
@@ -726,8 +610,9 @@ public class BytecodeClassFileEditor extends JavaEditor
 
             synchronized (this) {
                 if (fPosted) {
-                    if (input != null && input.equals(fClassFileEditorInput))
+                    if (input != null && input.equals(fClassFileEditorInput)) {
                         fClassFileEditorInput = input;
+                    }
                     return;
                 }
             }
@@ -746,31 +631,6 @@ public class BytecodeClassFileEditor extends JavaEditor
                 }
             }
         }
-    }
-
-    /*
-     * @see AbstractTextEditor#createActions()
-     */
-    protected void createActions() {
-        super.createActions();
-
-        // setAction(ITextEditorActionConstants.SAVE, null);
-        // setAction(ITextEditorActionConstants.REVERT_TO_SAVED, null);
-
-        /*
-         * 1GF82PL: ITPJUI:ALL - Need to be able to add bookmark to classfile // replace
-         * default action with class file specific ones
-         * setAction(ITextEditorActionConstants.BOOKMARK, new
-         * AddClassFileMarkerAction("AddBookmark.", this, IMarker.BOOKMARK, true));
-         * //$NON-NLS-1$ setAction(ITextEditorActionConstants.ADD_TASK, new
-         * AddClassFileMarkerAction("AddTask.", this, IMarker.TASK, false)); //$NON-NLS-1$
-         * setAction(ITextEditorActionConstants.RULER_MANAGE_BOOKMARKS, new
-         * ClassFileMarkerRulerAction("ManageBookmarks.", getVerticalRuler(), this,
-         * IMarker.BOOKMARK, true)); //$NON-NLS-1$
-         * setAction(ITextEditorActionConstants.RULER_MANAGE_TASKS, new
-         * ClassFileMarkerRulerAction("ManageTasks.", getVerticalRuler(), this,
-         * IMarker.TASK, true)); //$NON-NLS-1$
-         */
     }
 
     /*
@@ -1045,6 +905,9 @@ public class BytecodeClassFileEditor extends JavaEditor
         } else {
             newLine = sourceMapper.mapToSource(startLine, getClassFile()) - 1;
         }
+        if(newLine < 0) {
+            return null;
+        }
         IDocument document = getDocumentProvider()
             .getDocument(getEditorInput());
         try {
@@ -1075,12 +938,14 @@ public class BytecodeClassFileEditor extends JavaEditor
         return null;
     }
 
-    /*
-     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#installOverrideIndicator(boolean)
-     * @since 3.0
-     */
-    protected void installOverrideIndicator(boolean provideAST) {
-        super.installOverrideIndicator(true);
+    public int getBytecodeInstructionAtLine(int line) {
+        if (isDecompiled()) {
+            DecompiledClass decompiledClass = sourceMapper.getDecompiledClass(getClassFile());
+            if(line > 0 && decompiledClass != null) {
+                return decompiledClass.getBytecodeInsn(line);
+            }
+        }
+        return -1;
     }
 
 }

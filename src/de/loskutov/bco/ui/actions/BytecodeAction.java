@@ -99,12 +99,12 @@ public abstract class BytecodeAction implements IObjectActionDelegate {
         modes.set(BCOConstants.F_LINK_VIEW_TO_EDITOR, store.getBoolean(BCOConstants.LINK_VIEW_TO_EDITOR));
         modes.set(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT, store.getBoolean(BCOConstants.SHOW_ONLY_SELECTED_ELEMENT));
         modes.set(BCOConstants.F_SHOW_RAW_BYTECODE, store.getBoolean(BCOConstants.SHOW_RAW_BYTECODE));
-        modes.set(BCOConstants.F_SHOW_LINE_INFO, store.getBoolean(BCOConstants.SHOW_LINE_INFO));
-        modes.set(BCOConstants.F_SHOW_VARIABLES, store.getBoolean(BCOConstants.SHOW_VARIABLES));
-        modes.set(BCOConstants.F_SHOW_ASMIFIER_CODE, store.getBoolean(BCOConstants.SHOW_ASMIFIER_CODE));
+        modes.set(BCOConstants.F_SHOW_LINE_INFO, store.getBoolean(BCOConstants.DIFF_SHOW_LINE_INFO));
+        modes.set(BCOConstants.F_SHOW_VARIABLES, store.getBoolean(BCOConstants.DIFF_SHOW_VARIABLES));
+        modes.set(BCOConstants.F_SHOW_ASMIFIER_CODE, store.getBoolean(BCOConstants.DIFF_SHOW_ASMIFIER_CODE));
         modes.set(BCOConstants.F_SHOW_ANALYZER, store.getBoolean(BCOConstants.SHOW_ANALYZER));
-        modes.set(BCOConstants.F_SHOW_STACKMAP, store.getBoolean(BCOConstants.SHOW_STACKMAP));
-        modes.set(BCOConstants.F_EXPAND_STACKMAP, store.getBoolean(BCOConstants.EXPAND_STACKMAP));
+        modes.set(BCOConstants.F_SHOW_STACKMAP, store.getBoolean(BCOConstants.DIFF_SHOW_STACKMAP));
+        modes.set(BCOConstants.F_EXPAND_STACKMAP, store.getBoolean(BCOConstants.DIFF_EXPAND_STACKMAP));
         return modes;
     }
 
