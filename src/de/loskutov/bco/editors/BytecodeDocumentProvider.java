@@ -24,7 +24,7 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
  */
 public class BytecodeDocumentProvider extends ClassFileDocumentProvider {
 
-    public BytecodeDocumentProvider() {
+    public BytecodeDocumentProvider(BytecodeClassFileEditor classFileEditor) {
         super();
     }
 
