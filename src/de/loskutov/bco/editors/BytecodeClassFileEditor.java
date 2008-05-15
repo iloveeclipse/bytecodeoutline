@@ -1,4 +1,4 @@
-/* $Id: BytecodeClassFileEditor.java,v 1.7 2007-10-05 22:05:41 andrei Exp $ */
+/* $Id: BytecodeClassFileEditor.java,v 1.8 2008-05-15 21:31:58 andrei Exp $ */
 
 package de.loskutov.bco.editors;
 
@@ -27,10 +27,10 @@ import org.eclipse.jdt.debug.core.IJavaReferenceType;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.JavaUIStatus;
 import org.eclipse.jdt.internal.ui.javaeditor.ClassFileDocumentProvider;
+import org.eclipse.jdt.internal.ui.javaeditor.ClassFileEditor;
 import org.eclipse.jdt.internal.ui.javaeditor.ExternalClassFileEditorInput;
 import org.eclipse.jdt.internal.ui.javaeditor.IClassFileEditorInput;
 import org.eclipse.jdt.internal.ui.javaeditor.InternalClassFileEditorInput;
-import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
@@ -39,10 +39,7 @@ import org.eclipse.jface.text.ITextViewerExtension5;
 import org.eclipse.jface.text.Region;
 import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.text.source.ISourceViewer;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
@@ -63,12 +60,10 @@ import de.loskutov.bco.ui.JdtUtils;
  * A "better" way to hook into JDT...
  * @author Eugene Kuleshov, V. Grishchenko, Jochen Klein, Andrei Loskutov
  */
-public class BytecodeClassFileEditor extends JavaEditor
+public class BytecodeClassFileEditor extends ClassFileEditor
     implements
         ClassFileDocumentProvider.InputChangeListener {
 
-    private StackLayout fStackLayout;
-    private Composite fParent;
     private Composite fViewerComposite;
     private InputUpdater fInputUpdater;
     public static final String ID = "de.loskutov.bco.editors.BytecodeClassFileEditor";
@@ -259,7 +254,7 @@ public class BytecodeClassFileEditor extends JavaEditor
         } else if (input instanceof FileEditorInput) {
             FileEditorInput fileEditorInput = (FileEditorInput) input;
             // make class file from that
-            IClassFileEditorInput cfi = transformEditorInput(input);
+            IClassFileEditorInput cfi = (IClassFileEditorInput) transformEditorInput(input);
             // return changed reference
             input = cfi;
             setDecompiled(true);
@@ -342,6 +337,7 @@ public class BytecodeClassFileEditor extends JavaEditor
             IDocument document = getDocumentProvider().getDocument(
                 getEditorInput());
             try {
+                // XXX have test if the requested line is from bytecode or sourcecode?!?
                 int lineAtOffset = document.getLineOfOffset(offset);
                 // get DecompiledMethod from line, then get JavaElement with same
                 // signature, because we do not have offsets or lines in the class file,
@@ -639,12 +635,12 @@ public class BytecodeClassFileEditor extends JavaEditor
     protected IJavaElement getCorrespondingElement(IJavaElement element) {
         IClassFile classFile = getClassFile();
         if (classFile == null) {
-            return null;
+            return super.getCorrespondingElement(element);
         }
         if (classFile.equals(element.getAncestor(IJavaElement.CLASS_FILE))) {
             return element;
         }
-        return null;
+        return super.getCorrespondingElement(element);
     }
 
     /*
@@ -711,18 +707,7 @@ public class BytecodeClassFileEditor extends JavaEditor
      * @see IWorkbenchPart#createPartControl(Composite)
      */
     public void createPartControl(Composite parent) {
-
-        fParent = new Composite(parent, SWT.NONE);
-        fStackLayout = new StackLayout();
-        fParent.setLayout(fStackLayout);
-
-        fViewerComposite = new Composite(fParent, SWT.NONE);
-        fViewerComposite.setLayout(new FillLayout());
-
-        super.createPartControl(fViewerComposite);
-
-        fStackLayout.topControl = fViewerComposite;
-        fParent.layout();
+        super.createPartControl(parent);
         initDone = true;
     }
 
