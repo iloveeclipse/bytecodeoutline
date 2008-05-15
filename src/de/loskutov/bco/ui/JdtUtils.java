@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IPathVariableManager;
 import org.eclipse.core.resources.IProject;
@@ -779,7 +780,7 @@ public class JdtUtils {
     private static boolean isPackageRoot(IJavaProject project, IResource pack)
         throws JavaModelException {
         boolean isRoot = false;
-        if (project == null || pack == null) {
+        if (project == null || pack == null || !(pack instanceof IContainer)) {
             return isRoot;
         }
         IPackageFragmentRoot root = project.getPackageFragmentRoot(pack);

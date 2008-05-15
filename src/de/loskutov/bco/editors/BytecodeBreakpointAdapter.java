@@ -171,12 +171,12 @@ public class BytecodeBreakpointAdapter extends ToggleBreakpointAdapter {
                                     }
                                 }
                                 if (!type.isBinary()) {
-                                    // resolve the type names
-                                    methodSignature = resolveMethodSignature(type, methodSignature);
-                                    if (methodSignature == null) {
-                                        report(ActionMessages.ManageMethodBreakpointActionDelegate_methodNonAvailable, part);
-                                        return Status.OK_STATUS;
-                                    }
+                                    // TODO resolve the type names
+//                                    methodSignature = resolveMethodSignature(type, methodSignature);
+//                                    if (methodSignature == null) {
+//                                        report(ActionMessages.ManageMethodBreakpointActionDelegate_methodNonAvailable, part);
+//                                        return Status.OK_STATUS;
+//                                    }
                                 }
                                 createMethodBreakpoint(BreakpointUtils.getBreakpointResource(method), type.getFullyQualifiedName(), methodName, methodSignature, true, false, false, -1, start, end, 0, true, attributes);
                             } else {
