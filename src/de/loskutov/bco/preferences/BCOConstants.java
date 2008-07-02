@@ -118,24 +118,24 @@ public interface BCOConstants {
      * Key is Integer value from one of F_* constants, value is the String value of one of corresponding
      * preference keys. It is not intended that the map would be modified by clients.
      */
-    Map/*<Integer,String>*/ FLAG_TO_NAME_MAP = new ConstantsMap();
+    Map/*<Integer,String>*/ NAME_TO_FLAG_MAP = new ConstantsMap();
 
     final class ConstantsMap extends HashMap {
         private static final long serialVersionUID = 1L;
 
         private ConstantsMap() {
             super();
-            put(Integer.valueOf(F_EXPAND_STACKMAP), EXPAND_STACKMAP);
-            put(Integer.valueOf(F_LINK_VIEW_TO_EDITOR), LINK_VIEW_TO_EDITOR);
-            put(Integer.valueOf(F_RECALCULATE_STACKMAP), RECALCULATE_STACKMAP);
-            put(Integer.valueOf(F_SHOW_ANALYZER), SHOW_ANALYZER);
-            put(Integer.valueOf(F_SHOW_ASMIFIER_CODE), SHOW_ASMIFIER_CODE);
-            put(Integer.valueOf(F_SHOW_HEX_VALUES), SHOW_HEX_VALUES);
-            put(Integer.valueOf(F_SHOW_LINE_INFO), SHOW_LINE_INFO);
-            put(Integer.valueOf(F_SHOW_ONLY_SELECTED_ELEMENT), SHOW_ONLY_SELECTED_ELEMENT);
-            put(Integer.valueOf(F_SHOW_RAW_BYTECODE), SHOW_RAW_BYTECODE);
-            put(Integer.valueOf(F_SHOW_STACKMAP), SHOW_STACKMAP);
-            put(Integer.valueOf(F_SHOW_VARIABLES), SHOW_VARIABLES);
+            put(EXPAND_STACKMAP, Integer.valueOf(F_EXPAND_STACKMAP));
+            put(LINK_VIEW_TO_EDITOR, Integer.valueOf(F_LINK_VIEW_TO_EDITOR));
+            put(RECALCULATE_STACKMAP, Integer.valueOf(F_RECALCULATE_STACKMAP));
+            put(SHOW_ANALYZER, Integer.valueOf(F_SHOW_ANALYZER));
+            put(SHOW_ASMIFIER_CODE, Integer.valueOf(F_SHOW_ASMIFIER_CODE));
+            put(SHOW_HEX_VALUES, Integer.valueOf(F_SHOW_HEX_VALUES));
+            put(SHOW_LINE_INFO, Integer.valueOf(F_SHOW_LINE_INFO));
+            put(SHOW_ONLY_SELECTED_ELEMENT, Integer.valueOf(F_SHOW_ONLY_SELECTED_ELEMENT));
+            put(SHOW_RAW_BYTECODE, Integer.valueOf(F_SHOW_RAW_BYTECODE));
+            put(SHOW_STACKMAP, Integer.valueOf(F_SHOW_STACKMAP));
+            put(SHOW_VARIABLES, Integer.valueOf(F_SHOW_VARIABLES));
         }
     }
 }

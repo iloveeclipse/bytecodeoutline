@@ -147,16 +147,16 @@ public class BytecodeOutlineView extends ViewPart {
     protected EditorListener editorListener;
     protected Action selectionChangedAction;
     protected Action refreshVarsAndStackAction;
-    protected Action linkWithEditorAction;
-    protected Action showSelectedOnlyAction;
-    protected Action setRawModeAction;
-    protected Action toggleASMifierModeAction;
-    protected Action hideLineInfoAction;
-    protected Action hideLocalsAction;
-    protected Action hideStackMapAction;
-    protected Action showHexValuesAction;
-    protected Action expandStackMapAction;
-    protected Action toggleVerifierAction;
+    protected DefaultToggleAction linkWithEditorAction;
+    protected DefaultToggleAction showSelectedOnlyAction;
+    protected DefaultToggleAction setRawModeAction;
+    protected DefaultToggleAction toggleASMifierModeAction;
+    protected DefaultToggleAction hideLineInfoAction;
+    protected DefaultToggleAction hideLocalsAction;
+    protected DefaultToggleAction hideStackMapAction;
+    protected DefaultToggleAction showHexValuesAction;
+    protected DefaultToggleAction expandStackMapAction;
+    protected DefaultToggleAction toggleVerifierAction;
     protected StatusLineManager statusLineManager;
     protected BCOViewSelectionProvider viewSelectionProvider;
 
@@ -233,7 +233,7 @@ public class BytecodeOutlineView extends ViewPart {
             lvtTable.setEnabled(on);
         }
         showSelectedOnlyAction.setEnabled(on);
-        linkWithEditorAction.setEnabled(on);
+        // linkWithEditorAction.setEnabled(on);
         selectionChangedAction.setEnabled(on);
         toggleVerifierAction.setEnabled(on);
         hideLocalsAction.setEnabled(on);
@@ -393,6 +393,8 @@ public class BytecodeOutlineView extends ViewPart {
         createToolbarActions();
 
         setEnabled(false);
+
+//        activateView();
     }
 
     private void initModes() {
@@ -457,8 +459,10 @@ public class BytecodeOutlineView extends ViewPart {
                     if (!toggleASMifierModeAction.isChecked()) {
                         setRawModeAction.setEnabled(true);
                     }
+                    activateView();
                     checkOpenEditors(true);
-                    // refreshView();
+                    inputChanged = true;
+                    refreshView();
                 }
             }
         };
@@ -769,6 +773,19 @@ public class BytecodeOutlineView extends ViewPart {
         javaEditor = null;
         setJavaInput(null);
         lastChildElement = null;
+        lastDecompiledResult = null;
+
+        linkWithEditorAction.dispose();
+        showSelectedOnlyAction.dispose();
+        setRawModeAction.dispose();
+        toggleASMifierModeAction.dispose();
+        hideLineInfoAction.dispose();
+        hideLocalsAction.dispose();
+        hideStackMapAction.dispose();
+        showHexValuesAction.dispose();
+        expandStackMapAction.dispose();
+        toggleVerifierAction.dispose();
+
         linkWithEditorAction = null;
         selectionChangedAction = null;
         refreshVarsAndStackAction = null;
@@ -781,7 +798,6 @@ public class BytecodeOutlineView extends ViewPart {
         showHexValuesAction = null;
         expandStackMapAction = null;
         toggleVerifierAction = null;
-        lastDecompiledResult = null;
         super.dispose();
     }
 
@@ -859,6 +875,9 @@ public class BytecodeOutlineView extends ViewPart {
 
     protected void handlePartVisible(IWorkbenchPart part) {
         if (!modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR)) {
+            if(this == part){
+                isVisible = true;
+            }
             return;
         }
         if (this == part) {

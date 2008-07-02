@@ -240,4 +240,13 @@
             <adapter type="org.eclipse.debug.ui.actions.IToggleBreakpointsTarget"/>
          </factory>
   </extension>
+  <extension
+        point="org.eclipse.ui.preferencePages">
+     <page
+           category="org.eclipse.jdt.ui.preferences.JavaBasePreferencePage"
+           class="de.loskutov.bco.preferences.BCOPreferencePage"
+           id="de.loskutov.ByteCodeOutline.page"
+           name="Bytecode Outline">
+     </page>
+  </extension>
 </plugin>

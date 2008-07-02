@@ -1,4 +1,4 @@
-#Tue Apr 11 23:11:33 CEST 2006
+#Sun Feb 11 10:22:10 CET 2007
 comment_clear_blank_lines=true
 comment_format_comments=true
 comment_format_header=true
@@ -10,7 +10,7 @@ comment_line_length=90
 comment_new_line_for_parameter=false
 comment_separate_root_tags=false
 eclipse.preferences.version=1
-formatter_settings_version=10
+formatter_settings_version=11
 internal.default.compliance=default
 org.eclipse.jdt.ui.exception.name=e
 org.eclipse.jdt.ui.gettersetter.use.is=true

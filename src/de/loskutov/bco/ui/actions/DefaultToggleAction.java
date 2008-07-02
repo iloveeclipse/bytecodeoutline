@@ -10,6 +10,8 @@ package de.loskutov.bco.ui.actions;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.jface.util.IPropertyChangeListener;
+import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
@@ -22,7 +24,7 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
  * event name.
  * @author Andrei
  */
-public abstract class DefaultToggleAction extends Action {
+public abstract class DefaultToggleAction extends Action implements IPropertyChangeListener {
 
     private static final String ACTION = "action";
 
@@ -35,6 +37,23 @@ public abstract class DefaultToggleAction extends Action {
 
         boolean isChecked = store.getBoolean(id);
         setChecked(isChecked);
+        store.addPropertyChangeListener(this);
+    }
+
+    public void propertyChange(PropertyChangeEvent event){
+        String id = getId();
+        if(!id.equals(event.getProperty())){
+            return;
+        }
+        IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
+        boolean isChecked = store.getBoolean(id);
+        setChecked(isChecked);
+        run(isChecked);
+    }
+
+    public void dispose(){
+        IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
+        store.removePropertyChangeListener(this);
     }
 
     private void init(){

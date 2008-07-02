@@ -2,7 +2,7 @@
 <feature
       id="de.loskutov.BytecodeOutline.feature"
       label="Bytecode Outline"
-      version="2.2.4"
+      version="2.2.5"
       provider-name="Andrei Loskutov">
 
    <description url="http://asm.objectweb.org/eclipse/bco/index.html">
@@ -38,10 +38,8 @@ THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS&apos;&apos; AND
       <import plugin="org.eclipse.ui.editors"/>
       <import plugin="org.eclipse.core.runtime"/>
       <import plugin="org.eclipse.jface.text"/>
-      <import plugin="org.eclipse.jdt.core"/>
       <import plugin="org.eclipse.ui.workbench.texteditor"/>
       <import plugin="org.eclipse.jdt.ui"/>
-      <import plugin="org.eclipse.core.resources" version="3.4.0" match="greaterOrEqual"/>
       <import plugin="org.eclipse.ui.ide"/>
       <import plugin="org.eclipse.compare"/>
       <import plugin="org.eclipse.ui.console"/>
@@ -49,16 +47,16 @@ THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS&apos;&apos; AND
       <import plugin="org.eclipse.help.appserver"/>
       <import plugin="org.eclipse.jdt.debug.ui"/>
       <import plugin="org.eclipse.debug.ui"/>
-      <import plugin="org.eclipse.debug.core"/>
       <import plugin="org.eclipse.jdt.debug"/>
-      <import plugin="org.eclipse.ui.views"/>
+      <import plugin="org.eclipse.jdt.core" version="3.4.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.core.net"/>
    </requires>
 
    <plugin
          id="de.loskutov.BytecodeOutline"
          download-size="650"
          install-size="650"
-         version="0.0.0"
+         version="2.2.5"
          unpack="false"/>
 
 </feature>
