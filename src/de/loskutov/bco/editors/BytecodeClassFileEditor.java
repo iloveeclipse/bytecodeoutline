@@ -1,4 +1,4 @@
-/* $Id: BytecodeClassFileEditor.java,v 1.8 2008-05-15 21:31:58 andrei Exp $ */
+/* $Id: BytecodeClassFileEditor.java,v 1.9 2008-07-02 19:18:35 andrei Exp $ */
 
 package de.loskutov.bco.editors;
 
@@ -65,11 +65,11 @@ public class BytecodeClassFileEditor extends ClassFileEditor
         ClassFileDocumentProvider.InputChangeListener {
 
     private Composite fViewerComposite;
-    private InputUpdater fInputUpdater;
+    private final InputUpdater fInputUpdater;
     public static final String ID = "de.loskutov.bco.editors.BytecodeClassFileEditor";
     public static final String MARK = "// class version ";
     /** the modes (flags) for the decompiler */
-    private BitSet decompilerFlags;
+    private final BitSet decompilerFlags;
     /** is not null only on class files with decompiled source */
     private static BytecodeSourceMapper sourceMapper;
     private BytecodeDocumentProvider fClassFileDocumentProvider;
@@ -338,11 +338,13 @@ public class BytecodeClassFileEditor extends ClassFileEditor
                 getEditorInput());
             try {
                 // XXX have test if the requested line is from bytecode or sourcecode?!?
-                int lineAtOffset = document.getLineOfOffset(offset);
-                // get DecompiledMethod from line, then get JavaElement with same
-                // signature, because we do not have offsets or lines in the class file,
-                // only java elements...
-                result = getSourceMapper().findElement(classFile, lineAtOffset);
+                if(document.getLength() > offset){
+                    int lineAtOffset = document.getLineOfOffset(offset);
+                    // get DecompiledMethod from line, then get JavaElement with same
+                    // signature, because we do not have offsets or lines in the class file,
+                    // only java elements...
+                    result = getSourceMapper().findElement(classFile, lineAtOffset);
+                }
             } catch (BadLocationException e) {
                 BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
