@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry combineaccessrules="false" kind="src" path="/asm 3.0"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry excluding="JCL/" kind="src" path="test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
@@ -9,5 +8,6 @@
 			<accessrule kind="accessible" pattern="**/jdt/internal/**"/>
 		</accessrules>
 	</classpathentry>
+	<classpathentry combineaccessrules="false" kind="src" path="/asm3"/>
 	<classpathentry kind="output" path="output/eclipse"/>
 </classpath>

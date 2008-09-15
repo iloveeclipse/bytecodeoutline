@@ -24,12 +24,12 @@ public class DecompiledClass {
     public static final String ATTR_ACCESS_FLAGS = "access";
 
     /** key is DecompiledMethod, value is IJavaElement (Member) */
-    private Map methodToJavaElt;
-    private List text;
+    private final Map methodToJavaElt;
+    private final List text;
     /**
      * key is string, value is string
      */
-    private Map classAttributesMap = new HashMap();
+    private final Map classAttributesMap = new HashMap();
     private String value;
     private ClassNode classNode;
 
@@ -100,7 +100,7 @@ public class DecompiledClass {
                     lines.add(mlines[j]);
                 }
             } else {
-                lines.add(new String[]{"", "", o.toString(), ""});
+                lines.add(new String[]{"", "", "", o.toString(), ""});
             }
         }
         return (String[][]) lines.toArray(new String[lines.size()][]);
@@ -253,6 +253,20 @@ public class DecompiledClass {
         return null;
     }
 
+    public String[][][] getFrameTablesForInsn(final int insn,
+        boolean useQualifiedNames) {
+        for (int i = 0; i < text.size(); ++i) {
+            Object o = text.get(i);
+            if (o instanceof DecompiledMethod) {
+                DecompiledMethod m = (DecompiledMethod) o;
+                String[][][] frame = m.getFrameTablesForInsn(insn, useQualifiedNames);
+                if (frame != null) {
+                    return frame;
+                }
+            }
+        }
+        return null;
+    }
     public String[][][] getFrameTables(final int decompiledLine,
         boolean useQualifiedNames) {
         int currentDecompiledLine = 0;

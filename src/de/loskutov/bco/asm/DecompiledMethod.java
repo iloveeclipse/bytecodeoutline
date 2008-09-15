@@ -29,34 +29,34 @@ import de.loskutov.bco.preferences.BCOConstants;
 
 public class DecompiledMethod {
 
-    private List text;
+    private final List text;
 
-    private List localVariables;
+    private final List localVariables;
 
     /**
      * decompiled line -> source line
      */
-    private Map sourceLines;
+    private final Map sourceLines;
 
     /**
      * source line -> decompiled line
      */
-    private Map decompiledLines;
+    private final Map decompiledLines;
 
     /**
      * decompiled line -> insn
      */
-    private Map insns;
+    private final Map insns;
 
     /**
      *  decompiled line -> opcode
      */
-    private Map opcodes;
+    private final Map opcodes;
 
     /**
      * insn -> decompile line
      */
-    private Map insnLines;
+    private final Map insnLines;
 
     private int lineCount;
 
@@ -70,7 +70,7 @@ public class DecompiledMethod {
      */
     private int lastSourceLine;
 
-    private MethodNode meth;
+    private final MethodNode meth;
 
     private Frame[] frames;
 
@@ -322,16 +322,24 @@ public class DecompiledMethod {
         Frame frame = null;
         String error1 = "";
         List lines = new ArrayList();
+        String offsStr = null;
         for (int i = 0; i < text.size(); ++i) {
             Object o = text.get(i);
             if (o instanceof Index) {
-                if (frames != null) {
-                    frame = frames[((Index) o).insn];
-                    if (this.error != null && ((Index) o).insn == this.errorInsn) {
+                Index index = (Index) o;
+                int insn = index.insn;
+
+                offsStr = "" + insn;
+                if (frames != null && insn < frames.length) {
+                    frame = frames[insn];
+                    if (this.error != null && insn == this.errorInsn) {
                       error1 = this.error;
                     }
                 }
             } else {
+                if(offsStr == null){
+                    offsStr = "";
+                }
                 String locals = " ";
                 String stack = " ";
                 if (frame != null) {
@@ -347,9 +355,11 @@ public class DecompiledMethod {
                         stack = " ";
                     }
                 }
-                lines.add(new String[]{locals, stack, o.toString(), error1});
+
+                lines.add(new String[]{offsStr, locals, stack, o.toString(), error1});
                 frame = null;
                 error1 = "";
+                offsStr = null;
             }
         }
         return (String[][]) lines.toArray(new String[lines.size()][]);
@@ -479,52 +489,58 @@ public class DecompiledMethod {
     }
 
     public String[][][] getFrameTables(final int decompiledLine, boolean useQualifiedNames) {
-      Integer insn = getBytecodeOffset(decompiledLine);
-      if (error != null && insn != null && insn.intValue() == errorInsn) {
-          return null;
-      }
-      if (frames != null && insn != null && insn.intValue() >= 0
-          && insn.intValue() < frames.length) {
-        Frame f = frames[insn.intValue()];
-        if (f == null) {
+        Integer insn = getBytecodeOffset(decompiledLine);
+        if(insn == null){
             return null;
         }
+        return getFrameTablesForInsn(insn.intValue(), useQualifiedNames);
+    }
 
-        try {
-            ArrayList locals = new ArrayList();
-            for (int i = 0; i < f.getLocals(); ++i) {
-                String varName = "";
-                for (Iterator it = localVariables.iterator(); it.hasNext();) {
-                    LocalVariableNode lvnode = (LocalVariableNode) it.next();
-                    int n = lvnode.index;
-                    if( n==i) {
-                      varName = lvnode.name;
-                      // TODO take into account variable scope!
-                      break;
+    public String[][][] getFrameTablesForInsn(final int insn, boolean useQualifiedNames) {
+        if (error != null && insn == errorInsn) {
+            return null;
+        }
+        if (frames != null && insn >= 0 && insn < frames.length) {
+            Frame f = frames[insn];
+            if (f == null) {
+                return null;
+            }
+
+            try {
+                ArrayList locals = new ArrayList();
+                for (int i = 0; i < f.getLocals(); ++i) {
+                    String varName = "";
+                    for (Iterator it = localVariables.iterator(); it.hasNext();) {
+                        LocalVariableNode lvnode = (LocalVariableNode) it.next();
+                        int n = lvnode.index;
+                        if( n==i) {
+                            varName = lvnode.name;
+                            // TODO take into account variable scope!
+                            break;
+                        }
                     }
+
+                    locals.add( new String[] {
+                        ""+i,
+                        getTypeName( useQualifiedNames, f.getLocal(i).toString()),
+                        varName});
                 }
 
-                locals.add( new String[] {
-                    ""+i,
-                    getTypeName( useQualifiedNames, f.getLocal(i).toString()),
-                    varName});
+                ArrayList stack = new ArrayList();
+                for (int i = 0; i < f.getStackSize(); ++i) {
+                    stack.add( new String[] {
+                        ""+i,
+                        getTypeName( useQualifiedNames, f.getStack(i).toString())});
+                }
+                return new String[][][] {
+                    (String[][]) locals.toArray( new String[ 3][]),
+                    (String[][]) stack.toArray( new String[ 2][])};
+            } catch (IndexOutOfBoundsException e) {
+                // TODO should we keep this?
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
-
-            ArrayList stack = new ArrayList();
-            for (int i = 0; i < f.getStackSize(); ++i) {
-                stack.add( new String[] {
-                    ""+i,
-                    getTypeName( useQualifiedNames, f.getStack(i).toString())});
-            }
-            return new String[][][] {
-                (String[][]) locals.toArray( new String[ 3][]),
-                (String[][]) stack.toArray( new String[ 2][])};
-        } catch (IndexOutOfBoundsException e) {
-            // TODO should we keep this?
-            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
-      }
-      return null;
+        return null;
     }
 
 
@@ -602,5 +618,7 @@ public class DecompiledMethod {
             && (owner != null? owner.equals(another.owner) : true);
     }
 
-
+    public int hashCode() {
+        return getSignature().hashCode() + (owner != null? owner.hashCode() : 0);
+    }
 }

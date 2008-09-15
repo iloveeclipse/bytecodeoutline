@@ -31,6 +31,9 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
      */
     public BytecodeOutlinePlugin() {
         super();
+        if(plugin != null){
+            throw new IllegalStateException("Bytecode outline plugin is a singleton!");
+        }
         plugin = this;
         try {
             resourceBundle = ResourceBundle

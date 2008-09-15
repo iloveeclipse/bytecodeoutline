@@ -23,17 +23,17 @@ import de.loskutov.bco.asm.CommentedClassVisitor.CommentedAnnotationVisitor;
 
 public class DecompilerMethodVisitor extends MethodAdapter {
 
-    private String owner;
+    private final String owner;
 
-    private List text;
+    private final List text;
 
-    private MethodNode meth;
+    private final MethodNode meth;
 
     private LabelNode currentLabel;
 
     private int currentInsn;
 
-    private Map lineNumbers;
+    private final Map lineNumbers;
 
     private final BitSet modes;
 
@@ -144,10 +144,10 @@ public class DecompilerMethodVisitor extends MethodAdapter {
     }
 
     public void visitLabel(final Label label) {
+        addIndex(-1);
         super.visitLabel(label);
         meth.visitLabel(label);
         currentLabel = (LabelNode) meth.instructions.getLast();
-        addIndex(-1);
     }
 
     public void visitLdcInsn(final Object cst) {
@@ -198,6 +198,7 @@ public class DecompilerMethodVisitor extends MethodAdapter {
     }
 
     public void visitLineNumber(final int line, final Label start) {
+        addIndex(-1);
         lineNumbers.put(start, new Integer(line));
         super.visitLineNumber(line, start);
         meth.visitLineNumber(line, start);

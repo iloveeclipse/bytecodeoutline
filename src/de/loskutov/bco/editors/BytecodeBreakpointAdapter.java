@@ -371,8 +371,8 @@ public class BytecodeBreakpointAdapter extends ToggleBreakpointAdapter {
                         Map attributes = new HashMap(10);
                         if (type == null) {
                             resource = getResource(editor);
-                            CompilationUnit unit = parseCompilationUnit(editor);
-                            Iterator types = unit.types().iterator();
+//                            CompilationUnit unit = parseCompilationUnit(editor);
+//                            Iterator types = unit.types().iterator();
                             // TODO unreachable API
 //                            while (types.hasNext()) {
 //                                TypeDeclaration declaration = (TypeDeclaration) types.next();

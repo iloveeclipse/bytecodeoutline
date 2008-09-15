@@ -64,7 +64,6 @@ public class BytecodeClassFileEditor extends ClassFileEditor
     implements
         ClassFileDocumentProvider.InputChangeListener {
 
-    private Composite fViewerComposite;
     private final InputUpdater fInputUpdater;
     public static final String ID = "de.loskutov.bco.editors.BytecodeClassFileEditor";
     public static final String MARK = "// class version ";

@@ -384,11 +384,15 @@ public class BytecodeOutlineView extends ViewPart {
 
         createVerifyControl();
 
-        ((StackLayout) stackComposite.getLayout()).topControl = textControl;
+        initModes();
+
+        if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
+            ((StackLayout) stackComposite.getLayout()).topControl = verifyControl;
+        } else {
+            ((StackLayout) stackComposite.getLayout()).topControl = textControl;
+        }
 
         createSelectionProvider();
-
-        initModes();
 
         createToolbarActions();
 
@@ -440,8 +444,20 @@ public class BytecodeOutlineView extends ViewPart {
         refreshVarsAndStackAction = new Action() {
 
             public void run() {
-                int decompiledLine = tableControl.getSelectionIndex();
-                updateVerifierControl(decompiledLine);
+                int selectionIndex = tableControl.getSelectionIndex();
+                TableItem[] items = tableControl.getSelection();
+                if(items == null || items.length < 1){
+                    return;
+                }
+                String line = items[0].getText(0);
+                if(line == null || "".equals(line)){
+                    return;
+                }
+                Integer valueOf = Integer.valueOf(line);
+                if(valueOf != null){
+                    updateVerifierControl4insn(valueOf.intValue());
+                    tableControl.setSelection(selectionIndex);
+                }
             }
         };
 
@@ -597,10 +613,17 @@ public class BytecodeOutlineView extends ViewPart {
         tableControl = new Table(verifyControl, SWT.SINGLE | SWT.FULL_SELECTION);
         tableControlViewer = new TableViewer(tableControl);
 
-        new TableColumn(tableControl, SWT.LEFT).setText(BytecodeOutlinePlugin
-            .getResourceString(NLS_PREFIX + "lvt.header"));
-        new TableColumn(tableControl, SWT.LEFT).setText(BytecodeOutlinePlugin
-            .getResourceString(NLS_PREFIX + "stack.header"));
+        TableColumn tc = new TableColumn(tableControl, SWT.LEFT);
+        tc.setText("#");
+        tc.setToolTipText("ASM instruction offset");
+
+        tc = new TableColumn(tableControl, SWT.LEFT);
+        tc.setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "lvt.header"));
+        tc.setToolTipText("Local variables");
+
+        tc = new TableColumn(tableControl, SWT.LEFT);
+        tc.setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "stack.header"));
+        tc.setToolTipText("Stack content *before* current instruction is executed");
         new TableColumn(tableControl, SWT.LEFT);
         new TableColumn(tableControl, SWT.LEFT);
         tableControl.setLinesVisible(false);
@@ -643,10 +666,11 @@ public class BytecodeOutlineView extends ViewPart {
         viewSelectionProvider.registerSelectionProvider(textViewer);
         viewSelectionProvider.registerSelectionProvider(tableControlViewer);
 
-        // initially selection provider is the textControl, but this could be changed by
-        // user
-        // to the tableControl, if bco will be switched to the verify mode
-        viewSelectionProvider.setCurrentSelectionProvider(textViewer);
+        if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
+            viewSelectionProvider.setCurrentSelectionProvider(tableControlViewer);
+        } else {
+            viewSelectionProvider.setCurrentSelectionProvider(textViewer);
+        }
         getSite().setSelectionProvider(viewSelectionProvider);
     }
 
@@ -1190,7 +1214,8 @@ public class BytecodeOutlineView extends ViewPart {
         if (decompiledLine > 0) {
             try {
                 if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
-                    updateVerifierControl(decompiledLine);
+                    updateVerifierControl4line(decompiledLine);
+                    tableControl.setSelection(decompiledLine);
                 } else {
                     int lineCount = textControl.getLineCount();
                     if (decompiledLine < lineCount) {
@@ -1221,7 +1246,8 @@ public class BytecodeOutlineView extends ViewPart {
         if (firstDecompiledLine > 0) {
             try {
                 if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
-                    updateVerifierControl(firstDecompiledLine);
+                    updateVerifierControl4line(firstDecompiledLine);
+                    tableControl.setSelection(firstDecompiledLine);
                 } else {
                     int lineCount = textControl.getLineCount();
                     if (firstDecompiledLine < lineCount) {
@@ -1258,34 +1284,40 @@ public class BytecodeOutlineView extends ViewPart {
             lastDecompiledResult, bytecodeOffsetStart, bytecodeOffsetEnd);
     }
 
-    protected void updateVerifierControl(int decompiledLine) {
-        lvtTable.removeAll();
-        stackTable.removeAll();
+    protected void updateVerifierControl4line(int decompiledLine) {
         String[][][] frame = lastDecompiledResult.getFrameTables(
             decompiledLine, !modes.get(BCOConstants.F_SHOW_RAW_BYTECODE));
-        if (frame != null) {
-            for (int i = 0; i < frame[0].length; ++i) {
-                if (frame[0][i] != null) {
-                    new TableItem(lvtTable, SWT.NONE).setText(frame[0][i]);
-                }
-            }
-            for (int i = 0; i < frame[1].length; ++i) {
-                if (frame[1][i] != null) {
-                    new TableItem(stackTable, SWT.NONE).setText(frame[1][i]);
-                }
-            }
+        updateVerifierControl(frame);
+    }
 
-            lvtTable.getColumn(0).pack();
-            lvtTable.getColumn(1).pack();
-            lvtTable.getColumn(2).pack();
-            stackTable.getColumn(0).pack();
-            stackTable.getColumn(1).pack();
+    protected void updateVerifierControl4insn(int insn) {
+        String[][][] frame = lastDecompiledResult.getFrameTablesForInsn(
+            insn, !modes.get(BCOConstants.F_SHOW_RAW_BYTECODE));
+        updateVerifierControl(frame);
+    }
 
-        } else {
-            // lvtControl.setText("");
-            // stackControl.setText("");
+    private void updateVerifierControl(String[][][] frame) {
+        lvtTable.removeAll();
+        stackTable.removeAll();
+        if (frame == null) {
+            return;
         }
-        tableControl.setSelection(decompiledLine);
+        for (int i = 0; i < frame[0].length; ++i) {
+            if (frame[0][i] != null) {
+                new TableItem(lvtTable, SWT.NONE).setText(frame[0][i]);
+            }
+        }
+        for (int i = 0; i < frame[1].length; ++i) {
+            if (frame[1][i] != null) {
+                new TableItem(stackTable, SWT.NONE).setText(frame[1][i]);
+            }
+        }
+
+        lvtTable.getColumn(0).pack();
+        lvtTable.getColumn(1).pack();
+        lvtTable.getColumn(2).pack();
+        stackTable.getColumn(0).pack();
+        stackTable.getColumn(1).pack();
     }
 
     protected void setSelectionInJavaEditor(Point selection) {
@@ -1303,6 +1335,7 @@ public class BytecodeOutlineView extends ViewPart {
         int endDecLine = -1;
         if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
             startDecLine = tableControl.getSelectionIndex();
+            endDecLine = startDecLine;
         } else {
             startDecLine = textControl.getLineAtOffset(selection.x);
             endDecLine = textControl.getLineAtOffset(selection.y);
@@ -1500,6 +1533,7 @@ public class BytecodeOutlineView extends ViewPart {
             tableControl.getColumn(1).pack();
             tableControl.getColumn(2).pack();
             tableControl.getColumn(3).pack();
+            tableControl.getColumn(4).pack();
         }
     }
 
