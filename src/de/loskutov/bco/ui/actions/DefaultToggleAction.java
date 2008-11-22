@@ -31,7 +31,7 @@ public abstract class DefaultToggleAction extends Action implements IPropertyCha
     private final IPreferenceStore store;
 
     public DefaultToggleAction(final String id) {
-        this(id, false);
+        this(id, true);
     }
 
     public DefaultToggleAction(final String id, final boolean addPreferenceListener) {
