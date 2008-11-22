@@ -27,33 +27,52 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
 public abstract class DefaultToggleAction extends Action implements IPropertyChangeListener {
 
     private static final String ACTION = "action";
+    boolean avoidUpdate;
+    private final IPreferenceStore store;
 
-    public DefaultToggleAction(String id) {
+    public DefaultToggleAction(final String id) {
+        this(id, false);
+    }
+
+    public DefaultToggleAction(final String id, final boolean addPreferenceListener) {
         super();
         setId(id);
         init();
 
-        IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
+        IPreferenceStore prefStore = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
 
-        boolean isChecked = store.getBoolean(id);
+        boolean isChecked = prefStore.getBoolean(id);
         setChecked(isChecked);
-        store.addPropertyChangeListener(this);
+        if(addPreferenceListener) {
+            this.store = prefStore;
+            prefStore.addPropertyChangeListener(this);
+        } else {
+            this.store = null;
+        }
     }
 
-    public void propertyChange(PropertyChangeEvent event){
+    public void propertyChange(final PropertyChangeEvent event){
+        if(store == null){
+            return;
+        }
         String id = getId();
         if(!id.equals(event.getProperty())){
             return;
         }
-        IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
         boolean isChecked = store.getBoolean(id);
         setChecked(isChecked);
-        run(isChecked);
+        // The action state can be changed from preference page (therefore run()), but...
+        // see http://forge.objectweb.org/tracker/?func=detail&atid=100023&aid=311888&group_id=23
+        // this causes multiple unneeded re-syncs of the compare editor
+        if(!avoidUpdate) {
+            run(isChecked);
+        }
     }
 
     public void dispose(){
-        IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
-        store.removePropertyChangeListener(this);
+        if(store != null) {
+            store.removePropertyChangeListener(this);
+        }
     }
 
     private void init(){
@@ -79,8 +98,10 @@ public abstract class DefaultToggleAction extends Action implements IPropertyCha
      */
     public final void run() {
         boolean isChecked = isChecked();
-        IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
-        store.setValue(getId(), isChecked);
+        avoidUpdate = true;
+        // compare dialog: we use store as global variables to remember the state
+        BytecodeOutlinePlugin.getDefault().getPreferenceStore().setValue(getId(), isChecked);
+        avoidUpdate = false;
         run(isChecked);
     }
 

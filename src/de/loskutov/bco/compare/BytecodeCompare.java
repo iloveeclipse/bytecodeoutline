@@ -53,23 +53,23 @@ public class BytecodeCompare extends CompareEditorInput {
      * @param left element displayed on the left.
      * @param right element displayed on the right.
      */
-    public BytecodeCompare(TypedElement left, TypedElement right) {
+    public BytecodeCompare(final TypedElement left, final TypedElement right) {
         super(new CompareConfiguration());
         this.left = left;
         this.right = right;
         toggleAsmifierModeAction = new DefaultToggleAction(
-            BCOConstants.DIFF_SHOW_ASMIFIER_CODE) {
+            BCOConstants.DIFF_SHOW_ASMIFIER_CODE, false) {
 
-            public void run(boolean newState) {
+            public void run(final boolean newState) {
                 toggleMode(
                     BCOConstants.F_SHOW_ASMIFIER_CODE, newState, newState);
             }
         };
 
         hideLineInfoAction = new DefaultToggleAction(
-            BCOConstants.DIFF_SHOW_LINE_INFO) {
+            BCOConstants.DIFF_SHOW_LINE_INFO, false) {
 
-            public void run(boolean newState) {
+            public void run(final boolean newState) {
                 toggleMode(
                     BCOConstants.F_SHOW_LINE_INFO, newState,
                     toggleAsmifierModeAction.isChecked());
@@ -77,9 +77,9 @@ public class BytecodeCompare extends CompareEditorInput {
         };
 
         hideLocalsAction = new DefaultToggleAction(
-            BCOConstants.DIFF_SHOW_VARIABLES) {
+            BCOConstants.DIFF_SHOW_VARIABLES, false) {
 
-            public void run(boolean newState) {
+            public void run(final boolean newState) {
                 toggleMode(
                     BCOConstants.F_SHOW_VARIABLES, newState,
                     toggleAsmifierModeAction.isChecked());
@@ -87,9 +87,9 @@ public class BytecodeCompare extends CompareEditorInput {
         };
 
         hideStackMapAction = new DefaultToggleAction(
-            BCOConstants.DIFF_SHOW_STACKMAP) {
+            BCOConstants.DIFF_SHOW_STACKMAP, false) {
 
-            public void run(boolean newState) {
+            public void run(final boolean newState) {
                 toggleMode(
                     BCOConstants.F_SHOW_STACKMAP, newState,
                     toggleAsmifierModeAction.isChecked());
@@ -97,9 +97,9 @@ public class BytecodeCompare extends CompareEditorInput {
         };
 
         expandStackMapAction = new DefaultToggleAction(
-            BCOConstants.DIFF_EXPAND_STACKMAP) {
+            BCOConstants.DIFF_EXPAND_STACKMAP, false) {
 
-            public void run(boolean newState) {
+            public void run(final boolean newState) {
                 toggleMode(
                     BCOConstants.F_EXPAND_STACKMAP, newState,
                     toggleAsmifierModeAction.isChecked());
@@ -108,7 +108,7 @@ public class BytecodeCompare extends CompareEditorInput {
     }
 
     /** @see CompareEditorInput#prepareInput(IProgressMonitor) */
-    protected Object prepareInput(IProgressMonitor monitor)
+    protected Object prepareInput(final IProgressMonitor monitor)
         throws InterruptedException {
         if (right == null || left == null) {
             return null;
@@ -190,7 +190,7 @@ public class BytecodeCompare extends CompareEditorInput {
     /**
      * @see org.eclipse.compare.CompareEditorInput#createContents(org.eclipse.swt.widgets.Composite)
      */
-    public Control createContents(Composite parent) {
+    public Control createContents(final Composite parent) {
         Object obj = parent.getData();
         if(obj == null) {
             obj = parent.getParent().getData();
@@ -265,7 +265,7 @@ public class BytecodeCompare extends CompareEditorInput {
         return control;
     }
 
-    protected void toggleMode(int mode, boolean value, boolean isASMifierMode) {
+    protected void toggleMode(final int mode, final boolean value, final boolean isASMifierMode) {
         String contentType = isASMifierMode
             ? TypedElement.TYPE_ASM_IFIER
             : TypedElement.TYPE_BYTECODE;
