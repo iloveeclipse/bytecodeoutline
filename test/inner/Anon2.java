@@ -7,11 +7,11 @@ public class Anon2 {
     Anon2() {
         new Object() {
             final static String v15 = "Anon2$3";
-            final static String v14 = "Anon2$11";
+            final static String v14 = "Anon2$7";
         };
         new Object() {
             final static String v15 = "Anon2$4";
-            final static String v14 = "Anon2$12";
+            final static String v14 = "Anon2$8";
         };
     }
 
