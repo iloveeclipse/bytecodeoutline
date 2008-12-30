@@ -17,6 +17,7 @@ import org.eclipse.compare.CompareViewerPane;
 import org.eclipse.compare.CompareViewerSwitchingPane;
 import org.eclipse.compare.structuremergeviewer.Differencer;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.jface.action.Action;
@@ -26,6 +27,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.IReusableEditor;
 
+import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.preferences.BCOConstants;
 import de.loskutov.bco.ui.actions.DefaultToggleAction;
 
@@ -160,6 +162,7 @@ public class BytecodeCompare extends CompareEditorInput {
             }
         } catch (Exception e) {
             // ignore
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
 
         // does not work after changing content: this is a bug in CompareEditorInput, because
