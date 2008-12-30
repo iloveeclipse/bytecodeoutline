@@ -43,7 +43,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
 
     private int accessFlags;
 
-    private ClassNode classNode;
+    private final ClassNode classNode;
 
     public DecompilerClassVisitor(final ClassVisitor cv, final String field,
         final String method, final BitSet modes) {
@@ -88,7 +88,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
         return dc;
     }
 
-    private void formatText(final List input, StringBuffer line, final List result,
+    private void formatText(final List input, final StringBuffer line, final List result,
         final ClassLoader cl) {
         for (int i = 0; i < input.size(); ++i) {
             Object o = input.get(i);
@@ -116,11 +116,12 @@ public class DecompilerClassVisitor extends ClassAdapter {
     public void visit(final int version, final int access, final String name1,
         final String signature, final String superName,
         final String[] interfaces) {
-        if (methodFilter == null && fieldFilter == null) {
-            super
-                .visit(version, access, name1, signature, superName, interfaces);
-            classNode.visit(version, access, name1, signature, superName, interfaces);
+        if (decompilingEntireClass()) {
+            super.visit(version, access, name1, signature, superName, interfaces);
         }
+        // remember class name
+        classNode.visit(version, access, name1, signature, superName, interfaces);
+
         this.name = name1;
         int major = version & 0xFFFF;
         //int minor = version >>> 16;
@@ -134,15 +135,19 @@ public class DecompilerClassVisitor extends ClassAdapter {
     }
 
     public void visitSource(final String source, final String debug) {
-        if (methodFilter == null && fieldFilter == null) {
+        if (decompilingEntireClass()) {
             super.visitSource(source, debug);
             classNode.visitSource(source, debug);
         }
     }
 
+    private boolean decompilingEntireClass() {
+        return methodFilter == null && fieldFilter == null;
+    }
+
     public void visitOuterClass(final String owner, final String name1,
         final String desc) {
-        if (methodFilter == null && fieldFilter == null) {
+        if (decompilingEntireClass()) {
             super.visitOuterClass(owner, name1, desc);
             classNode.visitOuterClass(owner, name1, desc);
         }
@@ -150,7 +155,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
 
     public AnnotationVisitor visitAnnotation(final String desc,
         final boolean visible) {
-        if (methodFilter == null && fieldFilter == null) {
+        if (decompilingEntireClass()) {
             AnnotationVisitor cav = classNode.visitAnnotation(desc, visible);
             AnnotationVisitor av = super.visitAnnotation(desc, visible);
             if(av instanceof CommentedAnnotationVisitor){
@@ -163,7 +168,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
     }
 
     public void visitAttribute(final Attribute attr) {
-        if (methodFilter == null && fieldFilter == null) {
+        if (decompilingEntireClass()) {
             super.visitAttribute(attr);
             classNode.visitAttribute(attr);
         }
@@ -171,7 +176,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
 
     public void visitInnerClass(final String name1, final String outerName,
         final String innerName, final int access) {
-        if (methodFilter == null && fieldFilter == null) {
+        if (decompilingEntireClass()) {
             super.visitInnerClass(name1, outerName, innerName, access);
             classNode.visitInnerClass(name1, outerName, innerName, access);
         }
@@ -219,7 +224,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
     }
 
     public void visitEnd() {
-        if (methodFilter == null && fieldFilter == null) {
+        if (decompilingEntireClass()) {
             classNode.visitEnd();
             super.visitEnd();
         }
