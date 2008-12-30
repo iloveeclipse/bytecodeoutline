@@ -26,17 +26,6 @@ public class Anon4 {
         };
 
         class A3 {
-            {
-                new Object() {
-                    final static String v15 = "Anon4$1A3$1";
-                    final static String v14 = "Anon4$11";
-                };
-                new Object() {
-                    final static String v15 = "Anon4$1A3$2";
-                    final static String v14 = "Anon4$12";
-                };
-            }
-            // see https://bugs.eclipse.org/bugs/show_bug.cgi?id=167357
             final static String v15 = "Anon4$1A3";
             final static String v14 = "Anon4$1$A3";
 
@@ -50,17 +39,29 @@ public class Anon4 {
                     final static String v14 = "Anon4$14";
                 };
             }
+
+            {
+                new Object() {
+                    final static String v15 = "Anon4$1A3$1";
+                    final static String v14 = "Anon4$11";
+                };
+                new Object() {
+                    final static String v15 = "Anon4$1A3$2";
+                    final static String v14 = "Anon4$12";
+                };
+            }
+
         }
     }
 
     static void staticMethod() {
         new Object() {
             final static String v15 = "Anon4$7";
-            final static String v14 = "Anon4$11";
+            final static String v14 = "Anon4$15";
         };
         new Object() {
             final static String v15 = "Anon4$8";
-            final static String v14 = "Anon4$12";
+            final static String v14 = "Anon4$16";
         };
     }
 
@@ -80,6 +81,17 @@ public class Anon4 {
         final static String v15 = "Anon4$A2";
         final static String v14 = "Anon4$A2";
 
+        void instanceMethod() {
+            new Object() {
+                final static String v15 = "Anon4$A2$3";
+                final static String v14 = "Anon4$5";
+            };
+            new Object() {
+                final static String v15 = "Anon4$A2$4";
+                final static String v14 = "Anon4$6";
+            };
+        }
+
         {
             new Object() {
                 final static String v15 = "Anon4$A2$1";
@@ -91,15 +103,6 @@ public class Anon4 {
             };
         }
 
-        void instanceMethod() {
-            new Object() {
-                final static String v15 = "Anon4$A2$3";
-                final static String v14 = "Anon4$5";
-            };
-            new Object() {
-                final static String v15 = "Anon4$A2$4";
-                final static String v14 = "Anon4$6";
-            };
-        }
+
     }
 }

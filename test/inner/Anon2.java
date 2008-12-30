@@ -4,7 +4,7 @@ public class Anon2 {
     final static String v15 = "Anon2";
     final static String v14 = "Anon2";
 
-    Anon2() {
+    void instanceMethod() {
         new Object() {
             final static String v15 = "Anon2$3";
             final static String v14 = "Anon2$7";
@@ -15,7 +15,7 @@ public class Anon2 {
         };
     }
 
-    void instanceMethod() {
+    Anon2() {
         new Object() {
             final static String v15 = "Anon2$5";
             final static String v14 = "Anon2$9";
@@ -53,17 +53,6 @@ public class Anon2 {
         final static String v15 = "Anon2$A2";
         final static String v14 = "Anon2$A2";
 
-        {
-            new Object() {
-                final static String v15 = "Anon2$A2$1";
-                final static String v14 = "Anon2$3";
-            };
-            new Object() {
-                final static String v15 = "Anon2$A2$2";
-                final static String v14 = "Anon2$4";
-            };
-        }
-
         void instanceMethod() {
             new Object() {
                 final static String v15 = "Anon2$A2$3";
@@ -72,6 +61,17 @@ public class Anon2 {
             new Object() {
                 final static String v15 = "Anon2$A2$4";
                 final static String v14 = "Anon2$6";
+            };
+        }
+
+        {
+            new Object() {
+                final static String v15 = "Anon2$A2$1";
+                final static String v14 = "Anon2$3";
+            };
+            new Object() {
+                final static String v15 = "Anon2$A2$2";
+                final static String v14 = "Anon2$4";
             };
         }
     }

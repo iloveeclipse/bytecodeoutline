@@ -48,7 +48,7 @@ import org.eclipse.ui.PlatformUI;
 
 public abstract class TestJdtUtils extends TestCase {
 
-    private boolean onlyPrintOutError = false;
+    private final boolean onlyPrintOutError = false;
     private static String EXTERNAL_JAR_DIR_PATH;
     private IWorkspace workspace;
     private IWorkspaceRoot root;
@@ -470,7 +470,7 @@ public abstract class TestJdtUtils extends TestCase {
      * This path ends with a File.separatorChar.
      */
     protected String getExternalPath() {
-        if (EXTERNAL_JAR_DIR_PATH == null)
+        if (EXTERNAL_JAR_DIR_PATH == null) {
             try {
                 String path = root.getLocation().toFile().getParentFile().getCanonicalPath();
                 if (path.charAt(path.length()-1) != File.separatorChar) {
@@ -480,6 +480,7 @@ public abstract class TestJdtUtils extends TestCase {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
         return EXTERNAL_JAR_DIR_PATH;
     }
 
@@ -599,10 +600,10 @@ public abstract class TestJdtUtils extends TestCase {
             if(constant != null){
                 constant = constant.substring(1, constant.length() - 1);
             }
-            String name = JdtUtils.getByteCodePath(type);
             String expectedPath = packagePath + constant + ".class";
+            String name = JdtUtils.getByteCodePath(type);
             if(!(expectedPath).equals(name)){
-                System.out.println("Expected/received: \nok  -> " + expectedPath + "\nbad -> " + name + "\n");
+                System.out.println("Expected/received: \nexpected  -> " + expectedPath + "\nreceived -> " + name + "\n");
                 if(!onlyPrintOutError) {
                     assertEquals(expectedPath, name);
                 }
