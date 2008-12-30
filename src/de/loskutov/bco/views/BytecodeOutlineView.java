@@ -85,6 +85,7 @@ import org.eclipse.ui.texteditor.FindReplaceAction;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.texteditor.IUpdate;
 import org.eclipse.ui.texteditor.IWorkbenchActionDefinitionIds;
+import org.objectweb.asm.tree.ClassNode;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
@@ -1113,8 +1114,13 @@ public class BytecodeOutlineView extends ViewPart {
             currentStatusMessage = "Java:"
                 + result.getAttribute("java.version") + " | class size:"
                 + result.getAttribute("class.size");
+            ClassNode classNode = result.getClassNode();
+            if(classNode != null && classNode.name != null) {
+                setContentDescription(classNode.name);
+            }
         } else {
             currentStatusMessage = "";
+            setContentDescription("");
         }
         String selectionInfo = "";
         if (bytecodeOffsetStart >= 0) {
@@ -1129,6 +1135,7 @@ public class BytecodeOutlineView extends ViewPart {
         } else {
             statusLineManager.setMessage(currentStatusMessage + selectionInfo);
         }
+
     }
 
     public int getBytecodeInstructionAtLine(int line) {
