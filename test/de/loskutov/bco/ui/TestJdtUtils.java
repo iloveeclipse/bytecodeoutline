@@ -48,7 +48,7 @@ import org.eclipse.ui.PlatformUI;
 
 public abstract class TestJdtUtils extends TestCase {
 
-    private final boolean onlyPrintOutError = false;
+    private static final boolean onlyPrintOutError = false;
     private static String EXTERNAL_JAR_DIR_PATH;
     private IWorkspace workspace;
     private IWorkspaceRoot root;
@@ -490,7 +490,10 @@ public abstract class TestJdtUtils extends TestCase {
      */
     protected void copyDirectory(File source, File target) throws IOException {
         if (!target.exists()) {
-            target.mkdirs();
+            boolean result = target.mkdirs();
+            if(!result){
+                throw new IOException("Can't create directory: " + target);
+            }
         }
         File[] files = source.listFiles();
         if (files == null) {
