@@ -24,7 +24,6 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.debug.core.IJavaReferenceType;
-import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.JavaUIStatus;
 import org.eclipse.jdt.internal.ui.javaeditor.ClassFileDocumentProvider;
 import org.eclipse.jdt.internal.ui.javaeditor.ClassFileEditor;
@@ -462,62 +461,6 @@ public class BytecodeClassFileEditor extends ClassFileEditor
         return super.getAdapter(required);
     }
 
-    /*
-     * Overriden to prevent NPE on SourceReference objects without associated source
-     * ranges, see https://bugs.eclipse.org/bugs/show_bug.cgi?id=142936
-     * @see JavaEditor#adjustHighlightRange(int, int)
-     */
-    protected void adjustHighlightRange(int offset, int length) {
-        try {
-
-            IJavaElement element = getElementAt(offset);
-            while (element instanceof ISourceReference) {
-                ISourceRange range = ((ISourceReference) element)
-                    .getSourceRange();
-                // range != null is the only one change we need here
-                if (range != null
-                    && (offset < range.getOffset() + range.getLength() && range
-                        .getOffset() < offset + length)) {
-
-                    ISourceViewer viewer = getSourceViewer();
-                    if (viewer instanceof ITextViewerExtension5) {
-                        ITextViewerExtension5 extension = (ITextViewerExtension5) viewer;
-                        extension.exposeModelRange(new Region(
-                            range.getOffset(), range.getLength()));
-                    }
-
-                    setHighlightRange(
-                        range.getOffset(), range.getLength(), true);
-                    if (fOutlinePage != null) {
-                        fOutlineSelectionChangedListener
-                            .uninstall(fOutlinePage);
-                        fOutlinePage.select((ISourceReference) element);
-                        fOutlineSelectionChangedListener.install(fOutlinePage);
-                    }
-
-                    return;
-                }
-                element = element.getParent();
-            }
-
-        } catch (JavaModelException x) {
-            JavaPlugin.log(x.getStatus());
-        }
-
-        ISourceViewer viewer = getSourceViewer();
-        if (viewer instanceof ITextViewerExtension5) {
-            ITextViewerExtension5 extension = (ITextViewerExtension5) viewer;
-            extension.exposeModelRange(new Region(offset, length));
-        } else {
-            resetHighlightRange();
-        }
-
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.jdt.internal.ui.javaeditor.JavaEditor#computeHighlightRangeSourceReference()
-     */
     protected ISourceReference computeHighlightRangeSourceReference() {
         if (!isDecompiled()) {
             return super.computeHighlightRangeSourceReference();
