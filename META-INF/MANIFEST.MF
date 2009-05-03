@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Bytecode Outline Plug-in
 Bundle-SymbolicName: de.loskutov.BytecodeOutline;singleton:=true
-Bundle-Version: 2.2.8
+Bundle-Version: 2.2.9
 Bundle-ClassPath: .,
  lib/asm-3.1.jar,
  lib/asm-analysis-3.1.jar,
@@ -11,7 +11,6 @@ Bundle-ClassPath: .,
  lib/asm-util-3.1.jar
 Bundle-Activator: de.loskutov.bco.BytecodeOutlinePlugin
 Bundle-Vendor: Andrei Loskutov
-Bundle-Localization: plugin
 Require-Bundle: org.eclipse.ui,
  org.eclipse.ui.editors,
  org.eclipse.core.runtime,
