@@ -2,7 +2,7 @@
 <feature
       id="de.loskutov.BytecodeOutline.feature"
       label="Bytecode Outline"
-      version="2.2.6"
+      version="2.2.10"
       provider-name="Andrei Loskutov">
 
    <description url="http://asm.objectweb.org/eclipse/bco/index.html">
@@ -56,7 +56,7 @@ THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS&apos;&apos; AND
          id="de.loskutov.BytecodeOutline"
          download-size="710"
          install-size="710"
-         version="2.2.6"
+         version="2.2.10"
          unpack="false"/>
 
 </feature>
