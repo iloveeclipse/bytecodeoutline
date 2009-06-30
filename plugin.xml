@@ -178,27 +178,6 @@
    </extension>
 
    <extension
-         point="org.eclipse.ui.editorActions">
-      <editorContribution
-            targetID="org.eclipse.jdt.ui.ClassFileEditor"
-            id="org.eclipse.jdt.internal.ui.ClassFileEditor.ruler.actions2">
-         <action
-               label="%JavaSelectRulerAction.label"
-               class="org.eclipse.jdt.internal.ui.javaeditor.JavaSelectRulerAction"
-               actionID="RulerClick"
-               id="org.eclipse.jdt.internal.ui.javaeditor.JavaSelectRulerAction2">
-         </action>
-         <action
-               label="%BookmarkRulerAction.label"
-               helpContextId="org.eclipse.ui.bookmark_action_context"
-               class="org.eclipse.ui.texteditor.BookmarkRulerAction"
-               actionID="RulerDoubleClick"
-               id="org.eclipse.jdt.internal.ui.javaeditor.BookmarkRulerAction2">
-         </action>
-      </editorContribution>
-  </extension>
-
-   <extension
          point="org.eclipse.ui.editors">
       <editor
             class="de.loskutov.bco.editors.BytecodeClassFileEditor"
@@ -212,21 +191,7 @@
          <contentTypeBinding contentTypeId="org.eclipse.jdt.core.javaClass"/>
       </editor>
    </extension>
-   <!-- replacement for org.eclipse.debug.ui.actions.RulerToggleBreakpointActionDelegate -->
-   <extension
-         point="org.eclipse.ui.editorActions">
-      <editorContribution
-            targetID="de.loskutov.bco.editors.BytecodeClassFileEditor"
-            id="de.loskutov.bco.editors.BreakpointRulerActions">
-         <action
-               label="?"
-               class="org.eclipse.debug.ui.actions.RulerToggleBreakpointActionDelegate"
-               style="push"
-               actionID="RulerDoubleClick"
-               id="de.loskutov.bco.editors.ManageBreakpointRulerAction">
-         </action>
-      </editorContribution>
-   </extension>
+
   <extension point="org.eclipse.help.toc">
     <toc file="doc/toc.xml" primary="true" />
   </extension>
