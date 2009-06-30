@@ -18,6 +18,7 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaModelStatusConstants;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.ISourceReference;
 import org.eclipse.jdt.core.IType;
@@ -40,6 +41,7 @@ import org.eclipse.jface.text.TextSelection;
 import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorReference;
@@ -74,6 +76,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
     private boolean hasMappedSource;
     private boolean decompiled;
     private boolean initDone;
+    private boolean sourceAttachmentPossible;
 
     /**
      * Constructor for JadclipseClassFileEditor.
@@ -95,6 +98,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
         decompilerFlags.set(BCOConstants.F_SHOW_LINE_INFO, true);
         decompilerFlags.set(BCOConstants.F_SHOW_VARIABLES, true);
         decompilerFlags.set(BCOConstants.F_SHOW_RAW_BYTECODE, false);
+        setSourceAttachmentPossible(true);
     }
 
     /**
@@ -658,17 +662,25 @@ public class BytecodeClassFileEditor extends ClassFileEditor
     /*
      * @see ClassFileDocumentProvider.InputChangeListener#inputChanged(IClassFileEditorInput)
      */
-    public void inputChanged(IClassFileEditorInput input) {
-        fInputUpdater.post(input);
-        IClassFile cf = input.getClassFile();
-        String source;
-        try {
-            source = cf.getSource();
-            setDecompiled(source != null && source.startsWith(MARK));
-        } catch (JavaModelException e) {
-            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-        }
+    public void inputChanged(final IClassFileEditorInput input) {
+        Runnable updateInput = new Runnable() {
+            public void run() {
+                fInputUpdater.post(input);
+                IClassFile cf = input.getClassFile();
+                try {
+                    String source = cf.getSource();
+                    setDecompiled(source != null && source.startsWith(MARK));
+                } catch (JavaModelException e) {
+                    BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+                }
 
+            }
+        };
+        if(Display.getCurrent() == null){
+            Display.getDefault().asyncExec(updateInput);
+        } else {
+            updateInput.run();
+        }
     }
 
     /*
@@ -809,6 +821,22 @@ public class BytecodeClassFileEditor extends ClassFileEditor
         return false;
     }
 
+    /**
+     * Returns the package fragment root of this file.
+     *
+     * @param file the class file
+     * @return the package fragment root of the given class file
+     */
+    IPackageFragmentRoot getPackageFragmentRoot(IClassFile file) {
+
+        IJavaElement element= file.getParent();
+        while (element != null && element.getElementType() != IJavaElement.PACKAGE_FRAGMENT_ROOT) {
+            element= element.getParent();
+        }
+
+        return (IPackageFragmentRoot) element;
+    }
+
     private static BytecodeClassFileEditor getBytecodeEditor(IClassFile parent) {
         IEditorReference[] editorReferences = PlatformUI.getWorkbench()
             .getActiveWorkbenchWindow().getActivePage().getEditorReferences();
@@ -877,4 +905,11 @@ public class BytecodeClassFileEditor extends ClassFileEditor
         return -1;
     }
 
+    public void setSourceAttachmentPossible(boolean sourceAttachmentPossible) {
+        this.sourceAttachmentPossible = sourceAttachmentPossible;
+    }
+
+    public boolean isSourceAttachmentPossible() {
+        return sourceAttachmentPossible && isDecompiled() && !hasMappedSource();
+    }
 }

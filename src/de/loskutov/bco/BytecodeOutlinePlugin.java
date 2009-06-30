@@ -114,7 +114,9 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
         if (messageID != null) {
             message = getResourceString(messageID);
         }
-        message = message + " " + error.getMessage();//$NON-NLS-1$
+        if (error != null) {
+            message += " " + error.getMessage();
+        }
         MessageDialog.openError(
             shell, getResourceString("BytecodeOutline.Title"), //$NON-NLS-1$
             message);

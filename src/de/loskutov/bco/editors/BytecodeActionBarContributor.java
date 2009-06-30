@@ -1,6 +1,20 @@
 package de.loskutov.bco.editors;
 
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.ClasspathContainerInitializer;
+import org.eclipse.jdt.core.IClasspathContainer;
+import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.internal.corext.util.JavaModelUtil;
 import org.eclipse.jdt.internal.ui.javaeditor.ClassFileEditorActionContributor;
+import org.eclipse.jdt.internal.ui.wizards.buildpaths.BuildPathSupport;
+import org.eclipse.jdt.internal.ui.wizards.buildpaths.CPListElement;
+import org.eclipse.jdt.ui.wizards.BuildPathDialogAccess;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
@@ -8,6 +22,8 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
@@ -26,6 +42,7 @@ public class BytecodeActionBarContributor
     BytecodeClassFileEditor editor;
     protected ShowBytecodeAction refreshAction;
     protected ToggleRawBytecodeAction toggleRawBytecodeAction;
+    private final AttachSourceAction attachAction;
 
     public BytecodeActionBarContributor() {
         super();
@@ -40,12 +57,16 @@ public class BytecodeActionBarContributor
             symbolicName, "icons/raw_mode.gif");
         toggleRawBytecodeAction = new ToggleRawBytecodeAction(actionIcon);
 
+        actionIcon = AbstractUIPlugin.imageDescriptorFromPlugin(
+            symbolicName, "icons/source.gif");
+        attachAction = new AttachSourceAction(actionIcon);
     }
 
     public void contributeToToolBar(IToolBarManager toolBarManager) {
         super.contributeToToolBar(toolBarManager);
         toolBarManager.add(refreshAction);
         toolBarManager.add(toggleRawBytecodeAction);
+        toolBarManager.add(attachAction);
         // toolBarManager.add(new Separator(JadclipsePlugin.PID_JADCLIPSE));
         // toolBarManager.appendToGroup(JadclipsePlugin.PID_JADCLIPSE, dAction);
     }
@@ -57,6 +78,7 @@ public class BytecodeActionBarContributor
         if (edit != null) {
             edit.add(refreshAction);
             edit.add(toggleRawBytecodeAction);
+            edit.add(attachAction);
         }
     }
 
@@ -68,9 +90,11 @@ public class BytecodeActionBarContributor
             toggleRawBytecodeAction.setEnabled(editor.isDecompiled());
             toggleRawBytecodeAction.setChecked(editor
                 .getDecompilerFlag(BCOConstants.F_SHOW_RAW_BYTECODE));
+            attachAction.setEnabled(editor.isSourceAttachmentPossible());
         } else {
             refreshAction.setEnabled(false);
             toggleRawBytecodeAction.setEnabled(false);
+            attachAction.setEnabled(false);
             editor = null;
         }
         super.setActiveEditor(targetEditor);
@@ -104,6 +128,73 @@ public class BytecodeActionBarContributor
                 }
                 toggleRawBytecodeAction.setEnabled(editor.isDecompiled());
             }
+        }
+    }
+
+    private class AttachSourceAction extends Action {
+
+        protected AttachSourceAction(ImageDescriptor actionIcon) {
+            super("Attach Source...", SWT.NONE);
+            setImageDescriptor(actionIcon);
+            setToolTipText("Attach Source...");
+        }
+
+        public void run() {
+            if (editor == null) {
+                return;
+            }
+            IPackageFragmentRoot root = editor.getPackageFragmentRoot(editor.getClassFile());
+            try {
+                IClasspathEntry entry = root.getRawClasspathEntry();
+                IPath containerPath = null;
+                IJavaProject javaProject = root.getJavaProject();
+                if (entry.getEntryKind() == IClasspathEntry.CPE_CONTAINER) {
+                    containerPath = entry.getPath();
+                    IClasspathContainer container = JavaCore
+                        .getClasspathContainer(containerPath, javaProject);
+                    if(!isSourceAttachmentPossible(containerPath, javaProject)){
+                        editor.setSourceAttachmentPossible(false);
+                        attachAction.setEnabled(false);
+                        BytecodeOutlinePlugin
+                            .error("Unable to configure source attachment:\n"
+                                + "classpath entry '" + containerPath +
+                                        "'\nis either read-only "
+                                + "or source attachment is not supported...", null);
+                        return;
+                    }
+                    entry = JavaModelUtil.findEntryInContainer(container, root
+                        .getPath());
+                }
+
+                Shell shell = Display.getDefault().getActiveShell();
+                IClasspathEntry cpe = BuildPathDialogAccess
+                    .configureSourceAttachment(shell, entry);
+                if (cpe == null) {
+                    return;
+                }
+                String[] changedAttributes = {CPListElement.SOURCEATTACHMENT};
+                BuildPathSupport.modifyClasspathEntry(
+                    shell, cpe, changedAttributes, javaProject, containerPath,
+                    new NullProgressMonitor());
+            } catch (CoreException e) {
+                BytecodeOutlinePlugin.error(
+                    "Unable to configure source attachment", e);
+            }
+        }
+
+        private boolean isSourceAttachmentPossible(IPath containerPath,
+            IJavaProject javaProject) {
+            ClasspathContainerInitializer initializer = JavaCore
+                .getClasspathContainerInitializer(containerPath
+                    .segment(0));
+            IStatus status = initializer.getSourceAttachmentStatus(
+                containerPath, javaProject);
+            if (status.getCode() == ClasspathContainerInitializer.ATTRIBUTE_NOT_SUPPORTED
+                || status.getCode() == ClasspathContainerInitializer.ATTRIBUTE_READ_ONLY) {
+
+                return false;
+            }
+            return true;
         }
     }
 
