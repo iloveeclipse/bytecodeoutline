@@ -19,7 +19,7 @@
    <feature url="features/de.loskutov.BytecodeOutline.feature_2.2.6.jar" id="de.loskutov.BytecodeOutline.feature" version="2.2.6">
       <category name="Bytecode Outline for Eclipse 3.4"/>
    </feature>
-   <archive path="plugins/de.loskutov.BytecodeOutline_2.2.11.jar" url="http://download.forge.objectweb.org/asm/de.loskutov.BytecodeOutline_2.2.11.jar"/>
+   <archive path="plugins/de.loskutov.BytecodeOutline_2.2.12.jar" url="http://download.forge.objectweb.org/asm/de.loskutov.BytecodeOutline_2.2.12.jar"/>
    <category-def name="Bytecode Outline for Eclipse 3.4" label="Bytecode Outline for Eclipse 3.4"/>
 
 </site>

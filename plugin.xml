@@ -191,7 +191,23 @@
          <contentTypeBinding contentTypeId="org.eclipse.jdt.core.javaClass"/>
       </editor>
    </extension>
-
+   
+   <!-- replacement for org.eclipse.debug.ui.actions.RulerToggleBreakpointActionDelegate,
+    required for toggle breakpoint by double-click in editor ruler in class files -->
+   <extension
+         point="org.eclipse.ui.editorActions">
+      <editorContribution
+            targetID="de.loskutov.bco.editors.BytecodeClassFileEditor"
+            id="de.loskutov.bco.editors.BreakpointRulerActions">
+         <action
+               label="?"
+               class="org.eclipse.debug.ui.actions.RulerToggleBreakpointActionDelegate"
+               style="push"
+               actionID="RulerDoubleClick"
+               id="de.loskutov.bco.editors.ManageBreakpointRulerAction">
+         </action>
+      </editorContribution>
+   </extension>
   <extension point="org.eclipse.help.toc">
     <toc file="doc/toc.xml" primary="true" />
   </extension>

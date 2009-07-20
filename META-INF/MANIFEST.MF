@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Bytecode Outline Plug-in
 Bundle-SymbolicName: de.loskutov.BytecodeOutline;singleton:=true
-Bundle-Version: 2.2.11
+Bundle-Version: 2.2.12
 Bundle-ClassPath: .,
  lib/asm-3.2.jar,
  lib/asm-analysis-3.2.jar,
