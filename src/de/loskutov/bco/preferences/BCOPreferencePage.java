@@ -1,3 +1,11 @@
+/*******************************************************************************
+ * Copyright (c) 2010 Andrei Loskutov.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the BSD License
+ * which accompanies this distribution, and is available at
+ * http://www.opensource.org/licenses/bsd-license.php
+ * Contributor:  Andrei Loskutov - initial API and implementation
+ *******************************************************************************/
 package de.loskutov.bco.preferences;
 
 import org.eclipse.jface.preference.BooleanFieldEditor;
@@ -87,7 +95,7 @@ public class BCOPreferencePage extends FieldEditorPreferencePage
         rateGroup.setLayoutData(gridData);
         tabMisc.setControl(rateGroup);
 
-        RateIt.createTextArea(rateGroup);
+        SupportPanel.createSupportLinks(rateGroup);
 
 
         addField(new BooleanFieldEditor(
