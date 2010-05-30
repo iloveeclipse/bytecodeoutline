@@ -1,21 +1,21 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Bytecode Outline Plug-in
+Bundle-Name: Bytecode Outline
 Bundle-SymbolicName: de.loskutov.BytecodeOutline;singleton:=true
-Bundle-Version: 2.2.12
+Bundle-Version: 2.3
 Bundle-ClassPath: .,
- lib/asm-3.2.jar,
- lib/asm-analysis-3.2.jar,
- lib/asm-commons-3.2.jar,
- lib/asm-tree-3.2.jar,
- lib/asm-util-3.2.jar
+ lib/asm-3.3.jar,
+ lib/asm-analysis-3.3.jar,
+ lib/asm-commons-3.3.jar,
+ lib/asm-tree-3.3.jar,
+ lib/asm-util-3.3.jar
 Bundle-Activator: de.loskutov.bco.BytecodeOutlinePlugin
 Bundle-Vendor: Andrei Loskutov
 Require-Bundle: org.eclipse.ui,
  org.eclipse.ui.editors,
  org.eclipse.core.runtime,
  org.eclipse.jface.text,
- org.eclipse.jdt.core;bundle-version="3.4.0",
+ org.eclipse.jdt.core;bundle-version="3.5.0",
  org.eclipse.ui.workbench.texteditor,
  org.eclipse.jdt.ui,
  org.eclipse.ui.ide,
@@ -29,3 +29,4 @@ Require-Bundle: org.eclipse.ui,
  org.junit;resolution:=optional,
  org.eclipse.core.net
 Eclipse-LazyStart: true
+Bundle-RequiredExecutionEnvironment: J2SE-1.4
