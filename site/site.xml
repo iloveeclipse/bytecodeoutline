@@ -28,4 +28,10 @@
    <archive path="plugins/de.loskutov.BytecodeOutline_2.3.0.jar" url="http://download.forge.objectweb.org/asm/de.loskutov.BytecodeOutline_2.3.0.jar"/>
    <category-def name="Bytecode Outline for Eclipse 3.5" label="Bytecode Outline for Eclipse 3.5"/>
 
+   <feature url="features/de.loskutov.BytecodeOutline.feature_2.3.1.jar" id="de.loskutov.BytecodeOutline.feature" version="2.3.1">
+      <category name="Bytecode Outline for Eclipse 3.6"/>
+   </feature>
+   <archive path="plugins/de.loskutov.BytecodeOutline_2.3.1.jar" url="http://download.forge.objectweb.org/asm/de.loskutov.BytecodeOutline_2.3.1.jar"/>
+   <category-def name="Bytecode Outline for Eclipse 3.5" label="Bytecode Outline for Eclipse 3.6"/>
+
 </site>

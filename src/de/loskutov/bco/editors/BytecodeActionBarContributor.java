@@ -175,6 +175,7 @@ public class BytecodeActionBarContributor
                 String[] changedAttributes = {CPListElement.SOURCEATTACHMENT};
                 BuildPathSupport.modifyClasspathEntry(
                     shell, cpe, changedAttributes, javaProject, containerPath,
+                    cpe.getReferencingEntry() != null,
                     new NullProgressMonitor());
             } catch (CoreException e) {
                 BytecodeOutlinePlugin.error(
