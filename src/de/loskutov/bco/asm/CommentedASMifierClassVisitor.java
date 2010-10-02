@@ -49,9 +49,9 @@ public class CommentedASMifierClassVisitor extends ASMifierClassVisitor {
             }
 
             public void visitMaxs(int maxStack, int maxLocals) {
-                if (showLocals) {
+                //if (showLocals) {
                     super.visitMaxs(maxStack, maxLocals);
-                }
+                //}
             }
 
         };
