@@ -8,20 +8,19 @@ import java.util.Map;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodAdapter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.util.AbstractVisitor;
-
-import de.loskutov.bco.asm.CommentedClassVisitor.CommentedAnnotationVisitor;
+import org.objectweb.asm.util.ASMifierMethodVisitor;
+import org.objectweb.asm.util.TraceAnnotationVisitor;
+import org.objectweb.asm.util.TraceMethodVisitor;
 
 /**
  * @author Eric Bruneton
  */
 
-public class DecompilerMethodVisitor extends MethodAdapter {
+public class DecompilerMethodVisitor extends MethodVisitor {
 
     private final String owner;
 
@@ -39,10 +38,15 @@ public class DecompilerMethodVisitor extends MethodAdapter {
 
     public DecompilerMethodVisitor(final String owner, final MethodNode meth,
         final MethodVisitor mv, BitSet modes) {
-        super(mv);
+        super(Opcodes.ASM4, mv);
         this.owner = owner;
         this.modes = modes;
-        this.text = ((AbstractVisitor) mv).getText();
+        // TODO ASM 4.0 transition: "tv" and "sv" fields are invisible for us in ASM 4.0 RC2
+        if(mv instanceof TraceMethodVisitor) {
+            this.text = ((TraceMethodVisitor)mv).tv.text;
+        } else {
+            this.text = ((ASMifierMethodVisitor)mv).sv.text;
+        }
         this.meth = meth;
         this.lineNumbers = new HashMap();
     }
@@ -54,9 +58,10 @@ public class DecompilerMethodVisitor extends MethodAdapter {
     public AnnotationVisitor visitAnnotationDefault() {
         AnnotationVisitor annVisitor = super.visitAnnotationDefault();
         AnnotationVisitor visitor = meth.visitAnnotationDefault();
-        if (annVisitor instanceof CommentedAnnotationVisitor) {
-            CommentedAnnotationVisitor av = (CommentedAnnotationVisitor) annVisitor;
-            av.setAnnotationVisitor(visitor);
+        if (annVisitor instanceof TraceAnnotationVisitor) {
+            TraceAnnotationVisitor av = (TraceAnnotationVisitor) annVisitor;
+            // TODO ASM 4.0 transition: setNext() is invisible for us in ASM 4.0 RC2
+            av.setNext(visitor);
         }
         return annVisitor;
     }
@@ -64,9 +69,10 @@ public class DecompilerMethodVisitor extends MethodAdapter {
     public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
         AnnotationVisitor annVisitor = super.visitAnnotation(desc, visible);
         AnnotationVisitor visitor = meth.visitAnnotation(desc, visible);
-        if (annVisitor instanceof CommentedAnnotationVisitor) {
-            CommentedAnnotationVisitor av = (CommentedAnnotationVisitor) annVisitor;
-            av.setAnnotationVisitor(visitor);
+        if (annVisitor instanceof TraceAnnotationVisitor) {
+            TraceAnnotationVisitor av = (TraceAnnotationVisitor) annVisitor;
+            // TODO ASM 4.0 transition: setNext() is invisible for us in ASM 4.0 RC2
+            av.setNext(visitor);
         }
         return annVisitor;
     }
@@ -77,9 +83,10 @@ public class DecompilerMethodVisitor extends MethodAdapter {
             parameter, desc, visible);
         AnnotationVisitor visitor = meth.visitParameterAnnotation(
             parameter, desc, visible);
-        if (annVisitor instanceof CommentedAnnotationVisitor) {
-            CommentedAnnotationVisitor av = (CommentedAnnotationVisitor) annVisitor;
-            av.setAnnotationVisitor(visitor);
+        if (annVisitor instanceof TraceAnnotationVisitor) {
+            TraceAnnotationVisitor av = (TraceAnnotationVisitor) annVisitor;
+            // TODO ASM 4.0 transition: setNext() is invisible for us in ASM 4.0 RC2
+            av.setNext(visitor);
         }
         return annVisitor;
     }

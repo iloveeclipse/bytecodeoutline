@@ -8,24 +8,23 @@ import java.util.List;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
-import org.objectweb.asm.ClassAdapter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.util.AbstractVisitor;
+import org.objectweb.asm.util.TraceAnnotationVisitor;
+import org.objectweb.asm.util.TraceFieldVisitor;
 
-import de.loskutov.bco.asm.CommentedClassVisitor.CommentedAnnotationVisitor;
-import de.loskutov.bco.asm.CommentedClassVisitor.CommentedFieldVisitor;
 import de.loskutov.bco.preferences.BCOConstants;
 
 /**
  * @author Eric Bruneton
  */
 
-public class DecompilerClassVisitor extends ClassAdapter {
+public class DecompilerClassVisitor extends ClassVisitor {
 
     private final String fieldFilter;
 
@@ -45,9 +44,12 @@ public class DecompilerClassVisitor extends ClassAdapter {
 
     private final ClassNode classNode;
 
-    public DecompilerClassVisitor(final ClassVisitor cv, final String field,
+    private final ICommentedClassVisitor cv2;
+
+    public DecompilerClassVisitor(final ICommentedClassVisitor cv, final String field,
         final String method, final BitSet modes) {
-        super(cv);
+        super(Opcodes.ASM4, cv.getClassVisitor());
+        cv2 = cv;
         this.classNode = new ClassNode();
         this.fieldFilter = field;
         this.methodFilter = method;
@@ -63,7 +65,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
         if(modes.get(BCOConstants.F_EXPAND_STACKMAP)) {
             crFlags |= ClassReader.EXPAND_FRAMES;
         }
-        ClassVisitor cv;
+        ICommentedClassVisitor cv;
         if (modes.get(BCOConstants.F_SHOW_ASMIFIER_CODE)) {
             cv = new CommentedASMifierClassVisitor(modes);
         } else {
@@ -77,7 +79,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
 
     public DecompiledClass getResult(final ClassLoader cl) {
         List text = new ArrayList();
-        formatText(((AbstractVisitor) cv).getText(), new StringBuffer(), text, cl);
+        formatText(cv2.getText(), new StringBuffer(), text, cl);
         while (text.size() > 0 && text.get(0).equals("\n")) {
             text.remove(0);
         }
@@ -158,9 +160,9 @@ public class DecompilerClassVisitor extends ClassAdapter {
         if (decompilingEntireClass()) {
             AnnotationVisitor cav = classNode.visitAnnotation(desc, visible);
             AnnotationVisitor av = super.visitAnnotation(desc, visible);
-            if(av instanceof CommentedAnnotationVisitor){
-                CommentedAnnotationVisitor visitor = (CommentedAnnotationVisitor) av;
-                visitor.setAnnotationVisitor(cav);
+            if(av instanceof TraceAnnotationVisitor){
+                TraceAnnotationVisitor visitor = (TraceAnnotationVisitor) av;
+                visitor.setNext(cav);
             }
             return av;
         }
@@ -192,9 +194,9 @@ public class DecompilerClassVisitor extends ClassAdapter {
         }
         FieldVisitor cfv = classNode.visitField(access, name1, desc, signature, value);
         FieldVisitor fieldVisitor = super.visitField(access, name1, desc, signature, value);
-        if(fieldVisitor instanceof CommentedFieldVisitor){
-            CommentedFieldVisitor visitor = (CommentedFieldVisitor) fieldVisitor;
-            visitor.setFieldVisitor(cfv);
+        if(fieldVisitor instanceof TraceFieldVisitor){
+            TraceFieldVisitor visitor = (TraceFieldVisitor) fieldVisitor;
+            visitor.setNext(cfv);
         }
         return fieldVisitor;
     }
@@ -209,10 +211,11 @@ public class DecompilerClassVisitor extends ClassAdapter {
         }
         MethodNode meth = (MethodNode) classNode.visitMethod(
             access, name1, desc, signature, exceptions);
-        List text = ((AbstractVisitor) cv).getText();
+        final List text = cv2.getText();
         int size = text.size();
         MethodVisitor mv = cv.visitMethod(
             access, name1, desc, signature, exceptions);
+
         mv = new DecompilerMethodVisitor(this.name, meth, mv, modes);
         methods.add(mv);
         for (int i = size; i < text.size(); ++i) {
@@ -232,7 +235,7 @@ public class DecompilerClassVisitor extends ClassAdapter {
 
     private AnnotationVisitor getDummyAnnotationVisitor(){
         if (dummyAnnVisitor == null) {
-            dummyAnnVisitor = new AnnotationVisitor() {
+            dummyAnnVisitor = new AnnotationVisitor(Opcodes.ASM4) {
                 public void visit(String n, Object value) {
                     /* empty */
                 }

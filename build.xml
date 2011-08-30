@@ -11,11 +11,14 @@
   <property name="plugin.jar"   value="${plugin.id}_${plugin.version}.jar"/>
   <property name="feature.jar"  value="${plugin.id}.feature_${plugin.version}.jar"/>
 
+   <path id="saxon.classpath">
+        <fileset dir="${saxon.home}" includes="*.jar"/>
+    </path>
 
   <target name="init">
     <path id="classpath">
       <fileset dir="lib" includes="*.jar"/>
-      <fileset dir="${eclipse.home}" includes="plugins/**/*.jar"/>      
+      <fileset dir="${eclipse.home}" includes="plugins/**/*.jar"/>
     </path>
   </target>
 
@@ -68,8 +71,8 @@
         <include name="lib/*.jar"/>
       </fileset>
     <fileset dir="${out.build}">
-      <include name="**/*"/>	  
-    </fileset>    	
+      <include name="**/*"/>
+    </fileset>
       <zipfileset dir="${out}/doc" includes="toc.xml,ref-*.html" prefix="doc"/>
     </zip>
   </target>
@@ -96,9 +99,9 @@
 
   <target name="xslt" depends="init">
     <mkdir dir="${out}/doc"/>
-    <xslt basedir="." destdir="${out}/doc" includes="opcodes.xml" 
+    <xslt basedir="." destdir="${out}/doc" includes="opcodes.xml" classpathref="saxon.classpath"
           style="opcodes-doc.xsl" force="true">
-      <factory name="net.sf.saxon.TransformerFactoryImpl" />
+       <factory name="net.sf.saxon.TransformerFactoryImpl" />
     </xslt>
   </target>
 
