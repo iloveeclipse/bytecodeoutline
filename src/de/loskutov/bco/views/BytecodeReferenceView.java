@@ -30,7 +30,7 @@ import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.ViewPart;
-import org.objectweb.asm.util.AbstractVisitor;
+import org.objectweb.asm.util.Printer;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.editors.BytecodeClassFileEditor;
@@ -172,7 +172,7 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
                 opcode = ((BytecodeClassFileEditor)part).getBytecodeInstructionAtLine(line);
             }
             if (opcode != -1) {
-                opcodeName = AbstractVisitor.OPCODES[opcode];
+                opcodeName = Printer.OPCODES[opcode];
             }
         }
 
