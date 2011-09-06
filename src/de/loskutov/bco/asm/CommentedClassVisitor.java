@@ -1,16 +1,21 @@
 package de.loskutov.bco.asm;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.BitSet;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
-import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.util.AbstractVisitor;
-import org.objectweb.asm.util.TraceClassVisitor;
-import org.objectweb.asm.util.TraceVisitor;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.util.Printer;
+import org.objectweb.asm.util.Textifier;
+import org.objectweb.asm.util.TraceMethodVisitor;
 
 import de.loskutov.bco.preferences.BCOConstants;
 
@@ -18,26 +23,143 @@ import de.loskutov.bco.preferences.BCOConstants;
  * @author Eric Bruneton
  */
 
-public class CommentedClassVisitor extends TraceVisitor implements ICommentedClassVisitor {
+public class CommentedClassVisitor extends Textifier implements ICommentedClassVisitor {
 
-    protected boolean raw;
-    protected BitSet modes;
-    protected boolean showLines;
-    protected boolean showLocals;
-    protected boolean showStackMap;
-    protected boolean showHex;
-    private TraceClassVisitor traceClassVisitor;
+    protected final boolean raw;
+    protected final boolean showLines;
+    protected final boolean showLocals;
+    protected final boolean showStackMap;
+    protected final boolean showHex;
+    private final DecompilerOptions options;
 
-    public CommentedClassVisitor(final BitSet modes) {
+    private DecompiledMethod currMethod;
+    private String className;
+    private String javaVersion;
+    private int accessFlags;
+    private Textifier dummyAnnVisitor;
+    private final ClassNode classNode;
+
+    private LabelNode currentLabel;
+
+    private int currentInsn;
+
+    public CommentedClassVisitor(ClassNode classNode, final DecompilerOptions options) {
         super(Opcodes.ASM4);
-        this.modes = modes;
-        raw = !modes.get(BCOConstants.F_SHOW_RAW_BYTECODE);
-        showLines = modes.get(BCOConstants.F_SHOW_LINE_INFO);
-        showLocals = modes.get(BCOConstants.F_SHOW_VARIABLES);
-        showStackMap = modes.get(BCOConstants.F_SHOW_STACKMAP);
-        showHex = modes.get(BCOConstants.F_SHOW_HEX_VALUES);
+        this.classNode = classNode;
+        this.options = options;
+        raw = !options.modes.get(BCOConstants.F_SHOW_RAW_BYTECODE);
+        showLines = options.modes.get(BCOConstants.F_SHOW_LINE_INFO);
+        showLocals = options.modes.get(BCOConstants.F_SHOW_VARIABLES);
+        showStackMap = options.modes.get(BCOConstants.F_SHOW_STACKMAP);
+        showHex = options.modes.get(BCOConstants.F_SHOW_HEX_VALUES);
     }
 
+    private boolean decompilingEntireClass() {
+        return options.methodFilter == null && options.fieldFilter == null;
+    }
+
+    @Override
+    public void visit(int version, int access, String name, String signature,
+        String superName, String[] interfaces) {
+        if(decompilingEntireClass()) {
+            super.visit(version, access, name, signature, superName, interfaces);
+        }
+        this.className = name;
+        int major = version & 0xFFFF;
+        //int minor = version >>> 16;
+        // 1.1 is 45, 1.2 is 46 etc.
+        int javaV = major % 44;
+        if (javaV > 0 && javaV < 10) {
+            javaVersion = "1." + javaV;
+        }
+        this.accessFlags = access;
+    }
+
+    @Override
+    public Textifier visitClassAnnotation(String desc, boolean visible) {
+        if (decompilingEntireClass()) {
+            return super.visitClassAnnotation(desc, visible);
+        }
+        return getDummyVisitor();
+    }
+
+    @Override
+    public void visitClassAttribute(Attribute attr) {
+        if (decompilingEntireClass()) {
+            super.visitClassAttribute(attr);
+        }
+    }
+
+    @Override
+    public void visitClassEnd() {
+        if (decompilingEntireClass()) {
+            super.visitClassEnd();
+        }
+    }
+
+    @Override
+    public Textifier visitField(int access, String name, String desc,
+        String signature, Object value) {
+        if (options.methodFilter != null) {
+            return getDummyVisitor();
+        }
+        if (options.fieldFilter != null && !name.equals(options.fieldFilter)) {
+            return getDummyVisitor();
+        }
+        return super.visitField(access, name, desc, signature, value);
+    }
+
+    @Override
+    public void visitInnerClass(String name, String outerName,
+        String innerName, int access) {
+        if (decompilingEntireClass()) {
+            super.visitInnerClass(name, outerName, innerName, access);
+        }
+    }
+
+    @Override
+    public void visitOuterClass(String owner, String name, String desc) {
+        if (decompilingEntireClass()) {
+            super.visitOuterClass(owner, name, desc);
+        }
+    }
+
+    @Override
+    public void visitSource(String file, String debug) {
+        if (decompilingEntireClass()) {
+            super.visitSource(file, debug);
+        }
+    }
+
+    @Override
+    public Textifier visitMethod(int access, String name, String desc,
+        String signature, String[] exceptions) {
+        if(options.fieldFilter != null || options.methodFilter != null && !options.methodFilter.equals(name + desc)) {
+            return getDummyVisitor();
+        }
+
+        MethodNode meth = null;
+        List<String> exList = Arrays.asList(exceptions);
+        for (MethodNode mn : classNode.methods) {
+            if(mn.name.equals(name) && mn.desc.equals(desc) && mn.exceptions.equals(exList)) {
+                meth = mn;
+                break;
+            }
+        }
+        assert meth != null;
+
+        currMethod = new DecompiledMethod(className, new HashMap(), meth, options, access);
+        Textifier textifier = super.visitMethod(access, name, desc, signature, exceptions);
+        TraceMethodVisitor tm = new TraceMethodVisitor(textifier);
+        meth.accept(tm);
+
+        Object methodtext = text.remove(text.size() - 1);
+        currMethod.setText((List) methodtext);
+        text.add(currMethod);
+        return textifier;
+    }
+
+    @Override
     protected void appendDescriptor(final int type, final String desc) {
         appendDescriptor(buf, type, desc, raw);
     }
@@ -184,15 +306,19 @@ public class CommentedClassVisitor extends TraceVisitor implements ICommentedCla
         return null;
     }
 
+    @Override
     public void visitFrame(int type, int nLocal, Object[] local,
         int nStack, Object[] stack) {
         if (showStackMap) {
+            addIndex(-1);
             super.visitFrame(type, nLocal, local, nStack, stack);
         }
     }
 
+    @Override
     public void visitMethodInsn(final int opcode, final String owner,
         final String name, final String desc) {
+        addIndex(opcode);
         buf.setLength(0);
         buf.append(tab2).append(OPCODES[opcode]).append(' ');
         appendDescriptor(INTERNAL_NAME, owner);
@@ -202,7 +328,9 @@ public class CommentedClassVisitor extends TraceVisitor implements ICommentedCla
         text.add(buf.toString());
     }
 
+    @Override
     public void visitVarInsn(final int opcode, final int var) {
+        addIndex(opcode);
         text.add(tab2 + OPCODES[opcode] + " " + var);
         if (!raw) {
             text.add(new Integer(var));
@@ -210,7 +338,9 @@ public class CommentedClassVisitor extends TraceVisitor implements ICommentedCla
         text.add("\n");
     }
 
+    @Override
     public void visitLabel(Label label) {
+        addIndex(-1);
         buf.setLength(0);
         buf.append(ltab);
         appendLabel(label);
@@ -220,9 +350,23 @@ public class CommentedClassVisitor extends TraceVisitor implements ICommentedCla
         }
         buf.append('\n');
         text.add(buf.toString());
+        InsnList instructions = currMethod.meth.instructions;
+        LabelNode currLabel = null;
+        for (int i = 0; i < instructions.size(); i++) {
+            AbstractInsnNode insnNode = instructions.get(i);
+            if(insnNode instanceof LabelNode) {
+                LabelNode labelNode = (LabelNode) insnNode;
+                if(labelNode.getLabel() == label) {
+                    currLabel = labelNode;
+                }
+            }
+        }
+        setCurrentLabel(currLabel);
     }
 
+    @Override
     public void visitIincInsn(final int var, final int increment) {
+        addIndex(Opcodes.IINC);
         text.add(tab2 + "IINC " + var);
         if (!raw) {
             text.add(new Integer(var));
@@ -230,18 +374,15 @@ public class CommentedClassVisitor extends TraceVisitor implements ICommentedCla
         text.add(" " + increment + "\n");
     }
 
+    @Override
     public void visitIntInsn(int opcode, int operand) {
+        addIndex(opcode);
         buf.setLength(0);
         buf.append(tab2).append(OPCODES[opcode]).append(' ').append(
             opcode == Opcodes.NEWARRAY
             ? TYPES[operand]
                 : formatValue(operand)).append('\n');
         text.add(buf.toString());
-
-        // TODO ASM 4.0 transition:  seems to be dead code now
-        //            if (mv != null) {
-        //                mv.visitIntInsn(opcode, operand);
-        //            }
     }
 
     private String formatValue(int operand) {
@@ -257,7 +398,7 @@ public class CommentedClassVisitor extends TraceVisitor implements ICommentedCla
      * @return char value from int, together with char name if it is a control char,
      * or an empty string
      */
-    private String getAsCharComment(int value) {
+    private static String getAsCharComment(int value) {
         if (Character.MAX_VALUE < value || Character.MIN_VALUE > value) {
             return "";
         }
@@ -312,6 +453,7 @@ public class CommentedClassVisitor extends TraceVisitor implements ICommentedCla
         return operand.toString();
     }
 
+    @Override
     public void visitLocalVariable(final String name, final String desc,
         final String signature, final Label start, final Label end,
         final int index) {
@@ -321,11 +463,13 @@ public class CommentedClassVisitor extends TraceVisitor implements ICommentedCla
         }
     }
 
-    public void visitLdcInsn(Object cst) {
+    @Override
+    public void visitLdcInsn(final Object cst) {
+        addIndex(Opcodes.LDC);
         buf.setLength(0);
         buf.append(tab2).append("LDC ");
         if (cst instanceof String) {
-            AbstractVisitor.appendString(buf, (String) cst);
+            Printer.appendString(buf, (String) cst);
         } else if (cst instanceof Type) {
             buf.append(((Type) cst).getDescriptor() + ".class");
         } else {
@@ -333,34 +477,114 @@ public class CommentedClassVisitor extends TraceVisitor implements ICommentedCla
         }
         buf.append('\n');
         text.add(buf.toString());
-
-        // TODO ASM 4.0 transition: seems to be dead code now
-        //            if (mv != null) {
-        //                mv.visitLdcInsn(cst);
-        //            }
     }
 
-    public void visitLineNumber(final int line, final Label start) {
-        if (showLines) {
-            super.visitLineNumber(line, start);
-        }
-    }
-
+    @Override
     public void visitMaxs(final int maxStack, final int maxLocals) {
         if (showLocals) {
             super.visitMaxs(maxStack, maxLocals);
         }
     }
 
-    public ClassVisitor getClassVisitor() {
-        if(traceClassVisitor == null) {
-            // TODO ASM 4.0 transition: PrintWriter should be optional
-            traceClassVisitor = new TraceClassVisitor(null, this, new PrintWriter(new StringWriter()));
-        }
-        return traceClassVisitor;
+    @Override
+    public void visitInsn(final int opcode) {
+        addIndex(opcode);
+        super.visitInsn(opcode);
     }
 
-    protected TraceVisitor createTraceVisitor() {
-        return new CommentedClassVisitor(modes);
+    @Override
+    public void visitTypeInsn(final int opcode, final String desc) {
+        addIndex(opcode);
+        super.visitTypeInsn(opcode, desc);
+    }
+
+    @Override
+    public void visitFieldInsn(final int opcode, final String owner1,
+        final String name, final String desc) {
+        addIndex(opcode);
+        super.visitFieldInsn(opcode, owner1, name, desc);
+    }
+
+    @Override
+    public void visitJumpInsn(final int opcode, final Label label) {
+        addIndex(opcode);
+        super.visitJumpInsn(opcode, label);
+    }
+
+    @Override
+    public void visitTableSwitchInsn(final int min, final int max,
+        final Label dflt, final Label... labels) {
+        addIndex(Opcodes.TABLESWITCH);
+        super.visitTableSwitchInsn(min, max, dflt, labels);
+    }
+
+    @Override
+    public void visitLookupSwitchInsn(final Label dflt, final int[] keys,
+        final Label[] labels) {
+        addIndex(Opcodes.LOOKUPSWITCH);
+        super.visitLookupSwitchInsn(dflt, keys, labels);
+    }
+
+    @Override
+    public void visitMultiANewArrayInsn(final String desc, final int dims) {
+        addIndex(Opcodes.MULTIANEWARRAY);
+        super.visitMultiANewArrayInsn(desc, dims);
+    }
+
+
+    @Override
+    public void visitLineNumber(final int line, final Label start) {
+        if (showLines) {
+            addIndex(-1);
+            currMethod.addLineNumber(start, new Integer(line));
+            super.visitLineNumber(line, start);
+        }
+    }
+
+    private void addIndex(final int opcode) {
+        text.add(new Index(currentLabel, currentInsn++, opcode));
+    }
+
+    void setCurrentLabel(LabelNode currentLabel) {
+        this.currentLabel = currentLabel;
+    }
+
+    @Override
+    protected Textifier createTextifier() {
+        CommentedClassVisitor classVisitor = new CommentedClassVisitor(classNode, options);
+        classVisitor.currMethod = currMethod;
+        return classVisitor;
+    }
+
+    @Override
+    public DecompiledClassInfo getClassInfo() {
+        return new DecompiledClassInfo(javaVersion, accessFlags);
+    }
+
+    private Textifier getDummyVisitor(){
+        if (dummyAnnVisitor == null) {
+            dummyAnnVisitor = new Textifier(Opcodes.ASM4) {
+                @Override
+                public void visitAnnotationEnd() {
+                    text.clear();
+                }
+
+                @Override
+                public void visitClassEnd() {
+                    text.clear();
+                }
+
+                @Override
+                public void visitFieldEnd() {
+                    text.clear();
+                }
+
+                @Override
+                public void visitMethodEnd() {
+                    text.clear();
+                }
+            };
+        }
+        return dummyAnnVisitor;
     }
 }

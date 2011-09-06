@@ -1,3 +1,11 @@
+/*****************************************************************************************
+ * Copyright (c) 2011 Andrey Loskutov. All rights reserved. This program and the
+ * accompanying materials are made available under the terms of the BSD License which
+ * accompanies this distribution, and is available at
+ * http://www.opensource.org/licenses/bsd-license.php
+ * Contributor: Jochen Klein - initial API and implementation
+ * Contributor: Andrey Loskutov - fixes
+ ****************************************************************************************/
 package de.loskutov.bco.editors;
 
 import java.io.FileInputStream;
@@ -32,6 +40,7 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
 import de.loskutov.bco.asm.DecompilerClassVisitor;
+import de.loskutov.bco.asm.DecompilerOptions;
 import de.loskutov.bco.ui.JdtUtils;
 
 /**
@@ -41,7 +50,7 @@ import de.loskutov.bco.ui.JdtUtils;
 public class BytecodeSourceMapper implements IDebugContextListener {
 
     /** key is IClassFile, value is DecompiledClass */
-    private WeakHashMap classToDecompiled;
+    private final WeakHashMap classToDecompiled;
     private IJavaReferenceType lastTypeInDebugger;
     private String lastMethodInDebugger;
 
@@ -182,15 +191,15 @@ public class BytecodeSourceMapper implements IDebugContextListener {
         return decompiledClass;
     }
 
-    private DecompiledClass decompile(StringBuffer source, InputStream is,
+    private static DecompiledClass decompile(StringBuffer source, InputStream is,
         BitSet decompilerFlags) throws IOException {
         DecompiledClass decompiledClass = DecompilerClassVisitor
-            .getDecompiledClass(is, null, null, decompilerFlags, null);
+            .getDecompiledClass(is, new DecompilerOptions(null, null, decompilerFlags, null));
         source.append(decompiledClass.getText());
         return decompiledClass;
     }
 
-    private String getArchivePath(IPackageFragmentRoot root) {
+    private static String getArchivePath(IPackageFragmentRoot root) {
         String archivePath = null;
         IResource resource;
 
@@ -268,6 +277,7 @@ public class BytecodeSourceMapper implements IDebugContextListener {
     /* (non-Javadoc)
      * @see org.eclipse.debug.ui.contexts.IDebugContextListener#debugContextChanged(org.eclipse.debug.ui.contexts.DebugContextEvent)
      */
+    @Override
     public void debugContextChanged(DebugContextEvent event) {
         ISelection selection = event.getContext();
         if(selection instanceof IStructuredSelection){

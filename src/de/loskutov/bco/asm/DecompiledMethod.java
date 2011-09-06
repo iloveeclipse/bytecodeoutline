@@ -1,7 +1,15 @@
+/*******************************************************************************
+ * Copyright (c) 2011 Eric Bruneton.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the BSD License
+ * which accompanies this distribution, and is available at
+ * http://www.opensource.org/licenses/bsd-license.php
+ * Contributor:  Eric Bruneton - initial API and implementation
+ * Contributor:  Andrey Loskutov - fixes
+ *******************************************************************************/
 package de.loskutov.bco.asm;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -9,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.core.runtime.IStatus;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.LocalVariableNode;
@@ -70,7 +79,7 @@ public class DecompiledMethod {
      */
     private int lastSourceLine;
 
-    private final MethodNode meth;
+    MethodNode meth;
 
     private Frame[] frames;
 
@@ -81,9 +90,20 @@ public class DecompiledMethod {
     private final String owner;
 
 
-    public DecompiledMethod(final String owner, final List inputText,
-        final Map lineNumbers, final MethodNode meth, final ClassLoader cl, BitSet modes) {
+    private final Map lineNumbers;
+
+    private final DecompilerOptions options;
+
+    private final int access;
+
+
+    public DecompiledMethod(final String owner,
+        final Map lineNumbers, final MethodNode meth, DecompilerOptions options, int access) {
+        this.meth = meth;
         this.owner = owner;
+        this.lineNumbers = lineNumbers;
+        this.options = options;
+        this.access = access;
         this.text = new ArrayList();
         this.localVariables = meth.localVariables;
         this.sourceLines = new HashMap();
@@ -91,15 +111,20 @@ public class DecompiledMethod {
         this.insns = new HashMap();
         this.opcodes = new HashMap();
         this.insnLines = new HashMap();
+    }
 
-        this.meth = meth;
+    void setText(final List inputText) {
         formatText(inputText, new HashMap(), new StringBuffer(), this.text);
         computeMaps(lineNumbers);
 
-        if (modes.get(BCOConstants.F_SHOW_ANALYZER)
-            && (meth.access & Opcodes.ACC_ABSTRACT) == 0) {
-            analyzeMethod(cl);
+        if (options.modes.get(BCOConstants.F_SHOW_ANALYZER)
+            && (access & Opcodes.ACC_ABSTRACT) == 0) {
+            analyzeMethod(options.cl);
         }
+    }
+
+    void addLineNumber(Label start, Integer integer) {
+        lineNumbers.put(start, integer);
     }
 
     public boolean isInit() {
@@ -164,6 +189,7 @@ public class DecompiledMethod {
     private void analyzeMethod(final ClassLoader cl) {
         Analyzer a = new Analyzer(new SimpleVerifier() {
 
+            @Override
             protected Class getClass(final Type t) {
                 try {
                     if (t.getSort() == Type.ARRAY) {
@@ -231,12 +257,7 @@ public class DecompiledMethod {
         }
     }
 
-    /**
-     * @param i
-     * @param input
-     * @return
-     */
-    private Index getNextIndex(List input, int startOffset) {
+    private static Index getNextIndex(List input, int startOffset) {
         for (int i = startOffset + 1; i < input.size(); i++) {
             Object object = input.get(i);
             if(object instanceof Index){
@@ -257,20 +278,20 @@ public class DecompiledMethod {
         }
     }
 
-    private void computeMaps(final Map lineNumbers) {
+    private void computeMaps(final Map lineNumbers1) {
         int currentDecompiledLine = 0;
         int firstLine = -1;
         int lastLine = -1;
         for (int i = 0; i < text.size(); ++i) {
             int currentOpcode = -1;
-            int currentInsn = -1;
+            int currentInsn1 = -1;
             int currentSourceLine = -1;
             Object o = text.get(i);
             if (o instanceof Index) {
                 Index index = (Index) o;
                 Integer sourceLine = null;
                 if(index.labelNode != null) {
-                    sourceLine = (Integer) lineNumbers.get(index.labelNode.getLabel());
+                    sourceLine = (Integer) lineNumbers1.get(index.labelNode.getLabel());
                 }
                 if (sourceLine != null) {
                     currentSourceLine = sourceLine.intValue();
@@ -281,13 +302,13 @@ public class DecompiledMethod {
                         lastLine = currentSourceLine;
                     }
                 }
-                currentInsn = index.insn;
+                currentInsn1 = index.insn;
                 currentOpcode = index.opcode;
             } else {
                 ++currentDecompiledLine;
             }
             Integer cdl = new Integer(currentDecompiledLine);
-            Integer ci = new Integer(currentInsn);
+            Integer ci = new Integer(currentInsn1);
             Integer co = new Integer(currentOpcode);
             if(currentSourceLine >= 0){
                 Integer csl = new Integer(currentSourceLine);
@@ -383,7 +404,7 @@ public class DecompiledMethod {
             : i.intValue();
     }
 
-    private void appendFrame(final StringBuffer buf, final Frame f) {
+    private static void appendFrame(final StringBuffer buf, final Frame f) {
         try {
             for (int i = 0; i < f.getLocals(); ++i) {
                 appendValue(buf, f.getLocal(i));
@@ -393,12 +414,11 @@ public class DecompiledMethod {
                 appendValue(buf, f.getStack(i));
             }
         } catch (IndexOutOfBoundsException e) {
-            // TODO should we keep this?
-            BytecodeOutlinePlugin.log(e, IStatus.WARNING);
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
     }
 
-    private void appendValue(final StringBuffer buf, final Value v) {
+    private static void appendValue(final StringBuffer buf, final Value v) {
         if (((BasicValue) v).isReference()) {
             buf.append("R");
         } else {
@@ -463,8 +483,7 @@ public class DecompiledMethod {
                 }
                 return new String[] {localsBuf.toString(), stackBuf.toString()};
             } catch (IndexOutOfBoundsException e) {
-                // TODO should we keep this?
-                BytecodeOutlinePlugin.log(e, IStatus.WARNING);
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
         }
         return null;
@@ -536,7 +555,6 @@ public class DecompiledMethod {
                     (String[][]) locals.toArray( new String[ 3][]),
                     (String[][]) stack.toArray( new String[ 2][])};
             } catch (IndexOutOfBoundsException e) {
-                // TODO should we keep this?
                 BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
         }
@@ -552,7 +570,7 @@ public class DecompiledMethod {
      * @param buf buffer to append
      * @param s string with bytecode type name, like "Ljava/lang/Object;"
      */
-    private void appendTypeName(int n, final boolean useQualifiedNames, StringBuffer buf, String s) {
+    private static void appendTypeName(int n, final boolean useQualifiedNames, StringBuffer buf, String s) {
         buf.append(n).append( " ");
         if(!useQualifiedNames) {
             int idx = s.lastIndexOf('/');
@@ -569,7 +587,7 @@ public class DecompiledMethod {
         }
     }
 
-    private String getTypeName(final boolean useQualifiedNames, String s) {
+    private static String getTypeName(final boolean useQualifiedNames, String s) {
       if (!useQualifiedNames) {
           // get leading array symbols
           String arraySymbols = "";
@@ -606,6 +624,7 @@ public class DecompiledMethod {
      *
      * @return <code>true</code> if this <code>DecompiledMethod</code> is the same as the o argument.
      */
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -618,6 +637,7 @@ public class DecompiledMethod {
             && (owner != null? owner.equals(another.owner) : true);
     }
 
+    @Override
     public int hashCode() {
         return getSignature().hashCode() + (owner != null? owner.hashCode() : 0);
     }

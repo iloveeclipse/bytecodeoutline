@@ -8,31 +8,26 @@
  *******************************************************************************/
 package de.loskutov.bco.asm;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.BitSet;
-
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.util.ASMifierClassVisitor;
-import org.objectweb.asm.util.ASMifierVisitor;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.util.ASMifier;
 
 import de.loskutov.bco.preferences.BCOConstants;
 
 /**
  * @author Andrei
  */
-public class CommentedASMifierClassVisitor extends ASMifierVisitor implements ICommentedClassVisitor {
+public class CommentedASMifierClassVisitor extends ASMifier implements ICommentedClassVisitor {
 
-    protected BitSet modes;
-    protected boolean raw;
-    protected boolean showLines;
-    protected boolean showLocals;
-    protected boolean showStackMap;
-    private ASMifierClassVisitor classVisitor;
+    protected final boolean showLines;
+    protected final boolean showLocals;
+    protected final boolean showStackMap;
+    private final DecompilerOptions options;
+    private String javaVersion;
+    private int accessFlags;
 
-
+    @Override
     public void visitFrame(final int type, final int nLocal,
         final Object[] local, final int nStack, final Object[] stack) {
         if (showStackMap) {
@@ -40,12 +35,14 @@ public class CommentedASMifierClassVisitor extends ASMifierVisitor implements IC
         }
     }
 
+    @Override
     public void visitLineNumber(int line, Label start) {
         if (showLines) {
             super.visitLineNumber(line, start);
         }
     }
 
+    @Override
     public void visitLocalVariable(String name1, String desc,
         String signature, Label start, Label end, int index) {
         if (showLocals) {
@@ -54,41 +51,52 @@ public class CommentedASMifierClassVisitor extends ASMifierVisitor implements IC
         }
     }
 
+    @Override
     public void visitMaxs(int maxStack, int maxLocals) {
-        //if (showLocals) {
-        super.visitMaxs(maxStack, maxLocals);
-        //}
+//        if (showLocals) {
+            super.visitMaxs(maxStack, maxLocals);
+//        }
     }
 
-    private CommentedASMifierClassVisitor(final BitSet modes, String name, int id) {
+    private CommentedASMifierClassVisitor(final DecompilerOptions options, String name, int id) {
         super(Opcodes.ASM4, name, id);
-        this.modes = modes;
-        raw = !modes.get(BCOConstants.F_SHOW_RAW_BYTECODE);
-        showLines = modes.get(BCOConstants.F_SHOW_LINE_INFO);
-        showLocals = modes.get(BCOConstants.F_SHOW_VARIABLES);
-        showStackMap = modes.get(BCOConstants.F_SHOW_STACKMAP);
+        this.options = options;
+        showLines = options.modes.get(BCOConstants.F_SHOW_LINE_INFO);
+        showLocals = options.modes.get(BCOConstants.F_SHOW_VARIABLES);
+        showStackMap = options.modes.get(BCOConstants.F_SHOW_STACKMAP);
     }
 
-    public CommentedASMifierClassVisitor(final BitSet modes) {
-        this(modes, "cw", 0);
+    public CommentedASMifierClassVisitor(ClassNode classNode, final DecompilerOptions options) {
+        this(options, "cw", 0);
     }
 
-    public void visitEnd() {
-        text.add("cw.visitEnd();\n\n");
-        text.add("return cw.toByteArray();\n");
-        text.add("}\n");
-        text.add("}\n");
-    }
-
-    public ClassVisitor getClassVisitor() {
-        if(classVisitor == null) {
-            // TODO ASM 4.0 transition: PrintWriter should be optional
-            classVisitor = new ASMifierClassVisitor(this, new PrintWriter(new StringWriter()));
+    @Override
+    public void visit(int version, int access, String name1, String signature,
+        String superName, String[] interfaces) {
+        if(decompilingEntireClass()) {
+            super.visit(version, access, name1, signature, superName, interfaces);
         }
-        return classVisitor;
+        int major = version & 0xFFFF;
+        //int minor = version >>> 16;
+        // 1.1 is 45, 1.2 is 46 etc.
+        int javaV = major % 44;
+        if (javaV > 0 && javaV < 10) {
+            javaVersion = "1." + javaV;
+        }
+        this.accessFlags = access;
     }
 
-    protected ASMifierVisitor createASMifierVisitor(String name1, int id1) {
-        return new CommentedASMifierClassVisitor(modes, name1, id1);
+    private boolean decompilingEntireClass() {
+        return options.methodFilter == null && options.fieldFilter == null;
+    }
+
+    @Override
+    protected ASMifier createASMifier(String name1, int id1) {
+        return new CommentedASMifierClassVisitor(options, name1, id1);
+    }
+
+    @Override
+    public DecompiledClassInfo getClassInfo() {
+        return new DecompiledClassInfo(javaVersion, accessFlags);
     }
 }

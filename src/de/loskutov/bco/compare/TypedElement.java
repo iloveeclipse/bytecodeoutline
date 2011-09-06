@@ -1,8 +1,8 @@
 /*****************************************************************************************
- * Copyright (c) 2004 Andrei Loskutov. All rights reserved. This program and the
+ * Copyright (c) 2011 Andrey Loskutov. All rights reserved. This program and the
  * accompanying materials are made available under the terms of the BSD License which
  * accompanies this distribution, and is available at
- * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrei Loskutov -
+ * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrey Loskutov -
  * initial API and implementation
  ****************************************************************************************/
 
@@ -27,6 +27,7 @@ import org.eclipse.swt.widgets.Display;
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
 import de.loskutov.bco.asm.DecompilerClassVisitor;
+import de.loskutov.bco.asm.DecompilerOptions;
 import de.loskutov.bco.ui.JdtUtils;
 
 /**
@@ -72,6 +73,7 @@ public class TypedElement extends BufferedContent
     /**
      * @see org.eclipse.compare.ITypedElement#getName()
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -80,6 +82,7 @@ public class TypedElement extends BufferedContent
     /**
      * @see org.eclipse.compare.ITypedElement#getType()
      */
+    @Override
     public String getType() {
         return type;
     }
@@ -98,15 +101,18 @@ public class TypedElement extends BufferedContent
         return JdtUtils.getElementName(element);
     }
 
+    @Override
     public Image getImage() {
         // default image for .class files
         return CompareUI.getImage("class");
     }
 
+    @Override
     public Object[] getChildren() {
         return new TypedElement[0];
     }
 
+    @Override
     protected InputStream createStream() throws CoreException {
         InputStream stream = JdtUtils.createInputStream(element);
         if (stream == null) {
@@ -117,7 +123,7 @@ public class TypedElement extends BufferedContent
         DecompiledClass decompiledClass = null;
         try {
             decompiledClass = DecompilerClassVisitor.getDecompiledClass(
-                stream, null, methodName, modes, null);
+                stream, new DecompilerOptions(null, methodName, modes, null));
         } catch (IOException e) {
             throw new CoreException(new Status(
                 IStatus.ERROR, "de.loskutov.bco", -1,
@@ -137,6 +143,7 @@ public class TypedElement extends BufferedContent
         final byte[] bytes = decompiledClass.getText().getBytes();
         // use internal buffering to prevent multiple calls to this method
         Display.getDefault().syncExec(new Runnable(){
+            @Override
             public void run() {
                 setContent(bytes);
             }

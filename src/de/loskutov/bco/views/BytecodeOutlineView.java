@@ -1,8 +1,8 @@
 /*****************************************************************************************
- * Copyright (c) 2004 Andrei Loskutov. All rights reserved. This program and the
+ * Copyright (c) 2011 Andrey Loskutov. All rights reserved. This program and the
  * accompanying materials are made available under the terms of the BSD License which
  * accompanies this distribution, and is available at
- * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrei Loskutov -
+ * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrey Loskutov -
  * initial API and implementation
  ****************************************************************************************/
 package de.loskutov.bco.views;
@@ -75,6 +75,7 @@ import org.eclipse.ui.ISelectionService;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.IWorkbenchActionConstants;
+import org.eclipse.ui.IWorkbenchCommandConstants;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.ActionFactory;
@@ -84,13 +85,13 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.texteditor.FindReplaceAction;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.texteditor.IUpdate;
-import org.eclipse.ui.texteditor.IWorkbenchActionDefinitionIds;
 import org.objectweb.asm.tree.ClassNode;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
 import de.loskutov.bco.asm.DecompiledMethod;
 import de.loskutov.bco.asm.DecompilerClassVisitor;
+import de.loskutov.bco.asm.DecompilerOptions;
 import de.loskutov.bco.asm.LineRange;
 import de.loskutov.bco.preferences.BCOConstants;
 import de.loskutov.bco.ui.EclipseUtils;
@@ -336,6 +337,7 @@ public class BytecodeOutlineView extends ViewPart {
     /**
      * @see org.eclipse.ui.IViewPart#init(org.eclipse.ui.IViewSite)
      */
+    @Override
     public void init(IViewSite site) {
         super.setSite(site);
         if (editorListener == null) {
@@ -349,14 +351,17 @@ public class BytecodeOutlineView extends ViewPart {
      * This is a callback that will allow us to create the viewer and initialize it.
      * @param parent
      */
+    @Override
     public void createPartControl(Composite parent) {
         errorColor = parent.getDisplay().getSystemColor(SWT.COLOR_RED);
         parent.addControlListener(new ControlListener() {
 
+            @Override
             public void controlMoved(ControlEvent e) {
                 //
             }
 
+            @Override
             public void controlResized(ControlEvent e) {
                 computeOrientation();
             }
@@ -436,6 +441,7 @@ public class BytecodeOutlineView extends ViewPart {
 
         selectionChangedAction = new Action() {
 
+            @Override
             public void run() {
                 Point selection = textControl.getSelection();
                 setSelectionInJavaEditor(selection);
@@ -444,6 +450,7 @@ public class BytecodeOutlineView extends ViewPart {
 
         refreshVarsAndStackAction = new Action() {
 
+            @Override
             public void run() {
                 int selectionIndex = tableControl.getSelectionIndex();
                 TableItem[] items = tableControl.getSelection();
@@ -465,6 +472,7 @@ public class BytecodeOutlineView extends ViewPart {
         linkWithEditorAction = new DefaultToggleAction(
             BCOConstants.LINK_VIEW_TO_EDITOR) {
 
+            @Override
             public void run(boolean newState) {
                 setMode(BCOConstants.F_LINK_VIEW_TO_EDITOR, newState);
                 if (modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR)) {
@@ -487,6 +495,7 @@ public class BytecodeOutlineView extends ViewPart {
         showSelectedOnlyAction = new DefaultToggleAction(
             BCOConstants.SHOW_ONLY_SELECTED_ELEMENT) {
 
+            @Override
             public void run(boolean newState) {
                 setMode(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT, newState);
                 inputChanged = true;
@@ -497,6 +506,7 @@ public class BytecodeOutlineView extends ViewPart {
         setRawModeAction = new DefaultToggleAction(
             BCOConstants.SHOW_RAW_BYTECODE) {
 
+            @Override
             public void run(boolean newState) {
                 setMode(BCOConstants.F_SHOW_RAW_BYTECODE, newState);
                 inputChanged = true;
@@ -507,6 +517,7 @@ public class BytecodeOutlineView extends ViewPart {
         hideLineInfoAction = new DefaultToggleAction(
             BCOConstants.SHOW_LINE_INFO) {
 
+            @Override
             public void run(boolean newState) {
                 setMode(BCOConstants.F_SHOW_LINE_INFO, newState);
                 inputChanged = true;
@@ -516,6 +527,7 @@ public class BytecodeOutlineView extends ViewPart {
 
         hideLocalsAction = new DefaultToggleAction(BCOConstants.SHOW_VARIABLES) {
 
+            @Override
             public void run(boolean newState) {
                 setMode(BCOConstants.F_SHOW_VARIABLES, newState);
                 inputChanged = true;
@@ -525,6 +537,7 @@ public class BytecodeOutlineView extends ViewPart {
 
         hideStackMapAction = new DefaultToggleAction(BCOConstants.SHOW_STACKMAP) {
 
+            @Override
             public void run(boolean newState) {
                 setMode(BCOConstants.F_SHOW_STACKMAP, newState);
                 inputChanged = true;
@@ -535,6 +548,7 @@ public class BytecodeOutlineView extends ViewPart {
         expandStackMapAction = new DefaultToggleAction(
             BCOConstants.EXPAND_STACKMAP) {
 
+            @Override
             public void run(boolean newState) {
                 setMode(BCOConstants.F_EXPAND_STACKMAP, newState);
                 inputChanged = true;
@@ -545,6 +559,7 @@ public class BytecodeOutlineView extends ViewPart {
         showHexValuesAction = new DefaultToggleAction(
             BCOConstants.SHOW_HEX_VALUES) {
 
+            @Override
             public void run(boolean newState) {
                 setMode(BCOConstants.F_SHOW_HEX_VALUES, newState);
                 inputChanged = true;
@@ -555,6 +570,7 @@ public class BytecodeOutlineView extends ViewPart {
         toggleASMifierModeAction = new DefaultToggleAction(
             BCOConstants.SHOW_ASMIFIER_CODE) {
 
+            @Override
             public void run(boolean newState) {
                 setMode(BCOConstants.F_SHOW_ASMIFIER_CODE, newState);
                 if (newState) {
@@ -571,6 +587,7 @@ public class BytecodeOutlineView extends ViewPart {
         toggleVerifierAction = new DefaultToggleAction(
             BCOConstants.SHOW_ANALYZER) {
 
+            @Override
             public void run(boolean newState) {
                 toggleVerifyMode(mmanager, newState);
                 inputChanged = true;
@@ -652,6 +669,7 @@ public class BytecodeOutlineView extends ViewPart {
 
         tableControl.addSelectionListener(new SelectionAdapter() {
 
+            @Override
             public void widgetSelected(SelectionEvent e) {
                 if (modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR)) {
                     selectionChangedAction.run();
@@ -684,6 +702,7 @@ public class BytecodeOutlineView extends ViewPart {
         contextMenuManager.setRemoveAllWhenShown(true);
         contextMenuManager.addMenuListener(new IMenuListener() {
 
+            @Override
             public void menuAboutToShow(IMenuManager m) {
                 contextMenuAboutToShow(m);
             }
@@ -705,6 +724,7 @@ public class BytecodeOutlineView extends ViewPart {
 
         textSelectionListener = new ISelectionChangedListener() {
 
+            @Override
             public void selectionChanged(SelectionChangedEvent event) {
                 // Updates selection dependent actions like find/copy.
                 Iterator iterator = selectionActions.iterator();
@@ -716,6 +736,7 @@ public class BytecodeOutlineView extends ViewPart {
 
         textListener = new ITextListener() {
 
+            @Override
             public void textChanged(TextEvent event) {
                 IUpdate findReplace = (IUpdate) globalActions
                     .get(ActionFactory.FIND.getId());
@@ -731,11 +752,13 @@ public class BytecodeOutlineView extends ViewPart {
 
         textControl.addMouseListener(new MouseAdapter() {
 
+            @Override
             public void mouseDown(MouseEvent e) {
                 if (modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR)) {
                     selectionChangedAction.run();
                 }
             }
+            @Override
             public void mouseUp(MouseEvent e) {
                 if (modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR)) {
                     selectionChangedAction.run();
@@ -745,10 +768,12 @@ public class BytecodeOutlineView extends ViewPart {
 
         textControl.addKeyListener(new KeyListener() {
 
+            @Override
             public void keyPressed(KeyEvent e) {
                 // ignored
             }
 
+            @Override
             public void keyReleased(KeyEvent e) {
                 if (modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR)) {
                     selectionChangedAction.run();
@@ -760,6 +785,7 @@ public class BytecodeOutlineView extends ViewPart {
     /**
      * @see org.eclipse.ui.IWorkbenchPart#dispose()
      */
+    @Override
     public void dispose() {
         deActivateView();
         if (editorListener != null) {
@@ -853,6 +879,7 @@ public class BytecodeOutlineView extends ViewPart {
     /**
      * Passing the focus request to the viewer's control.
      */
+    @Override
     public void setFocus() {
         if (!modes.get(BCOConstants.F_SHOW_ANALYZER)) {
             if (textViewer != null) {
@@ -1486,7 +1513,7 @@ public class BytecodeOutlineView extends ViewPart {
             }
             available = is.available();
             decompiledClass = DecompilerClassVisitor.getDecompiledClass(
-                is, fieldName, methodName, modes, cl);
+                is, new DecompilerOptions(fieldName, methodName, modes, cl));
         } catch (Exception e) {
             try {
                 // check if compilation unit is ok - then this is the user problem
@@ -1544,6 +1571,7 @@ public class BytecodeOutlineView extends ViewPart {
         }
     }
 
+    @Override
     public Object getAdapter(Class adapter) {
         if (IFindReplaceTarget.class.equals(adapter)) {
             return textViewer.getFindReplaceTarget();
@@ -1602,7 +1630,7 @@ public class BytecodeOutlineView extends ViewPart {
                 + "copy.description"));
         action.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages()
             .getImageDescriptor(ISharedImages.IMG_TOOL_COPY));
-        action.setActionDefinitionId(IWorkbenchActionDefinitionIds.COPY);
+        action.setActionDefinitionId(IWorkbenchCommandConstants.EDIT_COPY);
         setGlobalAction(actionBars, ActionFactory.COPY.getId(), action);
 
         ResourceBundle bundle = BytecodeOutlinePlugin.getDefault()
@@ -1719,6 +1747,7 @@ public class BytecodeOutlineView extends ViewPart {
             return actionOrientation;
         }
 
+        @Override
         public void run() {
             if (isChecked()) {
                 orientation = actionOrientation;
