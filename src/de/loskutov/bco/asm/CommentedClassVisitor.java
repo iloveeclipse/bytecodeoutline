@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.objectweb.asm.Attribute;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -362,6 +363,13 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
             }
         }
         setCurrentLabel(currLabel);
+    }
+
+    @Override
+    public void visitInvokeDynamicInsn(String name, String desc, Handle bsm,
+        Object... bsmArgs) {
+        addIndex(Opcodes.INVOKEDYNAMIC);
+        super.visitInvokeDynamicInsn(name, desc, bsm, bsmArgs);
     }
 
     @Override
