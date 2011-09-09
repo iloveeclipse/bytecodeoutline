@@ -24,7 +24,7 @@
 
   <target name="compile" depends="init">
     <mkdir dir="${out.build}"/>
-    <javac destdir="${out.build}" debug="on" source="1.3" target="1.2" >
+    <javac destdir="${out.build}" debug="on" source="1.5" target="1.5" includeantruntime="false">
       <classpath refid="classpath"/>
       <src path="${src}"/>
       <include name="**/*.java"/>
