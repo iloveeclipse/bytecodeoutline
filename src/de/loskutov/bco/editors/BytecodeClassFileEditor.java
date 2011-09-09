@@ -61,9 +61,7 @@ import de.loskutov.bco.ui.JdtUtils;
  * A "better" way to hook into JDT...
  * @author Eugene Kuleshov, V. Grishchenko, Jochen Klein, Andrei Loskutov
  */
-public class BytecodeClassFileEditor extends ClassFileEditor
-    implements
-        ClassFileDocumentProvider.InputChangeListener {
+public class BytecodeClassFileEditor extends ClassFileEditor {
 
     private final InputUpdater fInputUpdater;
     public static final String ID = "de.loskutov.bco.editors.BytecodeClassFileEditor";
@@ -133,6 +131,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
     /*
      * @see IEditorPart#init(IEditorSite, IEditorInput)
      */
+    @Override
     public void init(IEditorSite site, IEditorInput input)
         throws PartInitException {
         input = doOpenBuffer(input, false, true);
@@ -171,6 +170,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
      * BytecodeClassFileEditor.doSetInput(IEditorInput) line: 201
      * AbstractTextEditor$17.run(IProgressMonitor) line: 2396
      */
+    @Override
     protected void doSetInput(IEditorInput input) throws CoreException {
 
         input = transformEditorInput(input);
@@ -282,7 +282,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
         }
     }
 
-    private String getAttachedJavaSource(IClassFile cf, boolean force) {
+    private static String getAttachedJavaSource(IClassFile cf, boolean force) {
         String origSrc = null;
         if (force) {
             IBuffer buffer = BytecodeBufferManager.getBuffer(cf);
@@ -302,7 +302,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
         return origSrc;
     }
 
-    private void changeBufferContent(IClassFile cf, char[] src) {
+    private static void changeBufferContent(IClassFile cf, char[] src) {
         IBuffer buffer = BytecodeBufferManager.getBuffer(cf);
 
         // i'm not sure if we need to create buffer each time -
@@ -328,6 +328,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
     /*
      * @see JavaEditor#getElementAt(int)
      */
+    @Override
     protected IJavaElement getElementAt(int offset) {
 
         IClassFile classFile = getClassFile();
@@ -369,6 +370,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
         return ((IClassFileEditorInput) editorInput).getClassFile();
     }
 
+    @Override
     protected void setSelection(ISourceReference reference, boolean moveCursor) {
         if (reference == null) {
             if (moveCursor) {
@@ -436,7 +438,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
         }
     }
 
-    private boolean isSupportedMember(ISourceReference reference) {
+    private static boolean isSupportedMember(ISourceReference reference) {
         // TODO this condition is not enough. We could have inner/anon. classes
         // as selection source (they are displayed in the outline),
         // but they are not in the decompiled class,
@@ -447,6 +449,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
             || reference instanceof IInitializer;
     }
 
+    @Override
     public Object getAdapter(Class required) {
         if (IToggleBreakpointsTarget.class == required) {
 
@@ -459,12 +462,13 @@ public class BytecodeClassFileEditor extends ClassFileEditor
             // and the ActionDelegateHelper looks with the given offset at classfile or
             // compilation unit, but our offset is completely different to Java source
             // code
-            super.getAdapter(required);
+            return null;
         }
 
         return super.getAdapter(required);
     }
 
+    @Override
     protected ISourceReference computeHighlightRangeSourceReference() {
         if (!isDecompiled()) {
             return super.computeHighlightRangeSourceReference();
@@ -497,12 +501,14 @@ public class BytecodeClassFileEditor extends ClassFileEditor
         return (ISourceReference) element;
     }
 
+    @Override
     public void showHighlightRangeOnly(boolean showHighlightRangeOnly) {
         // disabled as we currently do not support "partial" view on selected
         // elements
         // super.showHighlightRangeOnly(showHighlightRangeOnly);
     }
 
+    @Override
     protected void updateOccurrenceAnnotations(ITextSelection selection,
         CompilationUnit astRoot) {
         // disabled for bytecode as we currently do not support "occurencies" highlighting
@@ -528,6 +534,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
         /*
          * @see Runnable#run()
          */
+        @Override
         public void run() {
 
             IClassFileEditorInput input;
@@ -580,6 +587,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
     /*
      * @see JavaEditor#getCorrespondingElement(IJavaElement)
      */
+    @Override
     protected IJavaElement getCorrespondingElement(IJavaElement element) {
         IClassFile classFile = getClassFile();
         if (classFile == null) {
@@ -598,6 +606,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
     /*
      * @see org.eclipse.ui.texteditor.AbstractTextEditor#isEditable()
      */
+    @Override
     public boolean isEditable() {
         return isDecompiled();
     }
@@ -606,6 +615,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
      * @see org.eclipse.ui.texteditor.AbstractTextEditor#isEditorInputReadOnly()
      * @since 3.2
      */
+    @Override
     public boolean isEditorInputReadOnly() {
         return !isDecompiled();
     }
@@ -614,10 +624,12 @@ public class BytecodeClassFileEditor extends ClassFileEditor
      * @see ITextEditorExtension2#isEditorInputModifiable()
      * @since 2.1
      */
+    @Override
     public boolean isEditorInputModifiable() {
         return isDecompiled();
     }
 
+    @Override
     public boolean isSaveAsAllowed() {
         return isDecompiled();
     }
@@ -654,6 +666,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
     /*
      * @see IWorkbenchPart#createPartControl(Composite)
      */
+    @Override
     public void createPartControl(Composite parent) {
         super.createPartControl(parent);
         initDone = true;
@@ -662,8 +675,10 @@ public class BytecodeClassFileEditor extends ClassFileEditor
     /*
      * @see ClassFileDocumentProvider.InputChangeListener#inputChanged(IClassFileEditorInput)
      */
+    @Override
     public void inputChanged(final IClassFileEditorInput input) {
         Runnable updateInput = new Runnable() {
+            @Override
             public void run() {
                 fInputUpdater.post(input);
                 IClassFile cf = input.getClassFile();
@@ -686,6 +701,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor
     /*
      * @see org.eclipse.ui.IWorkbenchPart#dispose()
      */
+    @Override
     public void dispose() {
         // http://bugs.eclipse.org/bugs/show_bug.cgi?id=18510
         IDocumentProvider documentProvider = getDocumentProvider();

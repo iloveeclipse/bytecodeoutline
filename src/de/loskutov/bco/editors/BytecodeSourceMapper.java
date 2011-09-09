@@ -20,7 +20,7 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.debug.core.DebugException;
-import org.eclipse.debug.internal.ui.contexts.DebugContextManager;
+import org.eclipse.debug.ui.DebugUITools;
 import org.eclipse.debug.ui.contexts.DebugContextEvent;
 import org.eclipse.debug.ui.contexts.IDebugContextListener;
 import org.eclipse.jdt.core.IClassFile;
@@ -57,7 +57,7 @@ public class BytecodeSourceMapper implements IDebugContextListener {
     public BytecodeSourceMapper() {
         super();
         classToDecompiled = new WeakHashMap();
-        DebugContextManager.getDefault().addDebugContextListener(this);
+        DebugUITools.getDebugContextManager().addDebugContextListener(this);
     }
 
     public char[] getSource(IClassFile classFile, BitSet decompilerFlags) {
@@ -169,20 +169,20 @@ public class BytecodeSourceMapper implements IDebugContextListener {
         if(archivePath == null){
             return null;
         }
-        InputStream inputStream = null;
         DecompiledClass decompiledClass = null;
+        ZipFile zf = null;
         try {
-            ZipFile zf = new ZipFile(archivePath);
+            zf = new ZipFile(archivePath);
             ZipEntry ze = zf.getEntry(className);
-            inputStream = zf.getInputStream(ze);
+            InputStream inputStream = zf.getInputStream(ze);
             decompiledClass = decompile(source, inputStream, decompilerFlags);
         } catch (IOException e) {
             source.append(e.toString());
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         } finally {
-            if (inputStream != null) {
+            if (zf != null) {
                 try {
-                    inputStream.close();
+                    zf.close();
                 } catch (IOException e) {
                     BytecodeOutlinePlugin.log(e, IStatus.ERROR);
                 }

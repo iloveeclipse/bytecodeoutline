@@ -191,7 +191,7 @@
          <contentTypeBinding contentTypeId="org.eclipse.jdt.core.javaClass"/>
       </editor>
    </extension>
-   
+
    <!-- replacement for org.eclipse.debug.ui.actions.RulerToggleBreakpointActionDelegate,
     required for toggle breakpoint by double-click in editor ruler in class files -->
    <extension
@@ -212,7 +212,7 @@
     <toc file="doc/toc.xml" primary="true" />
   </extension>
 
- <!-- because of org.eclipse.jdt.internal.ui.javaeditor.ClassFileEditor replacement -->
+ <!-- because of org.eclipse.jdt.internal.ui.javaeditor.ClassFileEditor replacement
   <extension point="org.eclipse.core.runtime.adapters">
          <factory
             class="org.eclipse.jdt.internal.debug.ui.actions.RetargettableActionAdapterFactory"
@@ -220,7 +220,7 @@
             <adapter type="org.eclipse.debug.ui.actions.IRunToLineTarget"/>
             <adapter type="org.eclipse.debug.ui.actions.IToggleBreakpointsTarget"/>
          </factory>
-  </extension>
+  </extension> -->
   <extension
         point="org.eclipse.ui.preferencePages">
      <page
