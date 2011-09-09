@@ -11,6 +11,7 @@ package de.loskutov.bco.compare;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.BitSet;
 
 import org.eclipse.compare.BufferedContent;
@@ -140,7 +141,7 @@ public class TypedElement extends BufferedContent
                 BytecodeOutlinePlugin.log(e, IStatus.WARNING);
             }
         }
-        final byte[] bytes = decompiledClass.getText().getBytes();
+        final byte[] bytes = decompiledClass.getText().getBytes(Charset.forName("UTF-8"));
         // use internal buffering to prevent multiple calls to this method
         Display.getDefault().syncExec(new Runnable(){
             @Override

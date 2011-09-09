@@ -1125,7 +1125,7 @@ public class JdtUtils {
             anonType, sourceComparator);
         Collections.sort(anonymous, classComparator);
 
-        if(BytecodeOutlinePlugin.debug){
+        if(BytecodeOutlinePlugin.DEBUG){
             debugCompilePrio(classComparator);
         }
     }
@@ -1135,12 +1135,13 @@ public class JdtUtils {
         final Map map = classComparator.map;
         Comparator prioComp = new Comparator() {
 
+            @Override
             public int compare(Object e1, Object e2) {
-                int result = ((Comparable) map.get(e1)).compareTo(map.get(e2));
+                int result = ((Comparable) map.get(e2)).compareTo(map.get(e1));
                 if (result == 0) {
                     return e1.toString().compareTo(e2.toString());
                 }
-                return -result;
+                return result;
             }
 
         };
@@ -1365,6 +1366,7 @@ public class JdtUtils {
          * @param o2 should be IType
          * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
          */
+        @Override
         public int compare(Object o1, Object o2) {
             IType m1 = (IType) o1;
             IType m2 = (IType) o2;
@@ -1438,6 +1440,7 @@ public class JdtUtils {
          *
          * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
          */
+        @Override
         public int compare(Object o1, Object o2) {
             if(o1 == o2){
                 return 0;
@@ -1503,14 +1506,14 @@ public class JdtUtils {
             Integer prio;
             if ((prio = (Integer) map.get(anonType)) != null) {
                 compilePrio = prio.intValue();
-                if (BytecodeOutlinePlugin.debug) {
+                if (BytecodeOutlinePlugin.DEBUG) {
                     System.out.println("Using cache");
                 }
             } else {
                 compilePrio = getAnonCompilePriority(
                     anonType, firstAncestor, topAncestorType, is50OrHigher);
                 map.put(anonType, Integer.valueOf(compilePrio));
-                if (BytecodeOutlinePlugin.debug) {
+                if (BytecodeOutlinePlugin.DEBUG) {
                     System.out.println("Calculating value!");
                 }
             }

@@ -33,6 +33,7 @@ public class BytecodeDocumentProvider extends ClassFileDocumentProvider {
      * Overriden to get control over document content for bytecode editors
      * @see StorageDocumentProvider#setDocumentContent(IDocument, IEditorInput)
      */
+    @Override
     protected boolean setDocumentContent(IDocument document,
         IEditorInput editorInput, String encoding) throws CoreException {
 
@@ -64,7 +65,7 @@ public class BytecodeDocumentProvider extends ClassFileDocumentProvider {
 
     /**
      *
-     * During debug session, debugger tries to get line information for the current line
+     * During DEBUG session, debugger tries to get line information for the current line
      * in the stack, and then uses this info to set cursor and select text in editor.
      *
      * The problem is, that Java debugger knows only "source" - based lines, but our editor
@@ -82,6 +83,7 @@ public class BytecodeDocumentProvider extends ClassFileDocumentProvider {
      * All other clients of this method shouldn't be affected and should receive always
      * the original document.
      */
+    @Override
     public IDocument getDocument(Object element) {
         IDocument document = super.getDocument(element);
         if (element instanceof IClassFileEditorInput && isDebuggerCall()) {
@@ -93,7 +95,7 @@ public class BytecodeDocumentProvider extends ClassFileDocumentProvider {
     }
 
     /**
-     * We are looking for two stack patterns, which both are related to debug session and
+     * We are looking for two stack patterns, which both are related to DEBUG session and
      * coming from SourceLookupFacility.display(ISourceLookupResult result, IWorkbenchPage page):
      * first is the highlighting the editor current line, corresponding to
      * the line in the bytecode stack (light gray color),
@@ -103,7 +105,7 @@ public class BytecodeDocumentProvider extends ClassFileDocumentProvider {
      * This is a VERY BAD and VERY DIRTY hack, but it works.
      * @return
      */
-    private boolean isDebuggerCall() {
+    private static boolean isDebuggerCall() {
         Exception e = new Exception();
         StackTraceElement[] stackTrace = e.getStackTrace();
         boolean stackOk = true;
@@ -156,13 +158,13 @@ public class BytecodeDocumentProvider extends ClassFileDocumentProvider {
      * private void positionEditor(ITextEditor editor, IStackFrame frame)
      * private IRegion getLineInformation(ITextEditor editor, int lineNumber)
      *
-     * Other place for debug instruction pointer with the "wrong line" is InstructionPointerManager
+     * Other place for DEBUG instruction pointer with the "wrong line" is InstructionPointerManager
      *  public void addAnnotation(ITextEditor textEditor, IStackFrame frame, Annotation annotation)
      */
 
     /**
      * This class is non-functional replacement for IDocument. The only one purpose is to
-     * override getLineInformation() implementation for debug purposes
+     * override getLineInformation() implementation for DEBUG purposes
      */
     private static final class DocumentProxy4Debugger extends AbstractDocument {
 
@@ -175,6 +177,7 @@ public class BytecodeDocumentProvider extends ClassFileDocumentProvider {
             this.cf = cf;
         }
 
+        @Override
         public IRegion getLineInformation(int line) throws BadLocationException {
             BytecodeSourceMapper mapper = BytecodeClassFileEditor
                 .getSourceMapper();

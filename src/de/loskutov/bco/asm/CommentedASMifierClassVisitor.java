@@ -259,7 +259,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
     public void visitLineNumber(int line, Label start) {
         if (showLines) {
             addIndex(-1);
-            currMethod.addLineNumber(start, new Integer(line));
+            currMethod.addLineNumber(start, Integer.valueOf(line));
             super.visitLineNumber(line, start);
         }
     }

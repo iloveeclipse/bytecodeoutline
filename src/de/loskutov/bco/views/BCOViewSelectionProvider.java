@@ -31,7 +31,7 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
 class BCOViewSelectionProvider implements IPostSelectionProvider {
 
     private IPostSelectionProvider realProvider;
-    private List selProviders;
+    private final List selProviders;
     private ISelection selection;
 
     public BCOViewSelectionProvider(){
@@ -62,6 +62,7 @@ class BCOViewSelectionProvider implements IPostSelectionProvider {
     /* (non-Javadoc)
      * @see org.eclipse.jface.viewers.IPostSelectionProvider#addPostSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener)
      */
+    @Override
     public void addPostSelectionChangedListener(ISelectionChangedListener listener) {
         for (int i = 0; i < selProviders.size(); i++) {
             IPostSelectionProvider provider = (IPostSelectionProvider) selProviders.get(i);
@@ -72,6 +73,7 @@ class BCOViewSelectionProvider implements IPostSelectionProvider {
     /* (non-Javadoc)
      * @see org.eclipse.jface.viewers.IPostSelectionProvider#removePostSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener)
      */
+    @Override
     public void removePostSelectionChangedListener(ISelectionChangedListener listener) {
         for (int i = 0; i < selProviders.size(); i++) {
             IPostSelectionProvider provider = (IPostSelectionProvider) selProviders.get(i);
@@ -82,6 +84,7 @@ class BCOViewSelectionProvider implements IPostSelectionProvider {
     /* (non-Javadoc)
      * @see org.eclipse.jface.viewers.ISelectionProvider#addSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener)
      */
+    @Override
     public void addSelectionChangedListener(ISelectionChangedListener listener) {
         for (int i = 0; i < selProviders.size(); i++) {
             IPostSelectionProvider provider = (IPostSelectionProvider) selProviders.get(i);
@@ -92,6 +95,7 @@ class BCOViewSelectionProvider implements IPostSelectionProvider {
     /* (non-Javadoc)
      * @see org.eclipse.jface.viewers.ISelectionProvider#getSelection()
      */
+    @Override
     public ISelection getSelection() {
         return realProvider != null? realProvider.getSelection() : null;
     }
@@ -99,6 +103,7 @@ class BCOViewSelectionProvider implements IPostSelectionProvider {
     /* (non-Javadoc)
      * @see org.eclipse.jface.viewers.ISelectionProvider#removeSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener)
      */
+    @Override
     public void removeSelectionChangedListener(ISelectionChangedListener listener) {
         for (int i = 0; i < selProviders.size(); i++) {
             IPostSelectionProvider provider = (IPostSelectionProvider) selProviders.get(i);
@@ -109,6 +114,7 @@ class BCOViewSelectionProvider implements IPostSelectionProvider {
     /* (non-Javadoc)
      * @see org.eclipse.jface.viewers.ISelectionProvider#setSelection(org.eclipse.jface.viewers.ISelection)
      */
+    @Override
     public void setSelection(ISelection selection) {
         this.selection = selection;
         if(realProvider != null) {

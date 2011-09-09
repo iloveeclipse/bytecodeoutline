@@ -49,12 +49,14 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
         super();
     }
 
+    @Override
     public void createPartControl(Composite parent) {
         browser = new Browser(parent, SWT.BORDER);
         final IWorkbenchWindow workbenchWindow = getSite().getWorkbenchWindow();
         linkWithView = BytecodeOutlinePlugin.getDefault().getPreferenceStore()
             .getBoolean(BCOConstants.LINK_REF_VIEW_TO_EDITOR);
         linkWithViewAction = new DefaultToggleAction(BCOConstants.LINK_REF_VIEW_TO_EDITOR){
+            @Override
             public void run(boolean newState) {
                 linkWithView = newState;
                 if(linkWithView){
@@ -80,6 +82,7 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
         workbenchWindow.getPartService().addPartListener(this);
     }
 
+    @Override
     public void dispose() {
         getSite().getWorkbenchWindow().getPartService().removePartListener(this);
         browser.dispose();
@@ -88,32 +91,39 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
         super.dispose();
     }
 
+    @Override
     public void setFocus() {
         browser.setFocus();
     }
 
+    @Override
     public void partActivated(IWorkbenchPartReference partRef) {
         //
     }
 
+    @Override
     public void partBroughtToTop(IWorkbenchPartReference partRef) {
         //
     }
 
+    @Override
     public void partClosed(IWorkbenchPartReference partRef) {
         //
     }
 
+    @Override
     public void partDeactivated(IWorkbenchPartReference partRef) {
         //
     }
 
+    @Override
     public void partOpened(IWorkbenchPartReference partRef) {
         // WORKAROUND  - sometimes Eclipse does not invoke partVisible(),
         // but only partOpened()...
         partVisible(partRef);
     }
 
+    @Override
     public void partHidden(IWorkbenchPartReference partRef) {
         if (partRef.getId().equals(getSite().getId())) {
             getSite().getWorkbenchWindow().getSelectionService()
@@ -121,6 +131,7 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
         }
     }
 
+    @Override
     public void partVisible(IWorkbenchPartReference partRef) {
         if (partRef.getId().equals(getSite().getId())) {
             IWorkbenchWindow workbenchWindow = getSite().getWorkbenchWindow();
@@ -142,10 +153,12 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
         }
     }
 
+    @Override
     public void partInputChanged(IWorkbenchPartReference partRef) {
         //
     }
 
+    @Override
     public void selectionChanged(IWorkbenchPart part, ISelection selection) {
         boolean isViewSelection = part instanceof BytecodeOutlineView;
         if (!linkWithView || !(isViewSelection
@@ -195,7 +208,7 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
             + "empty.selection.text"));
     }
 
-    private String checkOpcodeName(String opcodeName) {
+    private static String checkOpcodeName(String opcodeName) {
         opcodeName = opcodeName.toLowerCase();
         /*
          * we need an additional check for DCONST_1...5, FCONST_1...5 etc case
@@ -223,7 +236,7 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
         return opcodeName;
     }
 
-    private URL getHelpResource(String name) {
+    private static URL getHelpResource(String name) {
         try {
             String href = "/"
                 + BytecodeOutlinePlugin.getDefault().getBundle()

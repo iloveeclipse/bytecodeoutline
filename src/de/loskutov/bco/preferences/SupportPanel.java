@@ -59,6 +59,7 @@ public class SupportPanel {
         link.setText(" - <a>visit homepage</a>");
         link.setToolTipText("You need just a sense of humor!");
         link.addListener (SWT.Selection, new Listener () {
+            @Override
             public void handleEvent(Event event) {
                 handleUrlClick("http://andrei.gmxhome.de/bytecode");
             }
@@ -69,6 +70,7 @@ public class SupportPanel {
         link.setText(" - <a>report issue or feature request</a>");
         link.setToolTipText("You need a valid account at ow2.org!");
         link.addListener (SWT.Selection, new Listener () {
+            @Override
             public void handleEvent(Event event) {
                 handleUrlClick("http://forge.ow2.org/tracker/?group_id=23");
             }
@@ -79,6 +81,7 @@ public class SupportPanel {
         link.setText(" - <a>add to your favorites at Eclipse MarketPlace</a>");
         link.setToolTipText("You need a valid bugzilla account at Eclipse.org!");
         link.addListener (SWT.Selection, new Listener () {
+            @Override
             public void handleEvent(Event event) {
                 handleUrlClick("http://marketplace.eclipse.org/content/bytecode-outline");
             }
@@ -89,6 +92,7 @@ public class SupportPanel {
         link.setText(" - <a>make a donation to support plugin development</a>");
         link.setToolTipText("You do NOT need a PayPal account!");
         link.addListener (SWT.Selection, new Listener () {
+            @Override
             public void handleEvent(Event event) {
                 handleUrlClick("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=R5SHJLNGUXKHU");
             }

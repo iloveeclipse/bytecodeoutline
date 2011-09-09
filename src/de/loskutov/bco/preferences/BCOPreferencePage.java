@@ -46,10 +46,12 @@ public class BCOPreferencePage extends FieldEditorPreferencePage
             .getResourceString("BCOPreferencePage.description"));
     }
 
+    @Override
     public void setVisible(boolean visible) {
         super.setVisible(visible);
     }
 
+    @Override
     protected void adjustGridLayout() {
         super.adjustGridLayout();
 //        ((GridData)rateGroup.getLayoutData()).horizontalSpan = 2;
@@ -60,6 +62,7 @@ public class BCOPreferencePage extends FieldEditorPreferencePage
      * needed to manipulate various types of preferences. Each field editor knows how to
      * save and restore itself.
      */
+    @Override
     public void createFieldEditors() {
 
         Composite fieldEditorParent = getFieldEditorParent();
@@ -183,6 +186,7 @@ public class BCOPreferencePage extends FieldEditorPreferencePage
      *
      * @see org.eclipse.ui.IWorkbenchPreferencePage#init(org.eclipse.ui.IWorkbench)
      */
+    @Override
     public void init(IWorkbench workbench) {
         //
     }

@@ -625,6 +625,7 @@ public class BytecodeOutlineView extends ViewPart {
         tmanager.add(toggleVerifierAction);
     }
 
+    @SuppressWarnings("unused")
     private void createVerifyControl() {
         verifyControl = new SashForm(stackComposite, SWT.VERTICAL);
 
@@ -1558,7 +1559,7 @@ public class BytecodeOutlineView extends ViewPart {
                         // this is the "cookie" for the bytecode reference, which could be
                         // mapped later to the sourcecode line on selection event in the
                         // table
-                        item.setData(new Integer(i));
+                        item.setData(Integer.valueOf(i));
                     }
                     item.setText(j, s);
                 }

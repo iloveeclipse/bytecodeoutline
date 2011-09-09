@@ -337,7 +337,7 @@ public class DecompiledClass {
                 DecompiledMethod m = (DecompiledMethod) o;
                 int l = m.getErrorLine();
                 if (l != -1) {
-                    errors.add(new Integer(l + currentDecompiledLine));
+                    errors.add(Integer.valueOf(l + currentDecompiledLine));
                 }
                 currentDecompiledLine += m.getLineCount();
             } else {

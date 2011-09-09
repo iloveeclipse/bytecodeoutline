@@ -26,7 +26,8 @@ public final class BytecodeBufferManager {
     }
 
     public static IBuffer createBuffer(IOpenable owner) {
-        return BufferManager.getDefaultBufferManager().createBuffer(owner);
+        BufferManager.getDefaultBufferManager();
+        return BufferManager.createBuffer(owner);
     }
 
     /**

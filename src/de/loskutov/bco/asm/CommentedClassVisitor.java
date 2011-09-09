@@ -334,7 +334,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
         addIndex(opcode);
         text.add(tab2 + OPCODES[opcode] + " " + var);
         if (!raw) {
-            text.add(new Integer(var));
+            text.add(Integer.valueOf(var));
         }
         text.add("\n");
     }
@@ -377,7 +377,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
         addIndex(Opcodes.IINC);
         text.add(tab2 + "IINC " + var);
         if (!raw) {
-            text.add(new Integer(var));
+            text.add(Integer.valueOf(var));
         }
         text.add(" " + increment + "\n");
     }
@@ -544,7 +544,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
     public void visitLineNumber(final int line, final Label start) {
         if (showLines) {
             addIndex(-1);
-            currMethod.addLineNumber(start, new Integer(line));
+            currMethod.addLineNumber(start, Integer.valueOf(line));
             super.visitLineNumber(line, start);
         }
     }

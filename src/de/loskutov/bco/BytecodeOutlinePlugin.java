@@ -25,7 +25,7 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
     private static BytecodeOutlinePlugin plugin;
     //Resource bundle.
     private ResourceBundle resourceBundle;
-    public static boolean debug;
+    public static boolean DEBUG;
 
     /**
      * The constructor.
@@ -49,9 +49,10 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
      * @param context
      * @throws Exception
      */
+    @Override
     public void start(BundleContext context) throws Exception {
         super.start(context);
-        debug = isDebugging();
+        DEBUG = isDebugging();
     }
 
     /**
@@ -59,6 +60,7 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
      * @param context
      * @throws Exception
      */
+    @Override
     public void stop(BundleContext context) throws Exception {
         super.stop(context);
     }

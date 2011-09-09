@@ -92,10 +92,13 @@ public class EclipseUtils {
      * @return full package name in default java notation (with dots)
      */
     public static String getJavaPackageName(IJavaElement resource) {
-        String name = resource == null
-            ? null : resource.getElementName(); //$NON-NLS-1$
+        String name;
+        if (resource == null) {
+            return "";
+        }
+        name = resource.getElementName();
         if (name == null) {
-            return ""; //$NON-NLS-1$
+            return "";
         }
         int type = resource.getElementType();
         if (type == IJavaElement.PACKAGE_FRAGMENT

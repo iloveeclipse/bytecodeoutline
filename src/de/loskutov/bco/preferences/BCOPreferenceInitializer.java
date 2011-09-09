@@ -14,14 +14,12 @@ import org.eclipse.jface.preference.IPreferenceStore;
 import de.loskutov.bco.BytecodeOutlinePlugin;
 
 /**
- * Inializer of default values for BCO preferences
+ * Initalizer of default values for BCO preferences
  * @author Andrei
  */
 public class BCOPreferenceInitializer extends AbstractPreferenceInitializer {
 
-    /* (non-Javadoc)
-     * @see org.eclipse.core.runtime.preferences.AbstractPreferenceInitializer#initializeDefaultPreferences()
-     */
+    @Override
     public void initializeDefaultPreferences() {
         IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
         store.setDefault(BCOConstants.LINK_VIEW_TO_EDITOR, true);

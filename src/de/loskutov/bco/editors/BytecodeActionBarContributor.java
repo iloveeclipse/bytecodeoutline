@@ -62,6 +62,7 @@ public class BytecodeActionBarContributor
         attachAction = new AttachSourceAction(actionIcon);
     }
 
+    @Override
     public void contributeToToolBar(IToolBarManager toolBarManager) {
         super.contributeToToolBar(toolBarManager);
         toolBarManager.add(refreshAction);
@@ -71,6 +72,7 @@ public class BytecodeActionBarContributor
         // toolBarManager.appendToGroup(JadclipsePlugin.PID_JADCLIPSE, dAction);
     }
 
+    @Override
     public void contributeToMenu(IMenuManager menu) {
         super.contributeToMenu(menu);
         IMenuManager edit = menu
@@ -82,6 +84,7 @@ public class BytecodeActionBarContributor
         }
     }
 
+    @Override
     public void setActiveEditor(IEditorPart targetEditor) {
         if (targetEditor instanceof BytecodeClassFileEditor) {
             editor = (BytecodeClassFileEditor) targetEditor;
@@ -109,6 +112,7 @@ public class BytecodeActionBarContributor
             setAccelerator(SWT.CTRL | SWT.SHIFT | 'B');
         }
 
+        @Override
         public void run() {
             if (editor != null) {
                 ISelection selection = editor.getSelectionProvider()
@@ -139,6 +143,7 @@ public class BytecodeActionBarContributor
             setToolTipText("Attach Source...");
         }
 
+        @Override
         public void run() {
             if (editor == null) {
                 return;
@@ -207,6 +212,7 @@ public class BytecodeActionBarContributor
             setToolTipText("Show Internal Types");
         }
 
+        @Override
         public void run() {
             if (editor != null) {
                 editor.setDecompilerFlag(

@@ -62,6 +62,7 @@ public class BytecodeCompare extends CompareEditorInput {
         toggleAsmifierModeAction = new DefaultToggleAction(
             BCOConstants.DIFF_SHOW_ASMIFIER_CODE, false) {
 
+            @Override
             public void run(final boolean newState) {
                 toggleMode(
                     BCOConstants.F_SHOW_ASMIFIER_CODE, newState, newState);
@@ -71,6 +72,7 @@ public class BytecodeCompare extends CompareEditorInput {
         hideLineInfoAction = new DefaultToggleAction(
             BCOConstants.DIFF_SHOW_LINE_INFO, false) {
 
+            @Override
             public void run(final boolean newState) {
                 toggleMode(
                     BCOConstants.F_SHOW_LINE_INFO, newState,
@@ -81,6 +83,7 @@ public class BytecodeCompare extends CompareEditorInput {
         hideLocalsAction = new DefaultToggleAction(
             BCOConstants.DIFF_SHOW_VARIABLES, false) {
 
+            @Override
             public void run(final boolean newState) {
                 toggleMode(
                     BCOConstants.F_SHOW_VARIABLES, newState,
@@ -91,6 +94,7 @@ public class BytecodeCompare extends CompareEditorInput {
         hideStackMapAction = new DefaultToggleAction(
             BCOConstants.DIFF_SHOW_STACKMAP, false) {
 
+            @Override
             public void run(final boolean newState) {
                 toggleMode(
                     BCOConstants.F_SHOW_STACKMAP, newState,
@@ -101,6 +105,7 @@ public class BytecodeCompare extends CompareEditorInput {
         expandStackMapAction = new DefaultToggleAction(
             BCOConstants.DIFF_EXPAND_STACKMAP, false) {
 
+            @Override
             public void run(final boolean newState) {
                 toggleMode(
                     BCOConstants.F_EXPAND_STACKMAP, newState,
@@ -110,6 +115,7 @@ public class BytecodeCompare extends CompareEditorInput {
     }
 
     /** @see CompareEditorInput#prepareInput(IProgressMonitor) */
+    @Override
     protected Object prepareInput(final IProgressMonitor monitor)
         throws InterruptedException {
         if (right == null || left == null) {
@@ -193,6 +199,7 @@ public class BytecodeCompare extends CompareEditorInput {
     /**
      * @see org.eclipse.compare.CompareEditorInput#createContents(org.eclipse.swt.widgets.Composite)
      */
+    @Override
     public Control createContents(final Composite parent) {
         Object obj = parent.getData();
         if(obj == null) {
