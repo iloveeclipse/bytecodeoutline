@@ -18,11 +18,9 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.compare,
  org.eclipse.ui.console,
  org.eclipse.help.base,
- org.eclipse.help.appserver,
- org.eclipse.jdt.debug.ui,
  org.eclipse.debug.ui,
  org.eclipse.jdt.debug,
- org.junit;resolution:=optional,
- org.eclipse.core.net
+ org.junit;resolution:=optional
 Eclipse-LazyStart: true
-Bundle-RequiredExecutionEnvironment: J2SE-1.4
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Bundle-ActivationPolicy: lazy
