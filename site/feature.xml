@@ -2,8 +2,8 @@
 <feature
       id="de.loskutov.BytecodeOutline.feature"
       label="Bytecode Outline"
-      version="2.3.1"
-      provider-name="Andrei Loskutov">
+      version="2.4.0"
+      provider-name="Andrey Loskutov">
 
    <description url="http://asm.objectweb.org/eclipse/bco/index.html">
       Feature contains bytecode outline and bytecode comparison view
@@ -11,12 +11,12 @@ for any java/class file.
    </description>
 
    <copyright url="..">
-      Copyright (C)2004-2007 by Andrei Loskutov Loskutov@gmx.de
+      Copyright (C)2004-2011 by Andrey Loskutov Loskutov@gmx.de
 All rights reserved.
    </copyright>
 
    <license>
-      Copyright (C)2004-2007 by Andrei Loskutov Loskutov@gmx.de
+      Copyright (C)2004-2011 by Andrey Loskutov Loskutov@gmx.de
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -31,6 +31,7 @@ THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS&apos;&apos; AND
    <url>
       <update label="ObjectWeb update site" url="http://download.forge.objectweb.org/eclipse-update/site.xml"/>
       <discovery label="ObjectWeb update site" url="http://download.forge.objectweb.org/eclipse-update/site.xml"/>
+      <discovery label="Andrey Loskutov plugins" url="http://andrei.gmxhome.de/eclipse/site.xml"/>
    </url>
 
    <requires>
@@ -44,19 +45,16 @@ THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS&apos;&apos; AND
       <import plugin="org.eclipse.compare"/>
       <import plugin="org.eclipse.ui.console"/>
       <import plugin="org.eclipse.help.base"/>
-      <import plugin="org.eclipse.help.appserver"/>
-      <import plugin="org.eclipse.jdt.debug.ui"/>
       <import plugin="org.eclipse.debug.ui"/>
       <import plugin="org.eclipse.jdt.debug"/>
       <import plugin="org.eclipse.jdt.core" version="3.6.0" match="greaterOrEqual"/>
-      <import plugin="org.eclipse.core.net"/>
    </requires>
 
    <plugin
          id="de.loskutov.BytecodeOutline"
          download-size="710"
          install-size="710"
-         version="2.3.1"
+         version="2.4.0"
          unpack="false"/>
 
 </feature>
