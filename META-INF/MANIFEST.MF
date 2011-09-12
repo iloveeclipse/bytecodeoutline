@@ -4,7 +4,7 @@ Bundle-Name: Bytecode Outline
 Bundle-SymbolicName: de.loskutov.BytecodeOutline;singleton:=true
 Bundle-Version: 2.4.0
 Bundle-ClassPath: .,
- lib/asm-debug-all-4.0_RC2.jar
+ lib/asm-debug-all.jar
 Bundle-Activator: de.loskutov.bco.BytecodeOutlinePlugin
 Bundle-Vendor: Andrey Loskutov
 Require-Bundle: org.eclipse.ui,

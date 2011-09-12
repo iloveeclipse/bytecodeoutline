@@ -1,28 +1,50 @@
 <project name="BytecodeOutline" default="plugin">
 
+  <!-- defines the location of the asm project via asm.project.dir -->
   <property file="${user.home}/asm-build.properties"/>
+
+  <!-- TODO right now we define bco.version/plugin.id here, but we shall read it from MANIFEST.MF -->
   <property file="build.properties"/>
+
+  <!-- defines product.version fro asm etc  -->
+  <property file="${asm.project.dir}/build.properties" />
+
 
   <property name="src"                value="${basedir}/src"/>
   <property name="externals"          value="${basedir}/externals"/>
   <property name="out"                value="${basedir}/output"/>
+  <property name="lib"                value="${basedir}/lib"/>
   <property name="out.build"          value="${out}/build"/>
 
-  <property name="plugin.jar"   value="${plugin.id}_${plugin.version}.jar"/>
-  <property name="feature.jar"  value="${plugin.id}.feature_${plugin.version}.jar"/>
+  <property name="plugin.jar"   value="${plugin.id}_${bco.version}.jar"/>
+  <property name="feature.jar"  value="${plugin.id}.feature_${bco.version}.jar"/>
+  <property name="asm-debug-all.jar" value="${asm.project.dir}/output/dist/lib/all/asm-debug-all-${product.version}.jar"/>
+  <property name="asm.jar" value="${lib}/asm-debug-all.jar"/>
 
    <path id="saxon.classpath">
         <fileset dir="${saxon.home}" includes="*.jar"/>
     </path>
 
   <target name="init">
+    <condition property="asm.recompile" >
+        <not><available file="${asm.jar}" /></not>
+    </condition>
+  </target>
+
+    <!-- Trigger (re-)compilation of FB core, if findbugs.jar is not available -->
+    <target name="asmcompile" if="asm.recompile" >
+        <echo message="Building ASM core libraries"/>
+        <ant dir="${asm.project.dir}" inheritall="false" target="jar" >
+        	<property name="product.noshrink" value="true"/>
+    	</ant>
+        <copy tofile="${asm.jar}" preservelastmodified="true" file="${asm-debug-all.jar}" />
+    </target>
+
+  <target name="compile" depends="init, asmcompile">
     <path id="classpath">
       <fileset dir="lib" includes="*.jar"/>
       <fileset dir="${eclipse.home}" includes="plugins/**/*.jar"/>
     </path>
-  </target>
-
-  <target name="compile" depends="init">
     <mkdir dir="${out.build}"/>
     <javac destdir="${out.build}" debug="on" source="1.5" target="1.5" includeantruntime="false">
       <classpath refid="classpath"/>
@@ -84,7 +106,7 @@
   </target>
 
   <target name="site" depends="feature">
-    <zip zipfile="${out}/${plugin.id}.update_${plugin.version}.zip">
+    <zip zipfile="${out}/${plugin.id}.update_${bco.version}.zip">
       <zipfileset dir="site" includes="site.xml"/>
       <zipfileset dir="${out}" includes="${feature.jar}" prefix="features"/>
       <zipfileset dir="${out}" includes="${plugin.jar}"  prefix="plugins"/>
@@ -94,6 +116,7 @@
   <target name="clean">
     <delete failonerror="false" includeEmptyDirs="true">
       <fileset dir="${out}" includes="**/*"/>
+      <fileset dir="${lib}" includes="**/*"/>
     </delete>
   </target>
 
