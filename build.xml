@@ -6,7 +6,7 @@
   <!-- TODO right now we define bco.version/plugin.id here, but we shall read it from MANIFEST.MF -->
   <property file="build.properties"/>
 
-  <!-- defines product.version fro asm etc  -->
+  <!-- defines product.version from asm etc  -->
   <property file="${asm.project.dir}/build.properties" />
 
 
@@ -31,7 +31,7 @@
     </condition>
   </target>
 
-    <!-- Trigger (re-)compilation of FB core, if findbugs.jar is not available -->
+    <!-- Trigger (re-)compilation of asm-debug-all.jar, if it is is not available -->
     <target name="asmcompile" if="asm.recompile" >
         <echo message="Building ASM core libraries"/>
         <ant dir="${asm.project.dir}" inheritall="false" target="jar" >
