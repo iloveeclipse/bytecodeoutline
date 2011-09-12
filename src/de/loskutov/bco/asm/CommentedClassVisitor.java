@@ -182,6 +182,15 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
                 case INTERNAL_NAME :
                     buf1.append(eatPackageNames(desc, '/'));
                     break;
+                case HANDLE_DESCRIPTOR :
+                    Type[] types = Type.getArgumentTypes(desc);
+                    for (int i = 0; i < types.length; ++i) {
+                        if (i > 0) {
+                            buf1.append(',');
+                        }
+                        buf1.append(getSimpleName(types[i]));
+                    }
+                    break;
                 case FIELD_DESCRIPTOR :
                     if ("T".equals(desc)) {
                         buf1.append("top");
