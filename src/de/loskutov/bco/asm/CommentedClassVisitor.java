@@ -186,7 +186,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
                     Type[] types = Type.getArgumentTypes(desc);
                     for (int i = 0; i < types.length; ++i) {
                         if (i > 0) {
-                            buf1.append(',');
+                            buf1.append(", ");
                         }
                         buf1.append(getSimpleName(types[i]));
                     }
@@ -208,7 +208,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
                     buf1.append('(');
                     for (int i = 0; i < args.length; ++i) {
                         if (i > 0) {
-                            buf1.append(',');
+                            buf1.append(", ");
                         }
                         buf1.append(getSimpleName(args[i]));
                     }
