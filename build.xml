@@ -40,6 +40,12 @@
         <copy tofile="${asm.jar}" preservelastmodified="true" file="${asm-debug-all.jar}" />
     </target>
 
+    <!-- use it to force recompilation of asm core libraries -->
+    <target name="force_recompile">
+        <property name="asm.recompile" value="true" />
+        <antcall target="compile" />
+    </target>
+
   <target name="compile" depends="init, asmcompile">
     <path id="classpath">
       <fileset dir="lib" includes="*.jar"/>
