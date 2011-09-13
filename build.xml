@@ -16,8 +16,6 @@
   <property name="lib"                value="${basedir}/lib"/>
   <property name="out.build"          value="${out}/build"/>
 
-  <property name="plugin.jar"   value="${plugin.id}_${bco.version}.jar"/>
-  <property name="feature.jar"  value="${plugin.id}.feature_${bco.version}.jar"/>
   <property name="asm-debug-all.jar" value="${asm.project.dir}/output/dist/lib/all/asm-debug-all-${product.version}.jar"/>
   <property name="asm.jar" value="${lib}/asm-debug-all.jar"/>
 
@@ -26,6 +24,24 @@
     </path>
 
   <target name="init">
+    <!-- read plugin base version from META-INF/MANIFEST.MF to ${pluginVersion} -->
+    <loadfile srcFile="${basedir}/META-INF/MANIFEST.MF" property="bco.version">
+      <filterchain>
+          <tokenfilter><containsregex pattern="Bundle-Version: (.*)" replace="\1"/></tokenfilter>
+          <deletecharacters chars=" \n\r"/>
+      </filterchain>
+    </loadfile>
+
+    <!-- read plugin id from META-INF/MANIFEST.MF to ${pluginId} -->
+    <loadfile srcFile="${basedir}/META-INF/MANIFEST.MF" property="plugin.id">
+      <filterchain>
+          <tokenfilter><containsregex pattern="Bundle-SymbolicName:\s*([^;]+)(;.*)?" replace="\1"/></tokenfilter>
+          <deletecharacters chars=" \n\r"/>
+      </filterchain>
+    </loadfile>
+
+    <property name="plugin.jar"   value="${plugin.id}_${bco.version}.jar"/>
+    <property name="feature.jar"  value="${plugin.id}.feature_${bco.version}.jar"/>
     <condition property="asm.recompile" >
         <not><available file="${asm.jar}" /></not>
     </condition>
@@ -65,6 +81,17 @@
         <include name="**/*.properties"/>
       </fileset>
     </copy>
+    <filterset id="version.filter">
+        <filter token="PLUGIN_VERSION" value="${bco.version}" />
+        <filter token="FEATURE_VERSION" value="${bco.version}" />
+    </filterset>
+  	<mkdir dir="${out}/site"/>
+    <copy todir="${out}/site">
+      <fileset dir="${basedir}/site">
+        <include name="**/*.xml"/>
+      </fileset>
+      <filterset refid="version.filter"/>
+    </copy>
 
     <zip zipfile="${out}/BytecodeOutlinesrc.zip">
       <zipfileset dir="${src}" includes="**/*" prefix="src"/>
@@ -80,10 +107,11 @@
         <include name="README.txt"/>
         <include name="LICENSE.txt"/>
       </fileset>
-      <fileset dir="site">
+      <fileset dir="${out}/site">
         <include name="feature.xml"/>
         <include name="site.xml"/>
       </fileset>
+
     </zip>
   </target>
 
@@ -107,13 +135,13 @@
 
   <target name="feature" depends="plugin">
     <jar zipfile="${out}/${feature.jar}">
-      <fileset dir="site" includes="feature.xml"/>
+      <fileset dir="${out}/site" includes="feature.xml"/>
     </jar>
   </target>
 
   <target name="site" depends="feature">
     <zip zipfile="${out}/${plugin.id}.update_${bco.version}.zip">
-      <zipfileset dir="site" includes="site.xml"/>
+      <zipfileset dir="${out}/site" includes="site.xml"/>
       <zipfileset dir="${out}" includes="${feature.jar}" prefix="features"/>
       <zipfileset dir="${out}" includes="${plugin.jar}"  prefix="plugins"/>
     </zip>
