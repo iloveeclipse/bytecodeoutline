@@ -1,8 +1,8 @@
 /*****************************************************************************************
- * Copyright (c) 2004 Andrei Loskutov. All rights reserved. This program and the
+ * Copyright (c) 2011 Andrey Loskutov. All rights reserved. This program and the
  * accompanying materials are made available under the terms of the BSD License which
  * accompanies this distribution, and is available at
- * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrei Loskutov -
+ * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrey Loskutov -
  * initial API and implementation
  ****************************************************************************************/
 package de.loskutov.bco.ui.actions;
@@ -14,19 +14,15 @@ import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.ui.IObjectActionDelegate;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
 
 /**
  * @author Andrei
  */
-public class CompareMemberBytecodeAction extends BytecodeAction implements IObjectActionDelegate {
+public class CompareMemberBytecodeAction extends BytecodeAction {
 
-    /**
-     * (non-Javadoc)
-     * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-     */
+    @Override
     public void run(IAction action) {
         IJavaElement[] resources = getSelectedResources();
         try {
@@ -37,11 +33,11 @@ public class CompareMemberBytecodeAction extends BytecodeAction implements IObje
         }
     }
 
-
+    @Override
     protected IJavaElement[] getSelectedResources() {
-        ArrayList resources = null;
+        ArrayList<Object> resources = null;
         if (!selection.isEmpty()) {
-            resources = new ArrayList();
+            resources = new ArrayList<Object>();
             for (Iterator elements = selection.iterator(); elements.hasNext();) {
                 Object next = elements.next();
                 if (next instanceof IMember) {
@@ -59,7 +55,7 @@ public class CompareMemberBytecodeAction extends BytecodeAction implements IObje
         }
 
         if (resources != null && !resources.isEmpty()) {
-            return (IJavaElement[]) resources.toArray(new IJavaElement[resources
+            return resources.toArray(new IJavaElement[resources
                 .size()]);
         }
 

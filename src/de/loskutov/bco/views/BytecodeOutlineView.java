@@ -90,7 +90,7 @@ import org.objectweb.asm.tree.ClassNode;
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
 import de.loskutov.bco.asm.DecompiledMethod;
-import de.loskutov.bco.asm.DecompilerClassVisitor;
+import de.loskutov.bco.asm.DecompilerHelper;
 import de.loskutov.bco.asm.DecompilerOptions;
 import de.loskutov.bco.asm.LineRange;
 import de.loskutov.bco.preferences.BCOConstants;
@@ -166,8 +166,8 @@ public class BytecodeOutlineView extends ViewPart {
 
     private DecompiledClass lastDecompiledResult;
 
-    protected Map globalActions;
-    protected List selectionActions;
+    protected Map<String, IAction> globalActions;
+    protected List<String> selectionActions;
     private MenuManager contextMenuManager;
     /** global class info, without current selection status */
     protected String currentStatusMessage;
@@ -201,8 +201,8 @@ public class BytecodeOutlineView extends ViewPart {
     public BytecodeOutlineView() {
         super();
         modes = new BitSet();
-        globalActions = new HashMap();
-        selectionActions = new ArrayList();
+        globalActions = new HashMap<String, IAction>();
+        selectionActions = new ArrayList<String>();
     }
 
     // ------------------------------------------------------------------------
@@ -728,9 +728,9 @@ public class BytecodeOutlineView extends ViewPart {
             @Override
             public void selectionChanged(SelectionChangedEvent event) {
                 // Updates selection dependent actions like find/copy.
-                Iterator iterator = selectionActions.iterator();
+                Iterator<String> iterator = selectionActions.iterator();
                 while (iterator.hasNext()) {
-                    updateAction((String) iterator.next());
+                    updateAction(iterator.next());
                 }
             }
         };
@@ -864,13 +864,13 @@ public class BytecodeOutlineView extends ViewPart {
         }
 
         menuManager
-            .add((IAction) globalActions.get(ActionFactory.COPY.getId()));
-        menuManager.add((IAction) globalActions.get(ActionFactory.SELECT_ALL
+            .add(globalActions.get(ActionFactory.COPY.getId()));
+        menuManager.add(globalActions.get(ActionFactory.SELECT_ALL
             .getId()));
 
         menuManager.add(new Separator("FIND")); //$NON-NLS-1$
         menuManager
-            .add((IAction) globalActions.get(ActionFactory.FIND.getId()));
+            .add(globalActions.get(ActionFactory.FIND.getId()));
 
         menuManager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
     }
@@ -1117,7 +1117,7 @@ public class BytecodeOutlineView extends ViewPart {
 
     private void refreshVerifyView(DecompiledClass result) {
         setVerifyTableItems(result.getTextTable());
-        List errors = result.getErrorLines();
+        List<Integer> errors = result.getErrorLines();
         if (errors.size() > 0) {
             // TODO this only changes color of status line -
             // but it is possible also to provide useful info here...
@@ -1125,7 +1125,7 @@ public class BytecodeOutlineView extends ViewPart {
             // currentErrorMessage = ...
         }
         for (int i = 0; i < errors.size(); ++i) {
-            int l = ((Integer) errors.get(i)).intValue();
+            int l = errors.get(i).intValue();
             tableControl.getItem(l).setForeground(errorColor);
         }
         toggleVerifierAction.setEnabled(true);
@@ -1140,8 +1140,8 @@ public class BytecodeOutlineView extends ViewPart {
         statusLineManager.setErrorMessage(null);
         if (result != null) {
             currentStatusMessage = "Java:"
-                + result.getAttribute("java.version") + " | class size:"
-                + result.getAttribute("class.size");
+                + result.getJavaVersion() + " | class size:"
+                + result.getClassSize();
             ClassNode classNode = result.getClassNode();
             if(classNode != null && classNode.name != null) {
                 setContentDescription(classNode.name);
@@ -1513,7 +1513,7 @@ public class BytecodeOutlineView extends ViewPart {
                 }
             }
             available = is.available();
-            decompiledClass = DecompilerClassVisitor.getDecompiledClass(
+            decompiledClass = DecompilerHelper.getDecompiledClass(
                 is, new DecompilerOptions(fieldName, methodName, modes, cl));
         } catch (Exception e) {
             try {
@@ -1541,8 +1541,7 @@ public class BytecodeOutlineView extends ViewPart {
         }
         // remember class file size to show it later in UI
         if (decompiledClass != null) {
-            decompiledClass.setAttribute(DecompiledClass.ATTR_CLAS_SIZE, ""
-                + available);
+            decompiledClass.setClassSize(available);
         }
         return decompiledClass;
     }
@@ -1603,7 +1602,7 @@ public class BytecodeOutlineView extends ViewPart {
      * @param actionId action definition id
      */
     protected void updateAction(String actionId) {
-        IAction action = (IAction) globalActions.get(actionId);
+        IAction action = globalActions.get(actionId);
         if (action instanceof IUpdate) {
             ((IUpdate) action).update();
         }

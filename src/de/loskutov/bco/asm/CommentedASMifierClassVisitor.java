@@ -156,7 +156,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
         }
         assert meth != null;
 
-        currMethod = new DecompiledMethod(className, new HashMap(), meth, options, access);
+        currMethod = new DecompiledMethod(className, new HashMap<Label, Integer>(), meth, options, access);
         ASMifier textifier = super.visitMethod(access, name1, desc, signature, exceptions);
         TraceMethodVisitor tm = new TraceMethodVisitor(textifier);
         meth.accept(tm);

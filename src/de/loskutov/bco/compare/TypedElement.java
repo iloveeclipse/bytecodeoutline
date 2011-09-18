@@ -27,7 +27,7 @@ import org.eclipse.swt.widgets.Display;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
-import de.loskutov.bco.asm.DecompilerClassVisitor;
+import de.loskutov.bco.asm.DecompilerHelper;
 import de.loskutov.bco.asm.DecompilerOptions;
 import de.loskutov.bco.ui.JdtUtils;
 
@@ -123,7 +123,7 @@ public class TypedElement extends BufferedContent
         }
         DecompiledClass decompiledClass = null;
         try {
-            decompiledClass = DecompilerClassVisitor.getDecompiledClass(
+            decompiledClass = DecompilerHelper.getDecompiledClass(
                 stream, new DecompilerOptions(null, methodName, modes, null));
         } catch (IOException e) {
             throw new CoreException(new Status(

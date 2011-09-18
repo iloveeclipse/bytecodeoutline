@@ -1,8 +1,8 @@
 /*****************************************************************************************
- * Copyright (c) 2007 Andrei Loskutov. All rights reserved. This program and the
+ * Copyright (c) 2011 Andrey Loskutov. All rights reserved. This program and the
  * accompanying materials are made available under the terms of the BSD License which
  * accompanies this distribution, and is available at
- * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrei Loskutov -
+ * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrey Loskutov -
  * initial API and implementation
  ****************************************************************************************/
 package de.loskutov.bco.views;
@@ -31,12 +31,12 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
 class BCOViewSelectionProvider implements IPostSelectionProvider {
 
     private IPostSelectionProvider realProvider;
-    private final List selProviders;
+    private final List<IPostSelectionProvider> selProviders;
     private ISelection selection;
 
     public BCOViewSelectionProvider(){
         super();
-        selProviders = new ArrayList();
+        selProviders = new ArrayList<IPostSelectionProvider>();
     }
 
     public void setCurrentSelectionProvider(IPostSelectionProvider provider){
@@ -59,61 +59,43 @@ class BCOViewSelectionProvider implements IPostSelectionProvider {
         }
     }
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.IPostSelectionProvider#addPostSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener)
-     */
     @Override
     public void addPostSelectionChangedListener(ISelectionChangedListener listener) {
         for (int i = 0; i < selProviders.size(); i++) {
-            IPostSelectionProvider provider = (IPostSelectionProvider) selProviders.get(i);
+            IPostSelectionProvider provider = selProviders.get(i);
             provider.addPostSelectionChangedListener(listener);
         }
     }
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.IPostSelectionProvider#removePostSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener)
-     */
     @Override
     public void removePostSelectionChangedListener(ISelectionChangedListener listener) {
         for (int i = 0; i < selProviders.size(); i++) {
-            IPostSelectionProvider provider = (IPostSelectionProvider) selProviders.get(i);
+            IPostSelectionProvider provider = selProviders.get(i);
             provider.removePostSelectionChangedListener(listener);
         }
     }
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.ISelectionProvider#addSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener)
-     */
     @Override
     public void addSelectionChangedListener(ISelectionChangedListener listener) {
         for (int i = 0; i < selProviders.size(); i++) {
-            IPostSelectionProvider provider = (IPostSelectionProvider) selProviders.get(i);
+            IPostSelectionProvider provider = selProviders.get(i);
             provider.addSelectionChangedListener(listener);
         }
     }
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.ISelectionProvider#getSelection()
-     */
     @Override
     public ISelection getSelection() {
         return realProvider != null? realProvider.getSelection() : null;
     }
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.ISelectionProvider#removeSelectionChangedListener(org.eclipse.jface.viewers.ISelectionChangedListener)
-     */
     @Override
     public void removeSelectionChangedListener(ISelectionChangedListener listener) {
         for (int i = 0; i < selProviders.size(); i++) {
-            IPostSelectionProvider provider = (IPostSelectionProvider) selProviders.get(i);
+            IPostSelectionProvider provider = selProviders.get(i);
             provider.removeSelectionChangedListener(listener);
         }
     }
 
-    /* (non-Javadoc)
-     * @see org.eclipse.jface.viewers.ISelectionProvider#setSelection(org.eclipse.jface.viewers.ISelection)
-     */
     @Override
     public void setSelection(ISelection selection) {
         this.selection = selection;

@@ -38,34 +38,34 @@ import de.loskutov.bco.preferences.BCOConstants;
 
 public class DecompiledMethod {
 
-    private final List text;
+    private final List<Object> text;
 
     private final List localVariables;
 
     /**
      * decompiled line -> source line
      */
-    private final Map sourceLines;
+    private final Map<Integer, Integer> sourceLines;
 
     /**
      * source line -> decompiled line
      */
-    private final Map decompiledLines;
+    private final Map<Integer, Integer> decompiledLines;
 
     /**
      * decompiled line -> insn
      */
-    private final Map insns;
+    private final Map<Integer, Integer> insns;
 
     /**
      *  decompiled line -> opcode
      */
-    private final Map opcodes;
+    private final Map<Integer, Integer> opcodes;
 
     /**
      * insn -> decompile line
      */
-    private final Map insnLines;
+    private final Map<Integer, Integer> insnLines;
 
     private int lineCount;
 
@@ -90,7 +90,7 @@ public class DecompiledMethod {
     private final String owner;
 
 
-    private final Map lineNumbers;
+    private final Map<Label, Integer> lineNumbers;
 
     private final DecompilerOptions options;
 
@@ -98,23 +98,23 @@ public class DecompiledMethod {
 
 
     public DecompiledMethod(final String owner,
-        final Map lineNumbers, final MethodNode meth, DecompilerOptions options, int access) {
+        final Map<Label, Integer> lineNumbers, final MethodNode meth, DecompilerOptions options, int access) {
         this.meth = meth;
         this.owner = owner;
         this.lineNumbers = lineNumbers;
         this.options = options;
         this.access = access;
-        this.text = new ArrayList();
+        this.text = new ArrayList<Object>();
         this.localVariables = meth.localVariables;
-        this.sourceLines = new HashMap();
-        this.decompiledLines = new HashMap();
-        this.insns = new HashMap();
-        this.opcodes = new HashMap();
-        this.insnLines = new HashMap();
+        this.sourceLines = new HashMap<Integer, Integer>();
+        this.decompiledLines = new HashMap<Integer, Integer>();
+        this.insns = new HashMap<Integer, Integer>();
+        this.opcodes = new HashMap<Integer, Integer>();
+        this.insnLines = new HashMap<Integer, Integer>();
     }
 
     void setText(final List inputText) {
-        formatText(inputText, new HashMap(), new StringBuffer(), this.text);
+        formatText(inputText, new HashMap<Integer, String>(), new StringBuffer(), this.text);
         computeMaps(lineNumbers);
 
         if (options.modes.get(BCOConstants.F_SHOW_ANALYZER)
@@ -158,13 +158,13 @@ public class DecompiledMethod {
         if(!containsSource(sourceLine)){
             return -1;
         }
-        Set set = decompiledLines.keySet();
+        Set<Integer> set = decompiledLines.keySet();
         if(set.size() == 0){
             return -1;
         }
         int bestMatch = -1;
-        for (Iterator iter = set.iterator(); iter.hasNext();) {
-            int line = ((Integer) iter.next()).intValue();
+        for (Iterator<Integer> iter = set.iterator(); iter.hasNext();) {
+            int line = iter.next().intValue();
             int delta = sourceLine - line;
             if(delta < 0){
                 continue;
@@ -178,16 +178,11 @@ public class DecompiledMethod {
         if(bestMatch < 0){
             return -1;
         }
-        return ((Integer)decompiledLines.get(Integer.valueOf(bestMatch))).intValue();
+        return decompiledLines.get(Integer.valueOf(bestMatch)).intValue();
     }
 
-    /**
-     * @param owner
-     * @param meth
-     * @param cl
-     */
     private void analyzeMethod(final ClassLoader cl) {
-        Analyzer a = new Analyzer(new SimpleVerifier() {
+        Analyzer<BasicValue> a = new Analyzer<BasicValue>(new SimpleVerifier() {
 
             @Override
             protected Class getClass(final Type t) {
@@ -219,8 +214,8 @@ public class DecompiledMethod {
         frames = a.getFrames();
     }
 
-    private void formatText(final List input, final Map locals, StringBuffer line,
-        final List result) {
+    private void formatText(final List input, final Map<Integer, String> locals, StringBuffer line,
+        final List<Object> result) {
         for (int i = 0; i < input.size(); ++i) {
             Object o = input.get(i);
             if (o instanceof List) {
@@ -229,12 +224,12 @@ public class DecompiledMethod {
                 result.add(o);
                 updateLocals((Index) o, locals);
             } else if (o instanceof Integer) {
-                String localVariableName = (String) locals.get(o);
+                String localVariableName = locals.get(o);
                 if (localVariableName == null) {
                     Index index = getNextIndex(input, i);
                     if(index != null){
                         updateLocals(index, locals);
-                        localVariableName = (String) locals.get(o);
+                        localVariableName = locals.get(o);
                     }
                 }
                 if(localVariableName != null) {
@@ -267,7 +262,7 @@ public class DecompiledMethod {
         return null;
     }
 
-    private void updateLocals(final Index index, final Map locals) {
+    private void updateLocals(final Index index, final Map<Integer, String> locals) {
         for (int i = 0; i < localVariables.size(); ++i) {
             LocalVariableNode lvNode = (LocalVariableNode) localVariables.get(i);
             if (lvNode.start == index.labelNode) {
@@ -278,7 +273,7 @@ public class DecompiledMethod {
         }
     }
 
-    private void computeMaps(final Map lineNumbers1) {
+    private void computeMaps(final Map<Label, Integer> lineNumbers1) {
         int currentDecompiledLine = 0;
         int firstLine = -1;
         int lastLine = -1;
@@ -291,7 +286,7 @@ public class DecompiledMethod {
                 Index index = (Index) o;
                 Integer sourceLine = null;
                 if(index.labelNode != null) {
-                    sourceLine = (Integer) lineNumbers1.get(index.labelNode.getLabel());
+                    sourceLine = lineNumbers1.get(index.labelNode.getLabel());
                 }
                 if (sourceLine != null) {
                     currentSourceLine = sourceLine.intValue();
@@ -342,7 +337,7 @@ public class DecompiledMethod {
     public String[][] getTextTable() {
         Frame frame = null;
         String error1 = "";
-        List lines = new ArrayList();
+        List<String[]> lines = new ArrayList<String[]>();
         String offsStr = null;
         for (int i = 0; i < text.size(); ++i) {
             Object o = text.get(i);
@@ -383,7 +378,7 @@ public class DecompiledMethod {
                 offsStr = null;
             }
         }
-        return (String[][]) lines.toArray(new String[lines.size()][]);
+        return lines.toArray(new String[lines.size()][]);
     }
 
     public int getLineCount() {
@@ -398,7 +393,7 @@ public class DecompiledMethod {
         if (error == null) {
             return -1;
         }
-        Integer i = (Integer) insnLines.get(Integer.valueOf(errorInsn));
+        Integer i = insnLines.get(Integer.valueOf(errorInsn));
         return i == null
             ? -1
             : i.intValue();
@@ -435,7 +430,7 @@ public class DecompiledMethod {
     }
 
     public int getSourceLine(final int decompiledLine) {
-        Integer i = (Integer) sourceLines.get(Integer.valueOf(decompiledLine));
+        Integer i = sourceLines.get(Integer.valueOf(decompiledLine));
         return i == null
             ? -1
             : i.intValue();
@@ -489,21 +484,13 @@ public class DecompiledMethod {
         return null;
     }
 
-    /**
-     * @param decompiledLine
-     * @return
-     */
     public Integer getBytecodeOffset(final int decompiledLine) {
-        Integer insn = (Integer) insns.get(Integer.valueOf(decompiledLine));
+        Integer insn = insns.get(Integer.valueOf(decompiledLine));
         return insn;
     }
 
-    /**
-     * @param decompiledLine
-     * @return
-     */
     public Integer getBytecodeInsn(final int decompiledLine) {
-        Integer insn = (Integer) opcodes.get(Integer.valueOf(decompiledLine));
+        Integer insn = opcodes.get(Integer.valueOf(decompiledLine));
         return insn;
     }
 
@@ -526,7 +513,7 @@ public class DecompiledMethod {
             }
 
             try {
-                ArrayList locals = new ArrayList();
+                ArrayList<String[]> locals = new ArrayList<String[]>();
                 for (int i = 0; i < f.getLocals(); ++i) {
                     String varName = "";
                     for (Iterator it = localVariables.iterator(); it.hasNext();) {
@@ -545,15 +532,15 @@ public class DecompiledMethod {
                         varName});
                 }
 
-                ArrayList stack = new ArrayList();
+                ArrayList<String[]> stack = new ArrayList<String[]>();
                 for (int i = 0; i < f.getStackSize(); ++i) {
                     stack.add( new String[] {
                         ""+i,
                         getTypeName( useQualifiedNames, f.getStack(i).toString())});
                 }
                 return new String[][][] {
-                    (String[][]) locals.toArray( new String[ 3][]),
-                    (String[][]) stack.toArray( new String[ 2][])};
+                    locals.toArray( new String[ 3][]),
+                    stack.toArray( new String[ 2][])};
             } catch (IndexOutOfBoundsException e) {
                 BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
@@ -613,7 +600,7 @@ public class DecompiledMethod {
     }
 
     public int getDecompiledLine(final int sourceLine) {
-        Integer i = (Integer) decompiledLines.get(Integer.valueOf(sourceLine));
+        Integer i = decompiledLines.get(Integer.valueOf(sourceLine));
         return i == null
             ? -1
             : i.intValue();

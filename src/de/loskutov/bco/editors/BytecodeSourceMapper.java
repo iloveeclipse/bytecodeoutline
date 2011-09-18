@@ -39,7 +39,7 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
-import de.loskutov.bco.asm.DecompilerClassVisitor;
+import de.loskutov.bco.asm.DecompilerHelper;
 import de.loskutov.bco.asm.DecompilerOptions;
 import de.loskutov.bco.ui.JdtUtils;
 
@@ -50,13 +50,13 @@ import de.loskutov.bco.ui.JdtUtils;
 public class BytecodeSourceMapper implements IDebugContextListener {
 
     /** key is IClassFile, value is DecompiledClass */
-    private final WeakHashMap classToDecompiled;
+    private final WeakHashMap<IClassFile, DecompiledClass> classToDecompiled;
     private IJavaReferenceType lastTypeInDebugger;
     private String lastMethodInDebugger;
 
     public BytecodeSourceMapper() {
         super();
-        classToDecompiled = new WeakHashMap();
+        classToDecompiled = new WeakHashMap<IClassFile, DecompiledClass>();
         DebugUITools.getDebugContextManager().addDebugContextListener(this);
     }
 
@@ -132,7 +132,7 @@ public class BytecodeSourceMapper implements IDebugContextListener {
     }
 
     public int getDecompiledLine(IMember elt, IClassFile cf) {
-        DecompiledClass dc = (DecompiledClass) classToDecompiled.get(cf);
+        DecompiledClass dc = classToDecompiled.get(cf);
         if (dc != null) {
             String signature = JdtUtils.getMethodSignature(elt);
             if (signature != null) {
@@ -193,7 +193,7 @@ public class BytecodeSourceMapper implements IDebugContextListener {
 
     private static DecompiledClass decompile(StringBuffer source, InputStream is,
         BitSet decompilerFlags) throws IOException {
-        DecompiledClass decompiledClass = DecompilerClassVisitor
+        DecompiledClass decompiledClass = DecompilerHelper
             .getDecompiledClass(is, new DecompilerOptions(null, null, decompilerFlags, null));
         source.append(decompiledClass.getText());
         return decompiledClass;
@@ -218,7 +218,7 @@ public class BytecodeSourceMapper implements IDebugContextListener {
     }
 
     protected IJavaElement findElement(IClassFile cf, int decompiledLine) {
-        DecompiledClass dc = (DecompiledClass) classToDecompiled.get(cf);
+        DecompiledClass dc = classToDecompiled.get(cf);
         if (dc != null) {
             return dc.getJavaElement(decompiledLine, cf);
         }
@@ -229,7 +229,7 @@ public class BytecodeSourceMapper implements IDebugContextListener {
         if (cf == null) {
             return 0;
         }
-        DecompiledClass dc = (DecompiledClass) classToDecompiled.get(cf);
+        DecompiledClass dc = classToDecompiled.get(cf);
         if (dc != null) {
             return dc.getSourceLine(decompiledLine);
         }
@@ -245,14 +245,14 @@ public class BytecodeSourceMapper implements IDebugContextListener {
         if(cf == null){
             return null;
         }
-        return (DecompiledClass) classToDecompiled.get(cf);
+        return classToDecompiled.get(cf);
     }
 
     public int mapToDecompiled(int sourceLine, IClassFile cf) {
         if (cf == null) {
             return 0;
         }
-        DecompiledClass dc = (DecompiledClass) classToDecompiled.get(cf);
+        DecompiledClass dc = classToDecompiled.get(cf);
         if (dc != null) {
             return dc.getDecompiledLine(sourceLine);
         }
@@ -267,16 +267,13 @@ public class BytecodeSourceMapper implements IDebugContextListener {
         if(cf == null || lastMethodInDebugger == null){
             return -1;
         }
-        DecompiledClass dc = (DecompiledClass) classToDecompiled.get(cf);
+        DecompiledClass dc = classToDecompiled.get(cf);
         if (dc != null) {
             return dc.getDecompiledLine(lastMethodInDebugger);
         }
         return -1;
     }
 
-    /* (non-Javadoc)
-     * @see org.eclipse.debug.ui.contexts.IDebugContextListener#debugContextChanged(org.eclipse.debug.ui.contexts.DebugContextEvent)
-     */
     @Override
     public void debugContextChanged(DebugContextEvent event) {
         ISelection selection = event.getContext();

@@ -128,9 +128,6 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
         return decompilerFlags.get(flag);
     }
 
-    /*
-     * @see IEditorPart#init(IEditorSite, IEditorInput)
-     */
     @Override
     public void init(IEditorSite site, IEditorInput input)
         throws PartInitException {
@@ -325,9 +322,6 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
         }
     }
 
-    /*
-     * @see JavaEditor#getElementAt(int)
-     */
     @Override
     protected IJavaElement getElementAt(int offset) {
 
@@ -531,9 +525,6 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
             //
         }
 
-        /*
-         * @see Runnable#run()
-         */
         @Override
         public void run() {
 
@@ -584,9 +575,6 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
         }
     }
 
-    /*
-     * @see JavaEditor#getCorrespondingElement(IJavaElement)
-     */
     @Override
     protected IJavaElement getCorrespondingElement(IJavaElement element) {
         IClassFile classFile = getClassFile();
@@ -599,31 +587,16 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
         return super.getCorrespondingElement(element);
     }
 
-    /*
-     * 1GEPKT5: ITPJUI:Linux - Source in editor for external classes is editable Removed
-     * methods isSaveOnClosedNeeded and isDirty. Added method isEditable.
-     */
-    /*
-     * @see org.eclipse.ui.texteditor.AbstractTextEditor#isEditable()
-     */
     @Override
     public boolean isEditable() {
         return isDecompiled();
     }
 
-    /*
-     * @see org.eclipse.ui.texteditor.AbstractTextEditor#isEditorInputReadOnly()
-     * @since 3.2
-     */
     @Override
     public boolean isEditorInputReadOnly() {
         return !isDecompiled();
     }
 
-    /*
-     * @see ITextEditorExtension2#isEditorInputModifiable()
-     * @since 2.1
-     */
     @Override
     public boolean isEditorInputModifiable() {
         return isDecompiled();
@@ -643,12 +616,12 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
 
         if (input instanceof IFileEditorInput) {
             IFile file = ((IFileEditorInput) input).getFile();
-            Constructor cons;
+            Constructor<ExternalClassFileEditorInput> cons;
             try {
                 cons = ExternalClassFileEditorInput.class
                     .getDeclaredConstructor(new Class[]{IFile.class});
                 cons.setAccessible(true);
-                IClassFileEditorInput classFileInput = (IClassFileEditorInput) cons
+                IClassFileEditorInput classFileInput = cons
                     .newInstance(new Object[]{file});
                 return classFileInput;
             } catch (Exception e) {
@@ -663,18 +636,12 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
         return null;
     }
 
-    /*
-     * @see IWorkbenchPart#createPartControl(Composite)
-     */
     @Override
     public void createPartControl(Composite parent) {
         super.createPartControl(parent);
         initDone = true;
     }
 
-    /*
-     * @see ClassFileDocumentProvider.InputChangeListener#inputChanged(IClassFileEditorInput)
-     */
     @Override
     public void inputChanged(final IClassFileEditorInput input) {
         Runnable updateInput = new Runnable() {
@@ -698,9 +665,6 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
         }
     }
 
-    /*
-     * @see org.eclipse.ui.IWorkbenchPart#dispose()
-     */
     @Override
     public void dispose() {
         // http://bugs.eclipse.org/bugs/show_bug.cgi?id=18510

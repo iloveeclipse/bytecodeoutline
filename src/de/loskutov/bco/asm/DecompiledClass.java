@@ -16,30 +16,22 @@ import de.loskutov.bco.ui.JdtUtils;
 /**
  * @author Eric Bruneton
  */
-
 public class DecompiledClass {
 
-    public static final String ATTR_CLAS_SIZE = "class.size";
-    public static final String ATTR_JAVA_VERSION = "java.version";
-    public static final String ATTR_ACCESS_FLAGS = "access";
-
     /** key is DecompiledMethod, value is IJavaElement (Member) */
-    private final Map methodToJavaElt;
-    private final List text;
-    /**
-     * key is string, value is string
-     */
-    private final Map classAttributesMap = new HashMap();
+    private final Map<DecompiledMethod, IJavaElement> methodToJavaElt;
+    private final List<Object> text;
+
     private String value;
-    private ClassNode classNode;
+    private final ClassNode classNode;
+    private int classSize;
+    private final DecompiledClassInfo classInfo;
 
-    public DecompiledClass(final List text) {
+    public DecompiledClass(final List<Object> text, DecompiledClassInfo classInfo, ClassNode classNode) {
         this.text = text;
-        methodToJavaElt = new HashMap();
-    }
-
-    public void setAttribute(String key, String value) {
-        classAttributesMap.put(key, value);
+        this.classInfo = classInfo;
+        this.classNode = classNode;
+        methodToJavaElt = new HashMap<DecompiledMethod, IJavaElement>();
     }
 
     /**
@@ -47,31 +39,16 @@ public class DecompiledClass {
      * indicates if the class is deprecated.
      */
     public int getAccessFlags() {
-        int result = 0;
-        String flags = (String) classAttributesMap.get(ATTR_ACCESS_FLAGS);
-        if (flags == null) {
-            return result;
-        }
-        try {
-            Integer intFlags = Integer.valueOf(flags);
-            result = intFlags.intValue();
-        } catch (NumberFormatException e) {
-            // ignore, should not happen
-        }
-        return result;
+        return classInfo.accessFlags;
     }
 
     /**
      * @return true if the class is either abstract or interface
      */
     public boolean isAbstractOrInterface() {
-        int accessFlags = getAccessFlags();
-        return ((accessFlags & Opcodes.ACC_ABSTRACT) != 0)
+        int accessFlags = classInfo.accessFlags;
+        return (accessFlags & Opcodes.ACC_ABSTRACT) != 0
             || ((accessFlags & Opcodes.ACC_INTERFACE) != 0);
-    }
-
-    public String getAttribute(String key) {
-        return (String) classAttributesMap.get(key);
     }
 
     public String getText() {
@@ -91,7 +68,7 @@ public class DecompiledClass {
     }
 
     public String[][] getTextTable() {
-        List lines = new ArrayList();
+        List<String[]> lines = new ArrayList<String[]>();
         for (int i = 0; i < text.size(); ++i) {
             Object o = text.get(i);
             if (o instanceof DecompiledMethod) {
@@ -103,7 +80,7 @@ public class DecompiledClass {
                 lines.add(new String[]{"", "", "", o.toString(), ""});
             }
         }
-        return (String[][]) lines.toArray(new String[lines.size()][]);
+        return lines.toArray(new String[lines.size()][]);
     }
 
     public int getBytecodeOffset(final int decompiledLine) {
@@ -196,7 +173,7 @@ public class DecompiledClass {
     public IJavaElement getJavaElement(int decompiledLine, IClassFile clazz) {
         DecompiledMethod method = getMethod(decompiledLine);
         if (method != null) {
-            IJavaElement javaElement = (IJavaElement) methodToJavaElt
+            IJavaElement javaElement = methodToJavaElt
                 .get(method);
             if (javaElement == null) {
                 javaElement = JdtUtils.getMethod(clazz, method.getSignature());
@@ -328,8 +305,8 @@ public class DecompiledClass {
         return -1;
     }
 
-    public List getErrorLines() {
-        List errors = new ArrayList();
+    public List<Integer> getErrorLines() {
+        List<Integer> errors = new ArrayList<Integer>();
         int currentDecompiledLine = 0;
         for (int i = 0; i < text.size(); ++i) {
             Object o = text.get(i);
@@ -432,11 +409,19 @@ public class DecompiledClass {
         return new LineRange(startSourceLine, endSourceLine);
     }
 
-    public void setClassNode(ClassNode classNode) {
-        this.classNode = classNode;
-    }
-
     public ClassNode getClassNode() {
         return classNode;
+    }
+
+    public void setClassSize(int classSize) {
+        this.classSize = classSize;
+    }
+
+    public int getClassSize() {
+        return classSize;
+    }
+
+    public String getJavaVersion() {
+        return classInfo.javaVersion;
     }
 }

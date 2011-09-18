@@ -1,10 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2004 Andrei Loskutov.
+ * Copyright (c) 2011 Andrey Loskutov.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the BSD License
  * which accompanies this distribution, and is available at
  * http://www.opensource.org/licenses/bsd-license.php
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributor:  Andrey Loskutov - initial API and implementation
  *******************************************************************************/
 package de.loskutov.bco.ui.actions;
 
@@ -40,27 +40,18 @@ public abstract class BytecodeAction implements IObjectActionDelegate {
     protected IStructuredSelection selection;
     protected Shell shell;
 
-    /**
-     * (non-Javadoc)
-     * @see org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action.IAction,
-     * org.eclipse.jface.viewers.ISelection)
-     */
+    @Override
     public void selectionChanged(IAction action, ISelection newSelection) {
         if (newSelection instanceof IStructuredSelection) {
             this.selection = (IStructuredSelection) newSelection;
         }
     }
 
-    /**
-     * @see org.eclipse.ui.IObjectActionDelegate#setActivePart(org.eclipse.jface.action.IAction, org.eclipse.ui.IWorkbenchPart)
-     */
+    @Override
     public void setActivePart(IAction action, IWorkbenchPart targetPart) {
         this.shell = targetPart.getSite().getShell();
     }
 
-    /**
-     * @see de.loskutov.branchview.connection.Command#exec(java.lang.Object)
-     */
     protected void exec(IJavaElement element1, IJavaElement element2) throws Exception {
         final BitSet modes = getModes();
         CompareUI.openCompareEditor(new BytecodeCompare(
@@ -93,7 +84,7 @@ public abstract class BytecodeAction implements IObjectActionDelegate {
         return new TypedElement(name, methodName, TypedElement.TYPE_BYTECODE, javaElement, modes);
     }
 
-    private BitSet getModes() {
+    private static BitSet getModes() {
         IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
         BitSet modes = new BitSet();
         modes.set(BCOConstants.F_LINK_VIEW_TO_EDITOR, store.getBoolean(BCOConstants.LINK_VIEW_TO_EDITOR));
@@ -109,9 +100,9 @@ public abstract class BytecodeAction implements IObjectActionDelegate {
     }
 
     protected IJavaElement[] getSelectedResources() {
-        ArrayList resources = null;
+        ArrayList<Object> resources = null;
         if (!selection.isEmpty()) {
-            resources = new ArrayList();
+            resources = new ArrayList<Object>();
             for (Iterator elements = selection.iterator(); elements.hasNext();) {
                 Object next = elements.next();
                 if (next instanceof IFile) {
@@ -143,7 +134,7 @@ public abstract class BytecodeAction implements IObjectActionDelegate {
         }
 
         if (resources != null && !resources.isEmpty()) {
-            return (IJavaElement[]) resources.toArray(new IJavaElement[resources
+            return resources.toArray(new IJavaElement[resources
                 .size()]);
         }
 

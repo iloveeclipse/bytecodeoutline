@@ -25,7 +25,7 @@ import de.loskutov.bco.preferences.BCOConstants;
 /**
  * @author Eric Bruneton
  */
-public class DecompilerClassVisitor  {
+public class DecompilerHelper  {
 
     public static DecompiledClass getDecompiledClass(final InputStream is,
         DecompilerOptions options)
@@ -49,21 +49,17 @@ public class DecompilerClassVisitor  {
     }
 
     private static DecompiledClass getResult(ICommentedClassVisitor printer,  DecompilerOptions options, ClassNode classNode) {
-        List classText = new ArrayList();
+        List<Object> classText = new ArrayList<Object>();
         formatText(printer.getText(), new StringBuffer(), classText, options.cl);
         while (classText.size() > 0 && classText.get(0).equals("\n")) {
             classText.remove(0);
         }
 
         DecompiledClassInfo classInfo = printer.getClassInfo();
-        DecompiledClass dc = new DecompiledClass(classText);
-        dc.setAttribute(DecompiledClass.ATTR_JAVA_VERSION, classInfo.javaVersion);
-        dc.setAttribute(DecompiledClass.ATTR_ACCESS_FLAGS, String.valueOf(classInfo.accessFlags));
-        dc.setClassNode(classNode);
-        return dc;
+        return new DecompiledClass(classText, classInfo, classNode);
     }
 
-    private static void formatText(final List input, final StringBuffer line, final List result,
+    private static void formatText(final List input, final StringBuffer line, final List<Object> result,
         final ClassLoader cl) {
         for (int i = 0; i < input.size(); ++i) {
             Object o = input.get(i);

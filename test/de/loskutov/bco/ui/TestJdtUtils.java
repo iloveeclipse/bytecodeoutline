@@ -259,7 +259,7 @@ public abstract class TestJdtUtils extends TestCase {
 
                 // set compliance level options
                 if ("1.5".equals(compliance)) {
-                    Map options = new HashMap();
+                    Map<String, String> options = new HashMap<String, String>();
                     options.put(
                         CompilerOptions.OPTION_Compliance,
                         CompilerOptions.VERSION_1_5);
@@ -371,7 +371,7 @@ public abstract class TestJdtUtils extends TestCase {
         setUpJCLClasspathVariables(compliance);
 
         // set options
-        Map options = new HashMap();
+        Map<String, String> options = new HashMap<String, String>();
         options.put(CompilerOptions.OPTION_Compliance, version);
         options.put(CompilerOptions.OPTION_Source, version);
         options.put(CompilerOptions.OPTION_TargetPlatform, version);
@@ -563,12 +563,12 @@ public abstract class TestJdtUtils extends TestCase {
     }
 
     protected IType[] getAllTypes(ICompilationUnit cu) throws JavaModelException {
-        ArrayList list = new ArrayList();
+        ArrayList<IJavaElement> list = new ArrayList<IJavaElement>();
         collectAllTypes(cu, list);
-        return (IType[])list.toArray(new IType[list.size()]);
+        return list.toArray(new IType[list.size()]);
     }
 
-    protected void collectAllTypes(IParent parent, List types) throws JavaModelException {
+    protected void collectAllTypes(IParent parent, List<IJavaElement> types) throws JavaModelException {
         // this call has a (good) side effect that the IParent will be opened
         IJavaElement[] children = parent.getChildren();
         for (int i = 0; i < children.length; i++) {

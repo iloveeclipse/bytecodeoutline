@@ -1,8 +1,8 @@
 /*****************************************************************************************
- * Copyright (c) 2004 Andrei Loskutov. All rights reserved. This program and the
+ * Copyright (c) 2011 Andrey Loskutov. All rights reserved. This program and the
  * accompanying materials are made available under the terms of the BSD License which
  * accompanies this distribution, and is available at
- * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrei Loskutov -
+ * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrey Loskutov -
  * initial API and implementation
  ****************************************************************************************/
 package de.loskutov.bco.ui;
@@ -527,13 +527,13 @@ public class JdtUtils {
     public static String getElementName(IJavaElement javaElement) {
         if (isAnonymousType(javaElement)) {
             IType anonType = (IType) javaElement;
-            List allAnonymous = new ArrayList();
+            List<IJavaElement> allAnonymous = new ArrayList<IJavaElement>();
             /*
              * in order to resolve anon. class name we need to know about all other
              * anonymous classes in declaring class, therefore we need to collect all here
              */
             collectAllAnonymous(allAnonymous, anonType);
-            int idx = getAnonimousIndex(anonType, (IType[]) allAnonymous
+            int idx = getAnonimousIndex(anonType, allAnonymous
                 .toArray(new IType[allAnonymous.size()]));
             return Integer.toString(idx);
         }
@@ -1046,7 +1046,7 @@ public class JdtUtils {
      * @param list for the found anon. classes, elements instanceof IType.
      * @param anonType the anon. type
      */
-    private static void collectAllAnonymous(List list, IType anonType) {
+    private static void collectAllAnonymous(List<IJavaElement> list, IType anonType) {
         /*
          * For JDK >= 1.5 in Eclipse 3.1+ the naming shema for nested anonymous
          * classes was changed from A$1, A$2, A$3, A$4, ..., A$n
@@ -1077,7 +1077,7 @@ public class JdtUtils {
      * @param allowNested true to search in IType child elements too
      * @throws JavaModelException
      */
-    private static void collectAllAnonymous(List list, IParent parent,
+    private static void collectAllAnonymous(List<IJavaElement> list, IParent parent,
         boolean allowNested) throws JavaModelException {
         IJavaElement[] children = parent.getChildren();
         for (int i = 0; i < children.length; i++) {
@@ -1116,7 +1116,7 @@ public class JdtUtils {
      * classes, in context of given anonymous type
      * @param anonymous
      */
-    private static void sortAnonymous(List anonymous, IType anonType) {
+    private static void sortAnonymous(List<IJavaElement> anonymous, IType anonType) {
         SourceOffsetComparator sourceComparator = new SourceOffsetComparator();
 
 //        Collections.sort(anonymous, sourceComparator);
@@ -1132,12 +1132,12 @@ public class JdtUtils {
 
     private static void debugCompilePrio(
         final AnonymClassComparator classComparator) {
-        final Map map = classComparator.map;
-        Comparator prioComp = new Comparator() {
+        final Map<IType, Integer> map = classComparator.map;
+        Comparator<IType> prioComp = new Comparator() {
 
             @Override
             public int compare(Object e1, Object e2) {
-                int result = ((Comparable) map.get(e2)).compareTo(map.get(e1));
+                int result = map.get(e2).compareTo(map.get(e1));
                 if (result == 0) {
                     return e1.toString().compareTo(e2.toString());
                 }
@@ -1146,9 +1146,9 @@ public class JdtUtils {
 
         };
 
-        List keys = new ArrayList(map.keySet());
+        List<IType> keys = new ArrayList<IType>(map.keySet());
         Collections.sort(keys, prioComp);
-        for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
+        for (Iterator<IType> iterator = keys.iterator(); iterator.hasNext();) {
             Object key = iterator.next();
             System.out.println(map.get(key) + " : " + key);
         }
@@ -1234,19 +1234,19 @@ public class JdtUtils {
         ClassLoader cl;
 
         IJavaProject javaProject = type.getJavaProject();
-        List urls = new ArrayList();
+        List<URL> urls = new ArrayList<URL>();
 
         getClassURLs(javaProject, urls);
 
         if (urls.isEmpty()) {
             cl = JdtUtils.class.getClassLoader();
         } else {
-            cl = new URLClassLoader((URL[]) urls.toArray(new URL[urls.size()]));
+            cl = new URLClassLoader(urls.toArray(new URL[urls.size()]));
         }
         return cl;
     }
 
-    private static void getClassURLs(IJavaProject javaProject, List urls) {
+    private static void getClassURLs(IJavaProject javaProject, List<URL> urls) {
         IProject project = javaProject.getProject();
         IWorkspaceRoot workspaceRoot = project.getWorkspace().getRoot();
 
@@ -1392,7 +1392,7 @@ public class JdtUtils {
         private final IType topAncestorType;
         private final SourceOffsetComparator sourceComparator;
         private final boolean is50OrHigher;
-        private final Map/*<IJavaElement,Integer>*/ map;
+        private final Map/*<IJavaElement,Integer>*/<IType, Integer> map;
 
         /**
          * @param javaElement
@@ -1403,7 +1403,7 @@ public class JdtUtils {
             this.sourceComparator = sourceComparator;
             is50OrHigher = is50OrHigher(javaElement);
             topAncestorType = (IType) getLastAncestor(javaElement, IJavaElement.TYPE);
-            map = new IdentityHashMap();
+            map = new IdentityHashMap<IType, Integer>();
         }
 
         /**
@@ -1504,7 +1504,7 @@ public class JdtUtils {
         private int getCompilePrio(IType anonType, IJavaElement firstAncestor) {
             int compilePrio;
             Integer prio;
-            if ((prio = (Integer) map.get(anonType)) != null) {
+            if ((prio = map.get(anonType)) != null) {
                 compilePrio = prio.intValue();
                 if (BytecodeOutlinePlugin.DEBUG) {
                     System.out.println("Using cache");
