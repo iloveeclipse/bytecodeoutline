@@ -30,7 +30,6 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaElementHyperlinkDetector;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaSourceViewer;
 import org.eclipse.jdt.internal.ui.text.JavaWordFinder;
@@ -1844,12 +1843,11 @@ public class BytecodeOutlineView extends ViewPart {
         @Override
         public IHyperlink[] detectHyperlinks(ITextViewer textViewer1,
             IRegion region, boolean canShowMultipleHyperlinks) {
-            ITextEditor textEditor = dummyEditorForHyperlinks;
-            if (region == null || textEditor == null || javaInput == null) {
+            if (region == null || dummyEditorForHyperlinks == null || javaInput == null) {
                 return null;
             }
 
-            IAction openAction = textEditor.getAction("OpenEditor"); //$NON-NLS-1$
+            IAction openAction = dummyEditorForHyperlinks.getAction("OpenEditor"); //$NON-NLS-1$
             if (!(openAction instanceof SelectionDispatchAction)) {
                 return null;
             }
@@ -1858,12 +1856,16 @@ public class BytecodeOutlineView extends ViewPart {
 
             IDocument document = textViewer1.getDocument();
             IRegion wordRegion = JavaWordFinder.findWord(document, offset);
+            List<IHyperlink> links = new ArrayList<IHyperlink>();
             IJavaElement[] elements;
             try {
                 elements = guessTypesFromSelectionInView(wordRegion);
             } catch (JavaModelException e) {
                 return null;
             }
+            // TODO check for inner class files possibly referenced in current line.
+            // If found, add new hyperlink to jump to this inner class, see
+            // https://forge.ow2.org/tracker/index.php?func=detail&aid=316206&group_id=23&atid=350023
             if (elements == null) {
                 return null;
             }
@@ -1871,14 +1873,13 @@ public class BytecodeOutlineView extends ViewPart {
             if (elements.length == 0) {
                 return null;
             }
-            List<IHyperlink> links = new ArrayList<IHyperlink>(elements.length);
             for (int i = 0; i < elements.length; i++) {
                 if (elements[i] == null) {
                     continue;
                 }
                 addHyperlinks(
                     links, wordRegion, (SelectionDispatchAction) openAction,
-                    elements[i], elements.length > 1, (JavaEditor) textEditor);
+                    elements[i], elements.length > 1, dummyEditorForHyperlinks);
             }
             if (links.size() == 0) {
                 return null;
