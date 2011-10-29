@@ -1829,6 +1829,12 @@ public class BytecodeOutlineView extends ViewPart {
         } catch (BadLocationException e) {
             return null;
         }
+        if(typeName.isEmpty()) {
+            return null;
+        }
+        if(typeName.contains("$")) {
+            typeName = typeName.substring(typeName.lastIndexOf('$') + 1);
+        }
         IJavaSearchScope scope = SearchEngine.createJavaSearchScope(new IJavaElement[] {javaInput.getJavaProject()});
         return JdtUtils.getTypeForName(typeName, scope, null);
     }
