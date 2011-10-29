@@ -1,10 +1,12 @@
-/*****************************************************************************************
- * Copyright (c) 2011 Andrey Loskutov. All rights reserved. This program and the
- * accompanying materials are made available under the terms of the BSD License which
- * accompanies this distribution, and is available at
- * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrey Loskutov -
- * initial API and implementation
- ****************************************************************************************/
+/*******************************************************************************
+ * Copyright (c) 2011 Andrey Loskutov.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributor:  Andrei Loskutov - initial API and implementation
+ *******************************************************************************/
 package de.loskutov.bco.ui;
 
 import java.io.File;
@@ -34,6 +36,7 @@ import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IClassFile;
@@ -53,6 +56,11 @@ import org.eclipse.jdt.core.ITypeParameter;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.Signature;
+import org.eclipse.jdt.core.search.IJavaSearchConstants;
+import org.eclipse.jdt.core.search.IJavaSearchScope;
+import org.eclipse.jdt.core.search.SearchEngine;
+import org.eclipse.jdt.core.search.SearchPattern;
+import org.eclipse.jdt.core.search.TypeNameRequestor;
 import org.eclipse.jface.text.ITextSelection;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InnerClassNode;
@@ -1519,5 +1527,65 @@ public class JdtUtils {
             }
             return compilePrio;
         }
+    }
+
+    /**
+     * Finds a type by the simple name.
+     * see org.eclipse.jdt.internal.corext.codemanipulation.AddImportsOperation
+     * @return null, if no types was found, empty array if more then one type was found,
+     * or only one element, if single match exists
+     */
+    public static IType[] getTypeForName(String simpleTypeName,
+        final IJavaSearchScope searchScope, IProgressMonitor monitor)
+            throws JavaModelException {
+        final List<IType> result = new ArrayList<IType>();
+        final TypeFactory fFactory = new TypeFactory();
+        TypeNameRequestor requestor = new TypeNameRequestor() {
+            @Override
+            public void acceptType(int modifiers, char[] packageName,
+                char[] simpleTypeName1, char[][] enclosingTypeNames, String path) {
+                IType type = fFactory.create(packageName, simpleTypeName1,
+                    enclosingTypeNames, modifiers, path, searchScope);
+                if (type != null) {
+                    result.add(type);
+                }
+            }
+        };
+        int matchRule = SearchPattern.R_EXACT_MATCH | SearchPattern.R_CASE_SENSITIVE;
+        new SearchEngine().searchAllTypeNames(
+            null, matchRule,
+            simpleTypeName.toCharArray(), matchRule,
+            IJavaSearchConstants.TYPE, searchScope, requestor,
+            IJavaSearchConstants.WAIT_UNTIL_READY_TO_SEARCH, monitor);
+
+        return result.toArray(new IType[result.size()]);
+    }
+
+    /**
+     * Selects the openable elements out of the given ones.
+     *
+     * @param elements the elements to filter
+     * @return the openable elements
+     */
+    public static IJavaElement[] selectOpenableElements(IJavaElement[] elements) {
+        List<IJavaElement> result= new ArrayList<IJavaElement>(elements.length);
+        for (int i= 0; i < elements.length; i++) {
+            IJavaElement element= elements[i];
+            if(element == null) {
+                continue;
+            }
+            switch (element.getElementType()) {
+                case IJavaElement.PACKAGE_DECLARATION:
+                case IJavaElement.PACKAGE_FRAGMENT:
+                case IJavaElement.PACKAGE_FRAGMENT_ROOT:
+                case IJavaElement.JAVA_PROJECT:
+                case IJavaElement.JAVA_MODEL:
+                    break;
+                default:
+                    result.add(element);
+                    break;
+            }
+        }
+        return result.toArray(new IJavaElement[result.size()]);
     }
 }

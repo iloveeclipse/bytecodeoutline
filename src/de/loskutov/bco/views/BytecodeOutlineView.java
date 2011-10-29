@@ -1,27 +1,46 @@
-/*****************************************************************************************
- * Copyright (c) 2011 Andrey Loskutov. All rights reserved. This program and the
- * accompanying materials are made available under the terms of the BSD License which
- * accompanies this distribution, and is available at
- * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrey Loskutov -
- * initial API and implementation
- ****************************************************************************************/
+/*******************************************************************************
+ * Copyright (c) 2011 Andrey Loskutov.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributor:  Andrei Loskutov - initial API and implementation
+ *******************************************************************************/
 package de.loskutov.bco.views;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import org.eclipse.core.filebuffers.FileBuffers;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.search.IJavaSearchScope;
+import org.eclipse.jdt.core.search.SearchEngine;
+import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
+import org.eclipse.jdt.internal.ui.javaeditor.JavaElementHyperlinkDetector;
+import org.eclipse.jdt.internal.ui.javaeditor.JavaSourceViewer;
+import org.eclipse.jdt.internal.ui.text.JavaWordFinder;
+import org.eclipse.jdt.internal.ui.text.java.hover.JavadocBrowserInformationControlInput;
+import org.eclipse.jdt.internal.ui.text.java.hover.JavadocHover;
+import org.eclipse.jdt.ui.actions.SelectionDispatchAction;
+import org.eclipse.jdt.ui.text.IColorManager;
+import org.eclipse.jdt.ui.text.IJavaPartitions;
+import org.eclipse.jdt.ui.text.JavaSourceViewerConfiguration;
+import org.eclipse.jdt.ui.text.JavaTextTools;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuListener;
@@ -36,11 +55,16 @@ import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IFindReplaceTarget;
 import org.eclipse.jface.text.IRegion;
+import org.eclipse.jface.text.ITextHover;
 import org.eclipse.jface.text.ITextListener;
 import org.eclipse.jface.text.ITextOperationTarget;
 import org.eclipse.jface.text.ITextSelection;
+import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.TextEvent;
 import org.eclipse.jface.text.TextViewer;
+import org.eclipse.jface.text.hyperlink.IHyperlink;
+import org.eclipse.jface.text.hyperlink.IHyperlinkDetector;
+import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
@@ -69,6 +93,7 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Widget;
 import org.eclipse.ui.IActionBars;
+import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.ISelectionService;
@@ -77,6 +102,7 @@ import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchCommandConstants;
 import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.IWorkbenchPartSite;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.console.actions.TextViewerAction;
@@ -86,6 +112,7 @@ import org.eclipse.ui.texteditor.FindReplaceAction;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.texteditor.IUpdate;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.util.Printer;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
@@ -93,6 +120,7 @@ import de.loskutov.bco.asm.DecompiledMethod;
 import de.loskutov.bco.asm.DecompilerHelper;
 import de.loskutov.bco.asm.DecompilerOptions;
 import de.loskutov.bco.asm.LineRange;
+import de.loskutov.bco.editors.BytecodeClassFileEditor;
 import de.loskutov.bco.preferences.BCOConstants;
 import de.loskutov.bco.ui.EclipseUtils;
 import de.loskutov.bco.ui.JdtUtils;
@@ -134,7 +162,7 @@ public class BytecodeOutlineView extends ViewPart {
 
     protected Composite stackComposite;
     protected StyledText textControl;
-    protected TextViewer textViewer;
+    protected JavaSourceViewer textViewer;
     protected SashForm verifyControl;
     protected SashForm stackAndLvt;
     protected Table tableControl;
@@ -187,6 +215,7 @@ public class BytecodeOutlineView extends ViewPart {
     // see org.eclipse.ui.console.TextConsolePage for the reason to do this ;)
     private ISelectionChangedListener textSelectionListener;
     private Control statusControl;
+    private BytecodeClassFileEditor dummyEditorForHyperlinks;
 
     // ------------------------------------------------------------------------
 
@@ -715,9 +744,33 @@ public class BytecodeOutlineView extends ViewPart {
     }
 
     private void createTextControl() {
-        textViewer = new TextViewer(stackComposite, SWT.H_SCROLL | SWT.V_SCROLL);
-        textViewer.setEditable(false);
-        // textViewer.setHoverControlCreator(null)
+
+        IPreferenceStore store = JavaPlugin.getDefault().getCombinedPreferenceStore();
+        final JavaSourceViewer viewer = new JavaSourceViewer(
+            stackComposite, null, null, true, SWT.V_SCROLL | SWT.H_SCROLL,
+            store);
+        dummyEditorForHyperlinks = new BytecodeClassFileEditor() {
+            @Override
+            public IWorkbenchPartSite getSite() {
+                return javaEditor == null? null : javaEditor.getEditorSite();
+            }
+
+            @Override
+            public IEditorInput getEditorInput() {
+                return javaEditor == null? null : javaEditor.getEditorInput();
+            }
+            @Override
+            public IAction getAction(String actionID) {
+                return javaEditor == null? null : javaEditor.getAction(actionID);
+            }
+
+        };
+
+        JavaSourceViewerConfiguration configuration = new JavaConfiguration(
+            JavaPlugin.getDefault().getJavaTextTools().getColorManager(), store, dummyEditorForHyperlinks, IJavaPartitions.JAVA_PARTITIONING);
+        viewer.configure(configuration);
+        viewer.setEditable(false);
+        textViewer = viewer;
 
         textControl = textViewer.getTextWidget();
         IDocument document = new Document("");
@@ -1106,6 +1159,14 @@ public class BytecodeOutlineView extends ViewPart {
 
     private void refreshTextView(DecompiledClass result) {
         IDocument document = new Document(result.getText());
+        JavaTextTools tools= JavaPlugin.getDefault().getJavaTextTools();
+        tools.setupJavaDocumentPartitioner(document, IJavaPartitions.JAVA_PARTITIONING);
+//        JavaSourceViewerConfiguration configuration = new JavaSourceViewerConfiguration(
+//            JavaPlugin.getDefault().getJavaTextTools().getColorManager(),
+//            JavaPlugin.getDefault().getCombinedPreferenceStore(), javaEditor,
+//            IJavaPartitions.JAVA_PARTITIONING);
+//        textViewer.unconfigure();
+//        textViewer.configure(configuration);
         textViewer.setDocument(document);
         // we are in verify mode but we can't show content because
         // current element is abstract, so we clean table content
@@ -1713,6 +1774,7 @@ public class BytecodeOutlineView extends ViewPart {
         mmanager.update();
     }
 
+
     private class ToggleOrientationAction extends Action {
 
         private final int actionOrientation;
@@ -1753,6 +1815,140 @@ public class BytecodeOutlineView extends ViewPart {
                 orientation = actionOrientation;
                 computeOrientation();
             }
+        }
+    }
+
+    protected IJavaElement[] guessTypesFromSelectionInView(IRegion wordRegion)
+        throws JavaModelException {
+        if (wordRegion == null || wordRegion.getLength() == 0 || javaInput == null) {
+            return null;
+        }
+        String typeName;
+        try {
+            typeName = textViewer.getDocument().get(wordRegion.getOffset(), wordRegion.getLength());
+        } catch (BadLocationException e) {
+            return null;
+        }
+        IJavaSearchScope scope = SearchEngine.createJavaSearchScope(new IJavaElement[] {javaInput.getJavaProject()});
+        return JdtUtils.getTypeForName(typeName, scope, null);
+    }
+
+    private class JavaElementHyperlinkDetectorInView extends JavaElementHyperlinkDetector {
+
+        @Override
+        public IHyperlink[] detectHyperlinks(ITextViewer textViewer1,
+            IRegion region, boolean canShowMultipleHyperlinks) {
+            ITextEditor textEditor = dummyEditorForHyperlinks;
+            if (region == null || textEditor == null || javaInput == null) {
+                return null;
+            }
+
+            IAction openAction = textEditor.getAction("OpenEditor"); //$NON-NLS-1$
+            if (!(openAction instanceof SelectionDispatchAction)) {
+                return null;
+            }
+
+            int offset = region.getOffset();
+
+            IDocument document = textViewer1.getDocument();
+            IRegion wordRegion = JavaWordFinder.findWord(document, offset);
+            IJavaElement[] elements;
+            try {
+                elements = guessTypesFromSelectionInView(wordRegion);
+            } catch (JavaModelException e) {
+                return null;
+            }
+            if (elements == null) {
+                return null;
+            }
+            elements = JdtUtils.selectOpenableElements(elements);
+            if (elements.length == 0) {
+                return null;
+            }
+            List<IHyperlink> links = new ArrayList<IHyperlink>(elements.length);
+            for (int i = 0; i < elements.length; i++) {
+                if (elements[i] == null) {
+                    continue;
+                }
+                addHyperlinks(
+                    links, wordRegion, (SelectionDispatchAction) openAction,
+                    elements[i], elements.length > 1, (JavaEditor) textEditor);
+            }
+            if (links.size() == 0) {
+                return null;
+            }
+            return links.toArray(new IHyperlink[links.size()]);
+        }
+
+    }
+
+    private final class JavaConfiguration extends JavaSourceViewerConfiguration {
+
+        private JavaConfiguration(
+            IColorManager colorManager, IPreferenceStore preferenceStore,
+            ITextEditor editor, String partitioning) {
+            super(colorManager, preferenceStore, editor, partitioning);
+        }
+
+        @Override
+        public IHyperlinkDetector[] getHyperlinkDetectors(
+            ISourceViewer sourceViewer) {
+            // does not work, as they work on *text editor*, not on the *view*...
+            // HyperlinkDetectorRegistry registry = EditorsUI.getHyperlinkDetectorRegistry();
+            // IHyperlinkDetector[] detectors = registry.createHyperlinkDetectors("org.eclipse.jdt.ui.javaCode", dummyEditorForHyperlinks);
+            JavaElementHyperlinkDetectorInView det = new JavaElementHyperlinkDetectorInView();
+            return new IHyperlinkDetector[] {det} ;
+        }
+
+        @Override
+        public ITextHover getTextHover(ISourceViewer sourceViewer,
+            String contentType, int stateMask) {
+            JavadocHover javadocHover = new JavadocHoverExtension();
+            return javadocHover;
+        }
+    }
+
+    private final class JavadocHoverExtension extends JavadocHover {
+
+        private final Set<String> OPCODES = new HashSet<String>(Arrays.asList(Printer.OPCODES));
+
+
+        @Override
+        protected IJavaElement[] getJavaElementsAt(
+            ITextViewer textViewer1, IRegion hoverRegion) {
+            try {
+                return guessTypesFromSelectionInView(hoverRegion);
+            } catch (JavaModelException e) {
+                return null;
+            }
+        }
+
+        @Override
+        public Object getHoverInfo2(ITextViewer viewer, IRegion region) {
+            String typeName;
+            IDocument document = viewer.getDocument();
+            try {
+                typeName = document.get(region.getOffset(), region.getLength());
+            } catch (BadLocationException e) {
+                return null;
+            }
+
+            if(!OPCODES.contains(typeName)) {
+                return super.getHoverInfo2(viewer, region);
+            }
+            int line;
+            try {
+                line = document.getLineOfOffset(region.getOffset());
+            } catch (BadLocationException e) {
+                return null;
+            }
+            StringBuilder sb = HelpUtils.getOpcodeHelpFor(getBytecodeInstructionAtLine(line));
+            if(sb.length() > 0) {
+                JavadocBrowserInformationControlInput input = new JavadocBrowserInformationControlInput(
+                    null, null, sb.toString(), 0);
+                return input;
+            }
+            return null;
         }
     }
 

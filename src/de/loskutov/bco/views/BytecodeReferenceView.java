@@ -1,9 +1,10 @@
 /*****************************************************************************************
- * Copyright (c) 2007 Andrei Loskutov. All rights reserved. This program and the
+ * Copyright (c) 2011 Andrey Loskutov. All rights reserved. This program and the
  * accompanying materials are made available under the terms of the BSD License which
  * accompanies this distribution, and is available at
  * http://www.opensource.org/licenses/bsd-license.php
- * Contributor: Eugene Kuleshov - initial API and implementation
+ * Contributors: Eugene Kuleshov - initial API and implementation
+ *               Andrey Loskutov - fixes
  ****************************************************************************************/
 
 package de.loskutov.bco.views;
@@ -11,7 +12,6 @@ package de.loskutov.bco.views;
 import java.net.URL;
 
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.help.internal.base.BaseHelpSystem;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
@@ -30,7 +30,6 @@ import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.ViewPart;
-import org.objectweb.asm.util.Printer;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.editors.BytecodeClassFileEditor;
@@ -40,7 +39,6 @@ import de.loskutov.bco.ui.actions.DefaultToggleAction;
 
 public class BytecodeReferenceView extends ViewPart implements IPartListener2, ISelectionListener {
 
-    private static final String NLS_PREFIX = "BytecodeReferenceView.";
     private Browser browser;
     private DefaultToggleAction linkWithViewAction;
     private boolean linkWithView;
@@ -166,7 +164,6 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
             return;
         }
         int line = -1;
-        String opcodeName = null;
         if (selection instanceof ITextSelection) {
             line = ((ITextSelection)selection).getStartLine();
         } else if(selection instanceof IStructuredSelection){
@@ -177,74 +174,27 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
             }
         }
 
-        if(line >= 0){
-            int opcode;
-            if(isViewSelection) {
-                opcode = ((BytecodeOutlineView)part).getBytecodeInstructionAtLine(line);
-            } else {
-                opcode = ((BytecodeClassFileEditor)part).getBytecodeInstructionAtLine(line);
-            }
-            if (opcode != -1) {
-                opcodeName = Printer.OPCODES[opcode];
-            }
+        if(line < 0) {
+            shouDefaultEmptyPage();
+            return;
         }
-
-        if (opcodeName != null) {
-            opcodeName = checkOpcodeName(opcodeName);
-
-            URL url = getHelpResource(opcodeName);
-            if (url != null) {
-                browser.setUrl(url.toString());
-            } else {
-                shouDefaultEmptyPage();
-            }
+        int opcode;
+        if(isViewSelection) {
+            opcode = ((BytecodeOutlineView)part).getBytecodeInstructionAtLine(line);
+        } else {
+            opcode = ((BytecodeClassFileEditor)part).getBytecodeInstructionAtLine(line);
+        }
+        URL url = HelpUtils.getHelpResource(opcode);
+        if (url != null) {
+            browser.setUrl(url.toString());
         } else {
             shouDefaultEmptyPage();
         }
     }
 
     private void shouDefaultEmptyPage() {
-        browser.setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
-            + "empty.selection.text"));
+        browser.setUrl(HelpUtils.getHelpIndex().toString());
     }
 
-    private static String checkOpcodeName(String opcodeName) {
-        opcodeName = opcodeName.toLowerCase();
-        /*
-         * we need an additional check for DCONST_1...5, FCONST_1...5 etc case
-         * to convert it to DCONST_D etc
-         */
-        int sepIndex = opcodeName.indexOf('_');
-        if(sepIndex > 0 && Character.isDigit(opcodeName.charAt(sepIndex + 1))){
-            opcodeName = opcodeName.substring(0, sepIndex);
-            switch(opcodeName.charAt(0)){
-                case 'd':
-                    opcodeName += "_d";
-                    break;
-                case 'f':
-                    opcodeName += "_f";
-                    break;
-                case 'l':
-                    opcodeName += "_l";
-                    break;
-                default:
-                    // ICONST uses "n"
-                    opcodeName += "_n";
-                    break;
-            }
-        }
-        return opcodeName;
-    }
-
-    private static URL getHelpResource(String name) {
-        try {
-            String href = "/"
-                + BytecodeOutlinePlugin.getDefault().getBundle()
-                    .getSymbolicName() + "/doc/ref-" + name + ".html";
-            return BaseHelpSystem.resolve(href, true);
-        } catch (Exception e) {
-            return null;
-        }
-    }
 }
 
