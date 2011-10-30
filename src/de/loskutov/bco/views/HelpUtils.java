@@ -33,9 +33,19 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
 
 public class HelpUtils {
     private static String styleSheet;
-    private static final RGB BG_COLOR_RGB = Display.getDefault().getSystemColor(SWT.COLOR_INFO_BACKGROUND).getRGB();
-    private static final RGB FG_COLOR_RGB = Display.getDefault().getSystemColor(SWT.COLOR_INFO_FOREGROUND).getRGB();
     private static final String DOC_BASE = "/" + BytecodeOutlinePlugin.getDefault().getBundle().getSymbolicName() + "/doc/";
+    private static RGB bg_color_rgb = new RGB(255, 255, 255);
+    private static RGB fg_color_rgb = new RGB(0, 0, 0);
+
+    static {
+        Display.getDefault().asyncExec(new Runnable() {
+            @Override
+            public void run() {
+                bg_color_rgb = Display.getDefault().getSystemColor(SWT.COLOR_INFO_BACKGROUND).getRGB();
+                fg_color_rgb = Display.getDefault().getSystemColor(SWT.COLOR_INFO_FOREGROUND).getRGB();
+            }
+        });
+    }
 
     private static String checkOpcodeName(String opcodeName) {
         opcodeName = opcodeName.toLowerCase();
@@ -139,9 +149,9 @@ public class HelpUtils {
         css = HTMLPrinter.convertTopLevelFont(css, fontData);
         StringBuilder sb = new StringBuilder(css);
         sb.append("\nbody {  background-color:");
-        appendColor(sb, BG_COLOR_RGB);
+        appendColor(sb, bg_color_rgb);
         sb.append(";  color:");
-        appendColor(sb, FG_COLOR_RGB);
+        appendColor(sb, fg_color_rgb);
         sb.append(";  }\n");
         return sb.toString();
     }

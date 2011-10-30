@@ -30,6 +30,8 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
+import org.eclipse.jdt.internal.ui.javaeditor.JavaElementHyperlink;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaElementHyperlinkDetector;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaSourceViewer;
 import org.eclipse.jdt.internal.ui.text.JavaWordFinder;
@@ -1877,7 +1879,7 @@ public class BytecodeOutlineView extends ViewPart {
                 if (elements[i] == null) {
                     continue;
                 }
-                addHyperlinks(
+                addHyperlinks2(
                     links, wordRegion, (SelectionDispatchAction) openAction,
                     elements[i], elements.length > 1, dummyEditorForHyperlinks);
             }
@@ -1885,6 +1887,25 @@ public class BytecodeOutlineView extends ViewPart {
                 return null;
             }
             return links.toArray(new IHyperlink[links.size()]);
+        }
+
+        /**
+         * This method is added for compatibility with Eclipse 3.6 and 3.7 only!
+         * <p>
+         * Creates and adds Java element hyperlinks.
+         *
+         * @param hyperlinksCollector the list to which hyperlinks should be added
+         * @param wordRegion the region of the link
+         * @param openAction the action to use to open the Java elements
+         * @param element the Java element to open
+         * @param qualify <code>true</code> if the hyperlink text should show a qualified name for
+         *            element
+         * @param editor the active Java editor
+         *
+         * @since 3.7.1
+         */
+        protected void addHyperlinks2(List<IHyperlink> hyperlinksCollector, IRegion wordRegion, SelectionDispatchAction openAction, IJavaElement element, boolean qualify, JavaEditor editor) {
+            hyperlinksCollector.add(new JavaElementHyperlink(wordRegion, openAction, element, qualify));
         }
 
     }
