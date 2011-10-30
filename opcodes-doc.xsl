@@ -15,6 +15,7 @@
 <xsl:result-document format="xml" href="toc.xml">
 
 <toc label="JVM Instruction Reference" topic="about.html">
+<topic label="Opcodes" href="doc/opcodes.html"/>
 
 <xsl:for-each select='opcode'>
   <xsl:sort/>

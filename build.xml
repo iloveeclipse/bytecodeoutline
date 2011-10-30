@@ -129,7 +129,7 @@
     <fileset dir="${out.build}">
       <include name="**/*"/>
     </fileset>
-      <zipfileset dir="${out}/doc" includes="toc.xml,ref-*.html" prefix="doc"/>
+      <zipfileset dir="${out}/doc" includes="toc.xml,opcodes.html,ref-*.html" prefix="doc"/>
     </zip>
   </target>
 
