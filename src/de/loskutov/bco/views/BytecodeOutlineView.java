@@ -65,6 +65,7 @@ import org.eclipse.jface.text.TextEvent;
 import org.eclipse.jface.text.TextViewer;
 import org.eclipse.jface.text.hyperlink.IHyperlink;
 import org.eclipse.jface.text.hyperlink.IHyperlinkDetector;
+import org.eclipse.jface.text.quickassist.IQuickAssistAssistant;
 import org.eclipse.jface.text.source.ISourceViewer;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -755,7 +756,6 @@ public class BytecodeOutlineView extends ViewPart {
             public IWorkbenchPartSite getSite() {
                 return javaEditor == null? null : javaEditor.getEditorSite();
             }
-
             @Override
             public IEditorInput getEditorInput() {
                 return javaEditor == null? null : javaEditor.getEditorInput();
@@ -769,7 +769,7 @@ public class BytecodeOutlineView extends ViewPart {
 
         JavaSourceViewerConfiguration configuration = new JavaConfiguration(
             JavaPlugin.getDefault().getJavaTextTools().getColorManager(), store, dummyEditorForHyperlinks, IJavaPartitions.JAVA_PARTITIONING);
-        viewer.configure(configuration);
+		viewer.configure(configuration);
         viewer.setEditable(false);
         textViewer = viewer;
 
@@ -845,6 +845,10 @@ public class BytecodeOutlineView extends ViewPart {
         deActivateView();
         if (editorListener != null) {
             getSite().getWorkbenchWindow().getPartService().removePartListener(
+                editorListener);
+            getSite().getWorkbenchWindow()
+                .getSelectionService().removePostSelectionListener(editorListener);
+            FileBuffers.getTextFileBufferManager().removeFileBufferListener(
                 editorListener);
             editorListener.dispose();
             editorListener = null;
@@ -1933,6 +1937,12 @@ public class BytecodeOutlineView extends ViewPart {
             String contentType, int stateMask) {
             JavadocHover javadocHover = new JavadocHoverExtension();
             return javadocHover;
+        }
+
+        @Override
+        public IQuickAssistAssistant getQuickAssistAssistant(
+            ISourceViewer sourceViewer) {
+            return null;
         }
     }
 

@@ -33,10 +33,10 @@
    </feature>
    <archive path="plugins/de.loskutov.BytecodeOutline_2.3.1.jar" url="http://download.forge.objectweb.org/asm/de.loskutov.BytecodeOutline_2.3.1.jar"/>
 
-   <feature url="features/de.loskutov.BytecodeOutline.feature_2.4.0.jar" id="de.loskutov.BytecodeOutline.feature" version="2.4.0">
+   <feature url="features/de.loskutov.BytecodeOutline.feature_2.4.1.jar" id="de.loskutov.BytecodeOutline.feature" version="2.4.1">
       <category name="Bytecode Outline for Eclipse 3.6-3.7"/>
    </feature>
-   <archive path="plugins/de.loskutov.BytecodeOutline_2.4.0.jar" url="http://download.forge.objectweb.org/asm/de.loskutov.BytecodeOutline_2.4.0.jar"/>
+   <archive path="plugins/de.loskutov.BytecodeOutline_2.4.1.jar" url="http://download.forge.objectweb.org/asm/de.loskutov.BytecodeOutline_2.4.1.jar"/>
    <category-def name="Bytecode Outline for Eclipse 3.6-3.7" label="Bytecode Outline for Eclipse 3.6-3.7"/>
 
 </site>

@@ -26,7 +26,7 @@ import org.eclipse.ui.IWorkbenchPartReference;
  */
 public class EditorListener implements ISelectionListener, IFileBufferListener,
     IPartListener2 {
-    protected BytecodeOutlineView view;
+    volatile protected BytecodeOutlineView view;
 
     EditorListener(BytecodeOutlineView view){
         this.view = view;
@@ -63,7 +63,9 @@ public class EditorListener implements ISelectionListener, IFileBufferListener,
                     display.asyncExec(new Runnable() {
                         @Override
                         public void run() {
-                            view.checkOpenEditors(true);
+                            if(view != null) {
+                                view.checkOpenEditors(true);
+                            }
                         }
                     });
                 }
