@@ -44,7 +44,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
     private int currentInsn;
 
     public CommentedClassVisitor(ClassNode classNode, final DecompilerOptions options) {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
         this.classNode = classNode;
         this.options = options;
         raw = !options.modes.get(BCOConstants.F_SHOW_RAW_BYTECODE);
@@ -579,7 +579,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 
     private Textifier getDummyVisitor(){
         if (dummyAnnVisitor == null) {
-            dummyAnnVisitor = new Textifier(Opcodes.ASM4) {
+            dummyAnnVisitor = new Textifier(Opcodes.ASM5) {
                 @Override
                 public void visitAnnotationEnd() {
                     text.clear();

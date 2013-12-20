@@ -31,7 +31,7 @@ public class DecompilerHelper  {
         DecompilerOptions options)
         throws IOException, UnsupportedClassVersionError {
         ClassReader cr = new ClassReader(is);
-        ClassNode cn = new ClassNode(Opcodes.ASM4);
+        ClassNode cn = new ClassNode(Opcodes.ASM5);
         int crFlags = 0;
         if(options.modes.get(BCOConstants.F_EXPAND_STACKMAP)) {
             crFlags |= ClassReader.EXPAND_FRAMES;

@@ -5,18 +5,18 @@
       version="@FEATURE_VERSION@"
       provider-name="Andrey Loskutov">
 
-   <description url="http://asm.objectweb.org/eclipse/bco/index.html">
+   <description url="http://asm.ow2.org/eclipse/index.html">
       Feature contains bytecode outline and bytecode comparison view
 for any java/class file.
    </description>
 
    <copyright url="..">
-      Copyright (C)2004-2011 by Andrey Loskutov Loskutov@gmx.de
+      Copyright (C)2004-2013 by Andrey Loskutov Loskutov@gmx.de
 All rights reserved.
    </copyright>
 
    <license>
-      Copyright (C)2004-2011 by Andrey Loskutov Loskutov@gmx.de
+      Copyright (C)2004-2013 by Andrey Loskutov Loskutov@gmx.de
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -29,9 +29,9 @@ THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS&apos;&apos; AND
    </license>
 
    <url>
-      <update label="ObjectWeb update site" url="http://download.forge.objectweb.org/eclipse-update/site.xml"/>
-      <discovery label="ObjectWeb update site" url="http://download.forge.objectweb.org/eclipse-update/site.xml"/>
-      <discovery label="Andrey Loskutov plugins" url="http://andrei.gmxhome.de/eclipse/site.xml"/>
+      <update label="ObjectWeb update site" url="http://download.forge.objectweb.org/eclipse-update/"/>
+      <discovery label="ObjectWeb update site" url="http://download.forge.objectweb.org/eclipse-update/"/>
+      <discovery label="Andrey Loskutov plugins" url="http://andrei.gmxhome.de/eclipse/"/>
    </url>
 
    <requires>
