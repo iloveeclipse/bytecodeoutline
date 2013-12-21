@@ -52,6 +52,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
         showLocals = options.modes.get(BCOConstants.F_SHOW_VARIABLES);
         showStackMap = options.modes.get(BCOConstants.F_SHOW_STACKMAP);
         showHex = options.modes.get(BCOConstants.F_SHOW_HEX_VALUES);
+        javaVersion = "?";
     }
 
     private boolean decompilingEntireClass() {
@@ -69,8 +70,10 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
         //int minor = version >>> 16;
         // 1.1 is 45, 1.2 is 46 etc.
         int javaV = major % 44;
-        if (javaV > 0 && javaV < 10) {
+        if (javaV > 0) {
             javaVersion = "1." + javaV;
+        } else {
+            javaVersion = "? " + major;
         }
         this.accessFlags = access;
     }
@@ -484,7 +487,8 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
             if(type.getSort() == Type.METHOD){
                 appendDescriptor(METHOD_DESCRIPTOR, descriptor);
             } else {
-                buf.append(descriptor + ".class");
+                String descr = raw? descriptor : descriptor.substring(0, descriptor.length() - 1);
+                appendDescriptor(INTERNAL_NAME, descr + ".class");
             }
         } else {
             buf.append(formatValue(cst));

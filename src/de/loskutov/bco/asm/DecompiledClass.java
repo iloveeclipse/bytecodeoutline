@@ -51,6 +51,10 @@ public class DecompiledClass {
             || ((accessFlags & Opcodes.ACC_INTERFACE) != 0);
     }
 
+    public boolean isDefaultMethodPossible(){
+        return classInfo.major >= 8;
+    }
+
     public String getText() {
         if (value == null) {
             StringBuffer buf = new StringBuffer();

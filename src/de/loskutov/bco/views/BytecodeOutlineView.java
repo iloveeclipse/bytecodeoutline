@@ -1134,12 +1134,11 @@ public class BytecodeOutlineView extends ViewPart {
             if (result == null) {
                 clearOutput = true;
             } else {
-                if (modes.get(BCOConstants.F_SHOW_ANALYZER)
-                    && !result.isAbstractOrInterface()) {
+                boolean hasMethods = !result.isAbstractOrInterface() || result.isDefaultMethodPossible();
+                if (modes.get(BCOConstants.F_SHOW_ANALYZER) && hasMethods) {
                     refreshVerifyView(result);
                 } else {
-                    toggleVerifierAction.setEnabled(!result
-                        .isAbstractOrInterface());
+                    toggleVerifierAction.setEnabled(hasMethods);
                     refreshTextView(result);
                 }
             }
