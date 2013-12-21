@@ -181,7 +181,9 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
                 case INTERNAL_NAME :
                     buf1.append(eatPackageNames(desc, '/'));
                     break;
+                case METHOD_DESCRIPTOR :
                 case HANDLE_DESCRIPTOR :
+                    buf1.append("(");
                     Type[] types = Type.getArgumentTypes(desc);
                     for (int i = 0; i < types.length; ++i) {
                         if (i > 0) {
@@ -189,6 +191,9 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
                         }
                         buf1.append(getSimpleName(types[i]));
                     }
+                    buf1.append(") : ");
+                    Type returnType = Type.getReturnType(desc);
+                    buf1.append(getSimpleName(returnType));
                     break;
                 case FIELD_DESCRIPTOR :
                     if ("T".equals(desc)) {
@@ -200,19 +205,6 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
                     } else {
                         buf1.append(getSimpleName(Type.getType(desc)));
                     }
-                    break;
-                case METHOD_DESCRIPTOR :
-                    Type[] args = Type.getArgumentTypes(desc);
-                    Type res = Type.getReturnType(desc);
-                    buf1.append('(');
-                    for (int i = 0; i < args.length; ++i) {
-                        if (i > 0) {
-                            buf1.append(", ");
-                        }
-                        buf1.append(getSimpleName(args[i]));
-                    }
-                    buf1.append(") : ");
-                    buf1.append(getSimpleName(res));
                     break;
 
                 case METHOD_SIGNATURE :
@@ -487,7 +479,13 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
         if (cst instanceof String) {
             Printer.appendString(buf, (String) cst);
         } else if (cst instanceof Type) {
-            buf.append(((Type) cst).getDescriptor() + ".class");
+            Type type = (Type) cst;
+            String descriptor = type.getDescriptor();
+            if(type.getSort() == Type.METHOD){
+                appendDescriptor(METHOD_DESCRIPTOR, descriptor);
+            } else {
+                buf.append(descriptor + ".class");
+            }
         } else {
             buf.append(formatValue(cst));
         }
