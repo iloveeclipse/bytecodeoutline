@@ -11,9 +11,9 @@
     <BugCode name="Se"/>
   </Match>
   <Match>
-    <Package name="inner.*"/>
+    <Package name="~inner.*"/>
   </Match>
   <Match>
-    <Class name="Test*"/>
-  </Match>  
+    <Class name="~.*Test.*"/>
+  </Match>
 </FindBugsFilter>

@@ -1,5 +1,5 @@
 #FindBugs User Preferences
-#Fri Sep 09 22:29:21 CEST 2011
+#Tue Jun 24 10:13:45 CEST 2014
 cloud_id=edu.umd.cs.findbugs.cloud.doNothingCloud
 detectorAppendingToAnObjectOutputStream=AppendingToAnObjectOutputStream|true
 detectorAtomicityProblem=AtomicityProblem|true
@@ -17,6 +17,7 @@ detectorCalledMethods=CalledMethods|true
 detectorCheckCalls=CheckCalls|false
 detectorCheckExpectedWarnings=CheckExpectedWarnings|false
 detectorCheckImmutableAnnotation=CheckImmutableAnnotation|true
+detectorCheckRelaxingNullnessAnnotation=CheckRelaxingNullnessAnnotation|true
 detectorCheckTypeQualifiers=CheckTypeQualifiers|true
 detectorCloneIdiom=CloneIdiom|true
 detectorComparatorIdiom=ComparatorIdiom|false
@@ -67,6 +68,7 @@ detectorFindOpenStream=FindOpenStream|true
 detectorFindPuzzlers=FindPuzzlers|true
 detectorFindRefComparison=FindRefComparison|true
 detectorFindReturnRef=FindReturnRef|false
+detectorFindRoughConstants=FindRoughConstants|true
 detectorFindRunInvocations=FindRunInvocations|true
 detectorFindSelfComparison=FindSelfComparison|true
 detectorFindSelfComparison2=FindSelfComparison2|true
@@ -88,6 +90,7 @@ detectorHugeSharedStringConstants=HugeSharedStringConstants|true
 detectorIDivResultCastToDouble=IDivResultCastToDouble|true
 detectorIncompatMask=IncompatMask|true
 detectorInconsistentAnnotations=InconsistentAnnotations|true
+detectorInefficientIndexOf=InefficientIndexOf|true
 detectorInefficientMemberAccess=InefficientMemberAccess|false
 detectorInefficientToArray=InefficientToArray|true
 detectorInfiniteLoop=InfiniteLoop|true
@@ -95,6 +98,7 @@ detectorInfiniteRecursiveLoop=InfiniteRecursiveLoop|true
 detectorInfiniteRecursiveLoop2=InfiniteRecursiveLoop2|false
 detectorInheritanceUnsafeGetResource=InheritanceUnsafeGetResource|true
 detectorInitializationChain=InitializationChain|true
+detectorInitializeNonnullFieldsInConstructor=InitializeNonnullFieldsInConstructor|true
 detectorInstantiateStaticClass=InstantiateStaticClass|true
 detectorIntCast2LongAsInstant=IntCast2LongAsInstant|true
 detectorInvalidJUnitTest=InvalidJUnitTest|true
@@ -119,6 +123,7 @@ detectorNoteNonnullReturnValues=NoteNonnullReturnValues|true
 detectorNoteSuppressedWarnings=NoteSuppressedWarnings|true
 detectorNoteUnconditionalParamDerefs=NoteUnconditionalParamDerefs|true
 detectorNumberConstructor=NumberConstructor|true
+detectorOptionalReturnNull=OptionalReturnNull|true
 detectorOverridingEqualsNotSymmetrical=OverridingEqualsNotSymmetrical|true
 detectorPreferZeroLengthArrays=PreferZeroLengthArrays|true
 detectorPublicSemaphores=PublicSemaphores|true
