@@ -3,7 +3,8 @@
       id="de.loskutov.BytecodeOutline.feature"
       label="Bytecode Outline"
       version="@FEATURE_VERSION@"
-      provider-name="Andrey Loskutov">
+      provider-name="Andrey Loskutov"
+      plugin="de.loskutov.BytecodeOutline">
 
    <description url="http://asm.ow2.org/eclipse/index.html">
       Feature contains bytecode outline and bytecode comparison view
