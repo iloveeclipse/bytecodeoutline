@@ -68,7 +68,7 @@
       <fileset dir="${eclipse.home}" includes="plugins/**/*.jar"/>
     </path>
     <mkdir dir="${out.build}"/>
-    <javac destdir="${out.build}" debug="on" source="1.6" target="1.6" includeantruntime="false">
+    <javac destdir="${out.build}" debug="on" source="1.8" target="1.8" includeantruntime="false">
       <classpath refid="classpath"/>
       <src path="${src}"/>
       <include name="**/*.java"/>

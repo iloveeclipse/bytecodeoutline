@@ -319,6 +319,9 @@ public class BytecodeOutlineView extends ViewPart {
     }
 
     private void checkVerifyMode() {
+        if(toggleVerifierAction == null){
+            return;
+        }
         boolean aoi = JdtUtils.isAbstractOrInterface(javaInput);
 
         if (!toggleVerifierAction.isChecked()) {
@@ -414,7 +417,10 @@ public class BytecodeOutlineView extends ViewPart {
         statusLineManager = new StatusLineManager();
         statusControl = statusLineManager.createControl(parent, SWT.NONE);
         statusControl.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-
+        IEditorPart activeEditor = EclipseUtils.getActiveEditor();
+        if(activeEditor instanceof ITextEditor) {
+            setInput((ITextEditor) activeEditor);
+        }
         createTextControl();
 
         createTextContextMenu();

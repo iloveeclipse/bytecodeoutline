@@ -15,8 +15,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -24,6 +30,7 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -968,6 +975,24 @@ public class JdtUtils {
                 BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
         }
+        if(path.lastSegment().equals("jrt-fs.jar")){
+            URL url;
+            try {
+                url = Paths.get(path.toOSString()).toUri().toURL();
+                URLClassLoader loader = new URLClassLoader(new URL[] { url });
+                FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"),
+                    Collections.emptyMap(),
+                    loader);
+                Path top = fs.getPath("/");
+                Optional<Path> first = Files.walk(top).filter(Files::isRegularFile).filter(p -> p.endsWith(fullClassName)).findFirst();
+                if(first.isPresent()){
+                    return Files.newInputStream(first.get());
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
         return null;
     }
 
