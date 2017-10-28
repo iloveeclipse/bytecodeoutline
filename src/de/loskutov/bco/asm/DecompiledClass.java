@@ -426,6 +426,6 @@ public class DecompiledClass {
     }
 
     public String getJavaVersion() {
-        return classInfo.javaVersion;
+        return classInfo.javaVersion.humanReadable();
     }
 }

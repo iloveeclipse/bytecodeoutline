@@ -9,16 +9,13 @@ package de.loskutov.bco.asm;
 
 
 public class DecompiledClassInfo {
-    /**
-     * Major.minor or ?
-     */
-    public final String javaVersion;
+    public final JavaVersion javaVersion;
     public final int accessFlags;
     public final int major;
 
-    public DecompiledClassInfo(String javaVersion, int accessFlags) {
+    public DecompiledClassInfo(JavaVersion javaVersion, int accessFlags) {
         this.javaVersion = javaVersion;
         this.accessFlags = accessFlags;
-        major = javaVersion.startsWith("1.")? Integer.parseInt(javaVersion.substring(2)) : 0;
+        major = javaVersion.major;
     }
 }

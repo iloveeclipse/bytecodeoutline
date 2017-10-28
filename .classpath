@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry combineaccessrules="false" kind="src" path="/asm3"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry excluding="JCL/" kind="src" path="test"/>
+	<classpathentry exported="true" kind="lib" path="lib/asm-6.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/asm-analysis-6.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/asm-commons-6.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/asm-tree-6.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/asm-util-6.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins">
 		<accessrules>
 			<accessrule kind="accessible" pattern="**/jdt/internal/**"/>

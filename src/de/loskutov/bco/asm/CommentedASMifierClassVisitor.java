@@ -35,7 +35,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
     protected final boolean showLocals;
     protected final boolean showStackMap;
     private final DecompilerOptions options;
-    private String javaVersion;
+    private JavaVersion javaVersion;
     private int accessFlags;
     private LabelNode currentLabel;
     private int currentInsn;
@@ -45,7 +45,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
     private final ClassNode classNode;
 
     private CommentedASMifierClassVisitor(ClassNode classNode, final DecompilerOptions options, String name, int id) {
-        super(Opcodes.ASM5, name, id);
+        super(Opcodes.ASM6, name, id);
         this.classNode = classNode;
         this.options = options;
         showLines = options.modes.get(BCOConstants.F_SHOW_LINE_INFO);
@@ -85,13 +85,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
             super.visit(version, access, name1, signature, superName, interfaces);
         }
         this.className = name;
-        int major = version & 0xFFFF;
-        //int minor = version >>> 16;
-        // 1.1 is 45, 1.2 is 46 etc.
-        int javaV = major % 44;
-        if (javaV > 0 && javaV < 10) {
-            javaVersion = "1." + javaV;
-        }
+        javaVersion = new JavaVersion(version);
         this.accessFlags = access;
     }
 
@@ -326,7 +320,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 
     private ASMifier getDummyVisitor(){
         if (dummyAnnVisitor == null) {
-            dummyAnnVisitor = new ASMifier(Opcodes.ASM5, "", -1) {
+            dummyAnnVisitor = new ASMifier(Opcodes.ASM6, "", -1) {
                 @Override
                 public void visitAnnotationEnd() {
                     text.clear();
