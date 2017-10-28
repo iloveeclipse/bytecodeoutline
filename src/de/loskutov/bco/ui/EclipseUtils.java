@@ -9,6 +9,7 @@
 package de.loskutov.bco.ui;
 
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.internal.ui.javaeditor.EditorUtility;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionProvider;
@@ -52,13 +53,19 @@ public class EclipseUtils {
      * @return editor input as IJavaElement
      */
     public static IJavaElement getJavaInput(IEditorPart part) {
-        IEditorInput editorInput = part.getEditorInput();
-        if (editorInput != null) {
-            IJavaElement input = (IJavaElement) editorInput
-                .getAdapter(IJavaElement.class);
+        IJavaElement input = part.getAdapter(IJavaElement.class);
+        if (input != null) {
             return input;
         }
-        return null;
+        IEditorInput editorInput = part.getEditorInput();
+        if (editorInput != null) {
+            input = editorInput.getAdapter(IJavaElement.class);
+        }
+        if (input != null) {
+            return input;
+        }
+        input = EditorUtility.getEditorInputJavaElement(part, false);
+        return input;
     }
 
     /**
