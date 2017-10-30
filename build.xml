@@ -3,7 +3,6 @@
   <!-- defines the location of the asm project via asm.project.dir -->
   <property file="${user.home}/asm-build.properties"/>
 
-  <!-- TODO right now we define bco.version/plugin.id here, but we shall read it from MANIFEST.MF -->
   <property file="build.properties"/>
 
   <!-- defines product.version from asm etc  -->
@@ -23,11 +22,29 @@
         <fileset dir="${saxon.home}" includes="*.jar"/>
     </path>
 
-  <target name="init">
+  	<tstamp><format property="plugin.date" pattern="yyyyMMddHHmm" /></tstamp>
+	
+	<target name="get-git-revision">
+	<exec executable="git" spawn="false" outputproperty="git.revision">
+	        <arg value="log"/>
+	        <arg value="--pretty=format:%h"/>
+	        <arg value="-n"/>
+	        <arg value="1"/>
+	</exec>
+	    <echo>Got git revision ${git.revision}</echo>
+	</target>
+	
+  <target name="init" depends="getasm,get-git-revision">
+    <property name="plugin.qualifier" value="${plugin.date}-${git.revision}" />
     <!-- read plugin base version from META-INF/MANIFEST.MF to ${pluginVersion} -->
-    <loadfile srcFile="${basedir}/META-INF/MANIFEST.MF" property="bco.version">
+    <loadfile srcFile="${basedir}/META-INF/MANIFEST.MF" property="plugin.version">
       <filterchain>
-          <tokenfilter><containsregex pattern="Bundle-Version: (.*)" replace="\1"/></tokenfilter>
+          <tokenfilter>
+          	<containsregex pattern="Bundle-Version: (.*)" replace="\1"/>
+          </tokenfilter>
+          <tokenfilter>
+          	<replacestring from="qualifier" to="${plugin.qualifier}"/>
+          </tokenfilter>
           <deletecharacters chars=" \n\r"/>
       </filterchain>
     </loadfile>
@@ -39,21 +56,105 @@
           <deletecharacters chars=" \n\r"/>
       </filterchain>
     </loadfile>
-
-    <property name="plugin.jar"   value="${plugin.id}_${bco.version}.jar"/>
-    <property name="feature.jar"  value="${plugin.id}.feature_${bco.version}.jar"/>
+    <property name="plugin.jar"   value="${plugin.id}_${plugin.version}.jar"/>
+    <property name="feature.jar"  value="${plugin.id}.feature_${plugin.version}.jar"/>
     <condition property="asm.recompile" >
         <not><available file="${asm.jar}" /></not>
     </condition>
   </target>
 
+    <scriptdef name="getAndCheckLibrary" language="javascript">
+        <attribute name="url"/>
+        <attribute name="path"/>
+        <attribute name="checksum"/>
+        <![CDATA[
+           var URL = Java.type("java.net.URL");
+           var File = Java.type("java.io.File");
+
+           var path = attributes.get("path");
+           var url = attributes.get("url");
+           var checksum = attributes.get("checksum");
+           print(path + " / " + url + " : " + checksum);
+
+           var file = new File(path);
+
+           check = project.createTask("checksum");
+           check.setFile(file);
+           check.setProperty(checksum);
+           check.setVerifyproperty("check.result");
+
+           result = false;
+           if(file.exists()){
+               print("File exists, verifying checksum...")
+               result = check.eval();
+               if(!result){
+    			  check = project.createTask("checksum");
+    	          check.setFile(file);
+    	          check.setProperty("fileChecksum");
+    			  check.execute();
+    			  print("expected: " + checksum + ", actual: " + project.getProperty("fileChecksum"))
+                  print("Checksum check failed, deleting!")
+                  file.delete();
+               } else {
+                  print("Checksum check succeeded!")
+               }
+           }
+           if(result == false){
+               print("Downloading file...")
+               get = project.createTask("get");
+               get.setSrc(new URL(url));
+               get.setDest(file)
+               get.perform();
+               result = check.eval();
+               if(!result ){
+                   fail = project.createTask("fail");
+                   fail.setMessage("Download and checksum check failed for: " + path);
+                   fail.perform();
+               }
+           }
+        ]]>
+    </scriptdef>
+
+    <target name="getasm" >
+    	<property name="asmRoot" value="https://repository.ow2.org/nexus/service/local/repositories/releases/content/org/ow2/asm" />
+    	<property name="asmVersion" value="6.0" />
+    	<mkdir dir="${lib}"/>
+        <getAndCheckLibrary
+            url="${asmRoot}/asm/${asmVersion}/asm-${asmVersion}.jar"
+            path="${lib}/asm-${asmVersion}.jar"
+            checksum="305b31315dbca9c3cddac687b4a0e04c"
+        />
+        <getAndCheckLibrary
+            url="${asmRoot}/asm-analysis/${asmVersion}/asm-analysis-${asmVersion}.jar"
+            path="${lib}/asm-analysis-${asmVersion}.jar"
+            checksum="78d854d5bf870b360e2dc8414a6a8799"
+        />
+        <getAndCheckLibrary
+            url="${asmRoot}/asm-commons/${asmVersion}/asm-commons-${asmVersion}.jar"
+            path="${lib}/asm-commons-${asmVersion}.jar"
+            checksum="cbe9c8e4ed2a7e27de503b43f6dc4d61"
+        />
+        <getAndCheckLibrary
+            url="${asmRoot}/asm-tree/${asmVersion}/asm-tree-${asmVersion}.jar"
+            path="${lib}/asm-tree-${asmVersion}.jar"
+            checksum="076f7668703c07ff671837ad17f59ea1"
+        />
+        <getAndCheckLibrary
+            url="${asmRoot}/asm-util/${asmVersion}/asm-util-${asmVersion}.jar"
+            path="${lib}/asm-util-${asmVersion}.jar"
+            checksum="ddd94acc28c09f938523c9f440cd97cc"
+        />
+    </target>
+	
     <!-- Trigger (re-)compilation of asm-debug-all.jar, if it is is not available -->
     <target name="asmcompile" if="asm.recompile" >
-        <echo message="Building ASM core libraries"/>
+        <echo message="TODO Building ASM core libraries"/>
+    	<!--
         <ant dir="${asm.project.dir}" inheritall="false" target="jar" >
         	<property name="product.noshrink" value="true"/>
     	</ant>
         <copy tofile="${asm.jar}" preservelastmodified="true" file="${asm-debug-all.jar}" />
+        -->
     </target>
 
     <!-- use it to force recompilation of asm core libraries -->
@@ -76,17 +177,27 @@
   </target>
 
   <target name="jars" depends="compile">
-    <copy todir="${out.build}">
+    <copy todir="${out.build}" overwrite="true">
       <fileset dir="${src}">
         <include name="**/*.properties"/>
       </fileset>
     </copy>
-    <filterset id="version.filter">
-        <filter token="PLUGIN_VERSION" value="${bco.version}" />
-        <filter token="FEATURE_VERSION" value="${bco.version}" />
+  	
+    <!-- set the values for plugin.version -->
+  	<filterset id="version.filter">
+        <filter token="PLUGIN_VERSION" value="${plugin.version}" />
+        <filter token="FEATURE_VERSION" value="${plugin.version}" />
     </filterset>
+  	
+    <echo>plugin qualifier  ${plugin.qualifier}</echo>
+    <echo>plugin version  ${plugin.version}</echo>
+    <!-- Copy META-INF/MANIFEST.MF to ${out.dir}, "qualifier" to current version -->
+    <copy file="META-INF/MANIFEST.MF" toFile="${out.build}/META-INF/MANIFEST.MF" overwrite="true">
+      <filterset begintoken="q" endtoken="r"><filter token="ualifie" value="${plugin.qualifier}"/></filterset>
+    </copy>
+  	
   	<mkdir dir="${out}/site"/>
-    <copy todir="${out}/site">
+    <copy todir="${out}/site" overwrite="true">
       <fileset dir="${basedir}/site">
         <include name="**/*.xml"/>
       </fileset>
@@ -119,7 +230,6 @@
     <zip zipfile="${out}/${plugin.jar}">
       <zipfileset dir="${out}" includes="BytecodeOutlinesrc.zip"/>
       <fileset dir=".">
-        <include name="META-INF/MANIFEST.MF"/>
         <include name="icons/**/*"/>
         <include name="plugin.xml"/>
         <include name="about.html"/>
@@ -129,9 +239,9 @@
         <include name="*.txt"/>
         <include name="lib/*.jar"/>
       </fileset>
-    <fileset dir="${out.build}">
-      <include name="**/*"/>
-    </fileset>
+      <fileset dir="${out.build}">
+        <include name="**/*"/>
+      </fileset>
       <zipfileset dir="${out}/doc" includes="toc.xml,opcodes.html,ref-*.html" prefix="doc"/>
     </zip>
   </target>
@@ -142,8 +252,8 @@
     </jar>
   </target>
 
-  <target name="site" depends="feature">
-    <zip zipfile="${out}/${plugin.id}.update_${bco.version}.zip">
+  <target name="site" depends="cleanOutput,feature">
+    <zip zipfile="${out}/${plugin.id}.update_${plugin.version}.zip">
       <zipfileset dir="${out}/site" includes="site.xml"/>
       <zipfileset dir="${out}" includes="${feature.jar}" prefix="features"/>
       <zipfileset dir="${out}" includes="${plugin.jar}"  prefix="plugins"/>
@@ -154,6 +264,12 @@
     <delete failonerror="false" includeEmptyDirs="true">
       <fileset dir="${out}" includes="**/*"/>
       <fileset dir="${lib}" includes="**/*"/>
+    </delete>
+  </target>
+	
+  <target name="cleanOutput">
+    <delete failonerror="false" includeEmptyDirs="true">
+      <fileset dir="${out}" includes="**/*"/>
     </delete>
   </target>
 

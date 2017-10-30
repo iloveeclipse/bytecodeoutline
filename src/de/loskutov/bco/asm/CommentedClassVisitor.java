@@ -34,7 +34,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 
     private DecompiledMethod currMethod;
     private String className;
-    private String javaVersion;
+    private JavaVersion javaVersion;
     private int accessFlags;
     private Textifier dummyAnnVisitor;
     private final ClassNode classNode;
@@ -44,7 +44,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
     private int currentInsn;
 
     public CommentedClassVisitor(ClassNode classNode, final DecompilerOptions options) {
-        super(Opcodes.ASM5);
+        super(Opcodes.ASM6);
         this.classNode = classNode;
         this.options = options;
         raw = !options.modes.get(BCOConstants.F_SHOW_RAW_BYTECODE);
@@ -52,7 +52,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
         showLocals = options.modes.get(BCOConstants.F_SHOW_VARIABLES);
         showStackMap = options.modes.get(BCOConstants.F_SHOW_STACKMAP);
         showHex = options.modes.get(BCOConstants.F_SHOW_HEX_VALUES);
-        javaVersion = "?";
+        javaVersion = new JavaVersion(0);
     }
 
     private boolean decompilingEntireClass() {
@@ -66,15 +66,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
             super.visit(version, access, name, signature, superName, interfaces);
         }
         this.className = name;
-        int major = version & 0xFFFF;
-        //int minor = version >>> 16;
-        // 1.1 is 45, 1.2 is 46 etc.
-        int javaV = major % 44;
-        if (javaV > 0) {
-            javaVersion = "1." + javaV;
-        } else {
-            javaVersion = "? " + major;
-        }
+        javaVersion = new JavaVersion(version);
         this.accessFlags = access;
     }
 
@@ -581,7 +573,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 
     private Textifier getDummyVisitor(){
         if (dummyAnnVisitor == null) {
-            dummyAnnVisitor = new Textifier(Opcodes.ASM5) {
+            dummyAnnVisitor = new Textifier(Opcodes.ASM6) {
                 @Override
                 public void visitAnnotationEnd() {
                     text.clear();
