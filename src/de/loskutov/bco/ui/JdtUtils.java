@@ -45,6 +45,7 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IOrdinaryClassFile;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IParent;
@@ -389,7 +390,7 @@ public class JdtUtils {
      * @param dc
      * @return inner type which has the same name as the given string, or null
      */
-    public static IClassFile getInnerType(IClassFile cf, DecompiledClass dc,
+    public static IOrdinaryClassFile getInnerType(IOrdinaryClassFile cf, DecompiledClass dc,
         String typeSignature) {
         if(typeSignature.endsWith(";")){
             typeSignature = typeSignature.substring(0, typeSignature.length()-1);
@@ -422,7 +423,7 @@ public class JdtUtils {
                     className = typeSignature.substring(idx + 1, typeSignature.length());
                 }
                 className += ".class";
-                return cf.getType().getPackageFragment().getClassFile(className);
+                return (IOrdinaryClassFile) cf.getType().getPackageFragment().getClassFile(className);
             }
         }
         return null;

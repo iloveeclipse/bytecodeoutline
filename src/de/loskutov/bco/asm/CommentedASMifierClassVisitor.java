@@ -281,9 +281,9 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 
     @Override
     public void visitMethodInsn(final int opcode, final String owner,
-        final String name1, final String desc) {
+        final String name1, final String desc, boolean itf) {
         addIndex(opcode);
-        super.visitMethodInsn(opcode, owner, name1, desc);
+        super.visitMethodInsn(opcode, owner, name1, desc, itf);
     }
 
     @Override

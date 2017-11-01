@@ -18,6 +18,7 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaModelStatusConstants;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
+import org.eclipse.jdt.core.IOrdinaryClassFile;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.ISourceReference;
@@ -202,7 +203,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
     }
 
     private IEditorInput doOpenBuffer(IJavaReferenceType type,
-        IClassFile parent, boolean externalClass) {
+        IOrdinaryClassFile parent, boolean externalClass) {
         IClassFile classFile = null;
         try {
             classFile = JdtUtils.getInnerType(parent, getSourceMapper()
@@ -238,13 +239,13 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
 
             if (origSrc == null || (force && !reuseSource)) {
                 setDecompiled(true);
-                char[] src;
+                char[] src = null;
                 if (input instanceof ExternalClassFileEditorInput) {
                     ExternalClassFileEditorInput extInput = (ExternalClassFileEditorInput) input;
                     src = getSourceMapper().getSource(
                         extInput.getFile(), cf, decompilerFlags);
-                } else {
-                    src = getSourceMapper().getSource(cf, decompilerFlags);
+                } else if(cf instanceof IOrdinaryClassFile) {
+                    src = getSourceMapper().getSource((IOrdinaryClassFile)cf, decompilerFlags);
                 }
                 changeBufferContent(cf, src);
             } else {
@@ -697,7 +698,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
      * @return The region in the inner class (if inner class could be found), or an empty
      * zero-based region.
      */
-    public static IRegion checkForInnerClass(int sourceLine, IClassFile parent) {
+    public static IRegion checkForInnerClass(int sourceLine, IOrdinaryClassFile parent) {
         IRegion region = new Region(0, 0);
 
         // get the editor with given class file, if any
@@ -765,7 +766,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
      * @return non public class (local type class) with the name from "debugType" and
      * which source was in the "parent" class. Null if no class file could be found.
      */
-    private static IClassFile getLocalTypeClass(IJavaReferenceType debugType, IClassFile parent) {
+    private static IClassFile getLocalTypeClass(IJavaReferenceType debugType, IOrdinaryClassFile parent) {
         try {
             IType type = parent.getType();
             if((type.isLocal()) || (type.isMember())) {
@@ -792,9 +793,11 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
     private static boolean hasInnerClass(IJavaReferenceType debugType,
         IClassFile parent) {
         try {
-            String parentName = parent.getType().getFullyQualifiedName();
-            String childName = debugType.getName();
-            return childName != null && childName.startsWith(parentName + "$");
+            if(parent instanceof IOrdinaryClassFile) {
+                String parentName = ((IOrdinaryClassFile)parent).getType().getFullyQualifiedName();
+                String childName = debugType.getName();
+                return childName != null && childName.startsWith(parentName + "$");
+            }
         } catch (Exception e) {
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }

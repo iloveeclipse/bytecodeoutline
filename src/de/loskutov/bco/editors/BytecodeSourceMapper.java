@@ -26,6 +26,7 @@ import org.eclipse.debug.ui.contexts.IDebugContextListener;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
+import org.eclipse.jdt.core.IOrdinaryClassFile;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
@@ -60,7 +61,7 @@ public class BytecodeSourceMapper implements IDebugContextListener {
         DebugUITools.getDebugContextManager().addDebugContextListener(this);
     }
 
-    public char[] getSource(IClassFile classFile, BitSet decompilerFlags) {
+    public char[] getSource(IOrdinaryClassFile classFile, BitSet decompilerFlags) {
         IType type;
         type = classFile.getType();
         if (type == null || !type.isBinary()) {

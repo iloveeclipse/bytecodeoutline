@@ -4,6 +4,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jdt.core.IBuffer;
 import org.eclipse.jdt.core.IClassFile;
+import org.eclipse.jdt.core.IOrdinaryClassFile;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.core.BufferManager;
 import org.eclipse.jdt.internal.ui.javaeditor.ClassFileDocumentProvider;
@@ -199,7 +200,9 @@ public class BytecodeDocumentProvider extends ClassFileDocumentProvider {
                      * expect that their source code is in our editor which is not the case for
                      * bytecode of inner classes => for inner classes we use another strategy
                      */
-                    return BytecodeClassFileEditor.checkForInnerClass(line, cf);
+                    if(cf instanceof IOrdinaryClassFile) {
+                        return BytecodeClassFileEditor.checkForInnerClass(line, (IOrdinaryClassFile) cf);
+                    }
                 }
             }
             // editor start lines with 1

@@ -313,7 +313,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 
     @Override
     public void visitMethodInsn(final int opcode, final String owner,
-        final String name, final String desc) {
+        final String name, final String desc, boolean itf) {
         addIndex(opcode);
         buf.setLength(0);
         buf.append(tab2).append(OPCODES[opcode]).append(' ');

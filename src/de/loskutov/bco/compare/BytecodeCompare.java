@@ -19,7 +19,7 @@ import org.eclipse.compare.structuremergeviewer.Differencer;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.OperationCanceledException;
-import org.eclipse.core.runtime.SubProgressMonitor;
+import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.action.ToolBarManager;
@@ -126,7 +126,7 @@ public class BytecodeCompare extends CompareEditorInput {
             initLabels();
             Differencer differencer = new Differencer();
             monitor.beginTask("Bytecode Outline: comparing...", 30); //$NON-NLS-1$
-            IProgressMonitor sub = new SubProgressMonitor(monitor, 10);
+            IProgressMonitor sub = SubMonitor.convert(monitor, 10);
             try {
                 sub.beginTask("Bytecode Outline: comparing...", 100); //$NON-NLS-1$
 

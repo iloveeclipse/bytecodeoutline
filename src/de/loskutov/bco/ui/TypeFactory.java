@@ -18,11 +18,11 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
-import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaModel;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IOrdinaryClassFile;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
@@ -59,8 +59,8 @@ public class TypeFactory {
             if (container instanceof ICompilationUnit) {
                 return findTypeInCompilationUnit((ICompilationUnit) container,
                         getTypeQualifiedName());
-            } else if (container instanceof IClassFile) {
-                return ((IClassFile) container).getType();
+            } else if (container instanceof IOrdinaryClassFile) {
+                return ((IOrdinaryClassFile) container).getType();
             }
             return null;
         } catch (JavaModelException e) {
