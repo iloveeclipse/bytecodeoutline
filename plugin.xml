@@ -190,6 +190,16 @@
             symbolicFontName="org.eclipse.jdt.ui.editors.textfont">
          <contentTypeBinding contentTypeId="org.eclipse.jdt.core.javaClass"/>
       </editor>
+      <editor
+            class="de.loskutov.bco.editors.BytecodeClassFileEditor"
+            contributorClass="de.loskutov.bco.editors.BytecodeActionBarContributor"
+            default="true"
+            filenames="*.class without source"
+            icon="icons/bytecodeview.gif"
+            id="de.loskutov.bco.editors.BytecodeClassFileEditorNoSource"
+            name="Class File Bytecode Viewer"
+            symbolicFontName="org.eclipse.jdt.ui.editors.textfont">
+      </editor>
    </extension>
 
    <!-- replacement for org.eclipse.debug.ui.actions.RulerToggleBreakpointActionDelegate,
