@@ -9,9 +9,9 @@
  *******************************************************************************/
 package de.loskutov.bco.ui;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -68,6 +68,7 @@ import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.TypeNameRequestor;
+import org.eclipse.jdt.internal.compiler.util.Util;
 import org.eclipse.jface.text.ITextSelection;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InnerClassNode;
@@ -881,9 +882,9 @@ public class JdtUtils {
             }
             String classPath = getByteCodePath(javaElement);
 
-            try {
-                is = new FileInputStream(classPath);
-            } catch (FileNotFoundException e) {
+            try (FileInputStream fis = new FileInputStream(classPath)){
+                is = createInMemoryStream(fis);
+            } catch (IOException e) {
                 // if autobuild is disabled, we get tons of this errors.
                 // but I think we cannot ignore them, therefore WARNING and not
                 // ERROR status
@@ -923,12 +924,17 @@ public class JdtUtils {
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
         IPathVariableManager pathManager = workspace.getPathVariableManager();
         rawLocation = pathManager.resolvePath(rawLocation);
-        try {
-            return new FileInputStream(rawLocation.toOSString());
-        } catch (FileNotFoundException e) {
+        try (FileInputStream fis = new FileInputStream(rawLocation.toOSString())){
+            return createInMemoryStream(fis);
+        } catch (IOException e) {
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
         }
         return null;
+    }
+
+    static InputStream createInMemoryStream(InputStream stream) throws IOException {
+        byte[] array = Util.getInputStreamAsByteArray(stream, -1);
+        return new ByteArrayInputStream(array);
     }
 
     /**
@@ -955,41 +961,41 @@ public class JdtUtils {
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
         IPathVariableManager pathManager = workspace.getPathVariableManager();
         path = pathManager.resolvePath(path);
-
-        JarFile jar = null;
-        try {
-            jar = new JarFile(path.toOSString());
-        } catch (IOException e) {
-            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-            return null;
-        }
         String fullClassName = getFullBytecodeName(classFile);
         if (fullClassName == null) {
             return null;
         }
-        JarEntry jarEntry = jar.getJarEntry(fullClassName);
-        if (jarEntry != null) {
-            try {
-                return jar.getInputStream(jarEntry);
-            } catch (IOException e) {
-                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+
+        try (JarFile jar = new JarFile(path.toOSString())) {
+            JarEntry jarEntry = jar.getJarEntry(fullClassName);
+            if (jarEntry != null) {
+                try (InputStream is = jar.getInputStream(jarEntry)){
+                    return createInMemoryStream(is);
+                }
             }
+        } catch (IOException e) {
+            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+            return null;
         }
         if(path.lastSegment().equals("jrt-fs.jar")){
+//            JarEntryFile jef = new JarEntryFile(simpleName)
+
             URL url;
             try {
                 url = Paths.get(path.toOSString()).toUri().toURL();
-                URLClassLoader loader = new URLClassLoader(new URL[] { url });
-                FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"),
-                    Collections.emptyMap(),
-                    loader);
-                Path top = fs.getPath("/");
-                Optional<Path> first = Files.walk(top).filter(Files::isRegularFile).filter(p -> p.endsWith(fullClassName)).findFirst();
-                if(first.isPresent()){
-                    return Files.newInputStream(first.get());
+                try (URLClassLoader loader = new URLClassLoader(new URL[]{url});
+                FileSystem fs = FileSystems.newFileSystem(
+                    URI.create("jrt:/"), Collections.emptyMap(), loader);) {
+                    Path top = fs.getPath("/");
+                    Optional<Path> first = Files.walk(top).filter(Files::isRegularFile).filter(p -> p.endsWith(fullClassName)).findFirst();
+                    if(first.isPresent()){
+                        try (InputStream is = Files.newInputStream(first.get())){
+                            return createInMemoryStream(is);
+                        }
+                    }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
             }
         }
 
