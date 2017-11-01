@@ -8,16 +8,9 @@
  ****************************************************************************************/
 package de.loskutov.bco.editors;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.BitSet;
 import java.util.WeakHashMap;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
-import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.ui.DebugUITools;
@@ -27,8 +20,6 @@ import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IOrdinaryClassFile;
-import org.eclipse.jdt.core.IPackageFragment;
-import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.debug.core.IJavaReferenceType;
@@ -80,55 +71,25 @@ public class BytecodeSourceMapper implements IDebugContextListener {
         return findSource(type, info, classFile, decompilerFlags);
     }
 
-    public char[] getSource(IFile file, IClassFile cf, BitSet decompilerFlags) {
+    public char[] getSource(IClassFile cf, BitSet decompilerFlags) {
         StringBuffer source = new StringBuffer();
 
-        DecompiledClass decompiledClass = decompile(source, file.getLocation()
-            .toOSString(), decompilerFlags);
+        DecompiledClass decompiledClass = decompile(cf, source, decompilerFlags);
 
         classToDecompiled.put(cf, decompiledClass);
 
         return source.toString().toCharArray();
     }
 
-    /**
-     *
-     */
     protected char[] findSource(IType type, IBinaryType info, IClassFile cf,
         BitSet decompilerFlags) {
 
-        IPackageFragment pkgFrag = type.getPackageFragment();
-        IPackageFragmentRoot root = (IPackageFragmentRoot) pkgFrag.getParent();
-        String pkg = type.getPackageFragment().getElementName().replace(
-            '.', '/');
-
-        String classFile = new String(info.getFileName());
-        int p = classFile.lastIndexOf('/');
-        classFile = classFile.substring(p + 1);
-
         StringBuffer source = new StringBuffer();
-        String location = null;
-        String className = pkg + "/" + classFile;
-        if (root.isArchive()) {
-            location = getArchivePath(root);
-            DecompiledClass decompiledClass = decompileFromArchive(
-                source, location, className, decompilerFlags);
-            classToDecompiled.put(cf, decompiledClass);
-        } else {
-            try {
-                location = root.getUnderlyingResource().getLocation()
-                    .toOSString()
-                    + "/" + className;
-                DecompiledClass decompiledClass = decompile(
-                    source, location, decompilerFlags);
-                classToDecompiled.put(cf, decompiledClass);
-            } catch (JavaModelException e) {
-                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-            }
-        }
+        DecompiledClass decompiledClass = decompile(cf, source, decompilerFlags);
+        classToDecompiled.put(cf, decompiledClass);
 
         source.append("\n\n// DECOMPILED FROM: ");
-        source.append(location).append("\n");
+        source.append(cf.getPath()).append("\n");
         return source.toString().toCharArray();
     }
 
@@ -143,79 +104,20 @@ public class BytecodeSourceMapper implements IDebugContextListener {
         return 0;
     }
 
-    protected DecompiledClass decompile(StringBuffer source, String filePath,
+    protected DecompiledClass decompile(IClassFile cf, StringBuffer source,
         BitSet decompilerFlags) {
-        FileInputStream inputStream = null;
-        DecompiledClass dc = null;
         try {
-            inputStream = new FileInputStream(filePath);
-            dc = decompile(source, inputStream, decompilerFlags);
-        } catch (IOException e) {
+            DecompiledClass decompiledClass = DecompilerHelper
+                .getDecompiledClass(
+                    cf.getBytes(),
+                    new DecompilerOptions(null, null, decompilerFlags, null));
+            source.append(decompiledClass.getText());
+            return decompiledClass;
+        } catch (JavaModelException e) {
             source.append(e.toString());
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-        } finally {
-            if (inputStream != null) {
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-                }
-            }
-        }
-        return dc;
-    }
-
-    protected DecompiledClass decompileFromArchive(StringBuffer source,
-        String archivePath, String className, BitSet decompilerFlags) {
-        if(archivePath == null){
             return null;
         }
-        DecompiledClass decompiledClass = null;
-        ZipFile zf = null;
-        try {
-            zf = new ZipFile(archivePath);
-            ZipEntry ze = zf.getEntry(className);
-            InputStream inputStream = zf.getInputStream(ze);
-            decompiledClass = decompile(source, inputStream, decompilerFlags);
-        } catch (IOException e) {
-            source.append(e.toString());
-            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-        } finally {
-            if (zf != null) {
-                try {
-                    zf.close();
-                } catch (IOException e) {
-                    BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-                }
-            }
-        }
-        return decompiledClass;
-    }
-
-    private static DecompiledClass decompile(StringBuffer source, InputStream is,
-        BitSet decompilerFlags) throws IOException {
-        DecompiledClass decompiledClass = DecompilerHelper
-            .getDecompiledClass(is, new DecompilerOptions(null, null, decompilerFlags, null));
-        source.append(decompiledClass.getText());
-        return decompiledClass;
-    }
-
-    private static String getArchivePath(IPackageFragmentRoot root) {
-        String archivePath = null;
-        IResource resource;
-
-        try {
-            if ((resource = root.getUnderlyingResource()) != null) {
-                // jar in workspace
-                archivePath = resource.getLocation().toOSString();
-            } else {
-                // external jar
-                archivePath = root.getPath().toOSString();
-            }
-        } catch (JavaModelException e) {
-            BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-        }
-        return archivePath;
     }
 
     protected IJavaElement findElement(IClassFile cf, int decompiledLine) {

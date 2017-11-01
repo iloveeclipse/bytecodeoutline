@@ -9,7 +9,6 @@
 package de.loskutov.bco.compare;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.BitSet;
@@ -25,7 +24,6 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
 
-import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
 import de.loskutov.bco.asm.DecompilerHelper;
 import de.loskutov.bco.asm.DecompilerOptions;
@@ -115,31 +113,21 @@ public class TypedElement extends BufferedContent
 
     @Override
     protected InputStream createStream() throws CoreException {
-        InputStream stream = JdtUtils.createInputStream(element);
-        if (stream == null) {
+        byte[] classBytes = JdtUtils.readClassBytes(element);
+        if (classBytes == null) {
             throw new CoreException(new Status(
                 IStatus.ERROR, "de.loskutov.bco", -1,
-                "cannot get bytecode from class file", null));
+                "Can't read bytecode for: " + element, null));
         }
         DecompiledClass decompiledClass = null;
         try {
             decompiledClass = DecompilerHelper.getDecompiledClass(
-                stream, new DecompilerOptions(null, methodName, modes, null));
-        } catch (IOException e) {
-            throw new CoreException(new Status(
-                IStatus.ERROR, "de.loskutov.bco", -1,
-                "cannot get bytecode dump", e));
+                classBytes, new DecompilerOptions(null, methodName, modes, null));
         } catch (UnsupportedClassVersionError e){
             throw new CoreException(new Status(
                 IStatus.ERROR, "de.loskutov.bco", -1,
                 "Error caused by attempt to load class compiled with Java version which"
                 + " is not supported by current JVM", e));
-        } finally {
-            try {
-                stream.close();
-            } catch (IOException e) {
-                BytecodeOutlinePlugin.log(e, IStatus.WARNING);
-            }
         }
         final byte[] bytes = decompiledClass.getText().getBytes(Charset.forName("UTF-8"));
         // use internal buffering to prevent multiple calls to this method

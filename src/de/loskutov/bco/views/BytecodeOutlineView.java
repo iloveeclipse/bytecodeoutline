@@ -9,8 +9,6 @@
  *******************************************************************************/
 package de.loskutov.bco.views;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -1558,12 +1556,12 @@ public class BytecodeOutlineView extends ViewPart {
         if (type == null) {
             return null;
         }
-        InputStream is = JdtUtils.createInputStream(type);
-        if (is == null) {
+        byte[] bytes = JdtUtils.readClassBytes(type);
+        if (bytes == null) {
             return null;
         }
         DecompiledClass decompiledClass = null;
-        int available = 0;
+        int available = bytes.length;
         try {
             ClassLoader cl = null;
             if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
@@ -1583,9 +1581,8 @@ public class BytecodeOutlineView extends ViewPart {
                     methodName = JdtUtils.getMethodSignature(childEl);
                 }
             }
-            available = is.available();
             decompiledClass = DecompilerHelper.getDecompiledClass(
-                is, new DecompilerOptions(fieldName, methodName, modes, cl));
+                bytes, new DecompilerOptions(fieldName, methodName, modes, cl));
         } catch (Exception e) {
             try {
                 // check if compilation unit is ok - then this is the user problem
@@ -1603,12 +1600,6 @@ public class BytecodeOutlineView extends ViewPart {
                 + ". Error was caused by attempt to "
                 + "load a class compiled with the Java version which is not "
                 + "supported by the current JVM. ", e);
-        } finally {
-            try {
-                is.close();
-            } catch (IOException e) {
-                BytecodeOutlinePlugin.log(e, IStatus.WARNING);
-            }
         }
         // remember class file size to show it later in UI
         if (decompiledClass != null) {

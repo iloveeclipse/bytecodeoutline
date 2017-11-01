@@ -9,8 +9,6 @@
  *******************************************************************************/
 package de.loskutov.bco.asm;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,10 +25,9 @@ import de.loskutov.bco.preferences.BCOConstants;
  */
 public class DecompilerHelper  {
 
-    public static DecompiledClass getDecompiledClass(final InputStream is,
-        DecompilerOptions options)
-        throws IOException, UnsupportedClassVersionError {
-        ClassReader cr = new ClassReader(is);
+    public static DecompiledClass getDecompiledClass(final byte[] bytes,
+        DecompilerOptions options) throws UnsupportedClassVersionError {
+        ClassReader cr = new ClassReader(bytes);
         ClassNode cn = new ClassNode(Opcodes.ASM6);
         int crFlags = 0;
         if(options.modes.get(BCOConstants.F_EXPAND_STACKMAP)) {

@@ -6,8 +6,10 @@ import java.lang.reflect.Constructor;
 import java.util.BitSet;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.ui.actions.IToggleBreakpointsTarget;
 import org.eclipse.jdt.core.IBuffer;
@@ -23,6 +25,7 @@ import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.ISourceReference;
 import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.debug.core.IJavaReferenceType;
@@ -240,11 +243,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
             if (origSrc == null || (force && !reuseSource)) {
                 setDecompiled(true);
                 char[] src = null;
-                if (input instanceof ExternalClassFileEditorInput) {
-                    ExternalClassFileEditorInput extInput = (ExternalClassFileEditorInput) input;
-                    src = getSourceMapper().getSource(
-                        extInput.getFile(), cf, decompilerFlags);
-                } else if(cf instanceof IOrdinaryClassFile) {
+                if(cf instanceof IOrdinaryClassFile) {
                     src = getSourceMapper().getSource((IOrdinaryClassFile)cf, decompilerFlags);
                 }
                 changeBufferContent(cf, src);
@@ -252,18 +251,38 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
                 setDecompiled(false);
             }
         } else if (input instanceof FileEditorInput) {
-            FileEditorInput fileEditorInput = (FileEditorInput) input;
             // make class file from that
-            IClassFileEditorInput cfi = (IClassFileEditorInput) transformEditorInput(input);
-            // return changed reference
-            input = cfi;
-            setDecompiled(true);
-            IClassFile cf = cfi.getClassFile();
-            char[] src = getSourceMapper().getSource(
-                fileEditorInput.getFile(), cf, decompilerFlags);
-            changeBufferContent(cf, src);
+            IEditorInput transformedInput = transformEditorInput(input);
+            if(transformedInput instanceof IClassFileEditorInput) {
+                IClassFileEditorInput cfi = (IClassFileEditorInput) transformedInput;
+                // return changed reference
+                input = cfi;
+                setDecompiled(true);
+                IClassFile cf = cfi.getClassFile();
+                char[] src = getSourceMapper().getSource(cf, decompilerFlags);
+                changeBufferContent(cf, src);
+            }
         }
         return input;
+    }
+
+    @Override
+    protected IEditorInput transformEditorInput(IEditorInput input) {
+        IEditorInput input2 = super.transformEditorInput(input);
+        if(input2 == input && input instanceof IFileEditorInput) {
+            IFile file= ((IFileEditorInput) input).getFile();
+            IJavaElement elt = JavaCore.create(file);
+            if(elt instanceof IClassFile) {
+                return new InternalClassFileEditorInput((IClassFile) elt);
+            }
+            String pathStr = JdtUtils.getByteCodePath(elt);
+            IFile iFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(pathStr));
+            IClassFile classFile= JavaCore.createClassFileFrom(iFile);
+            if(classFile != null) {
+                return new InternalClassFileEditorInput(classFile);
+            }
+        }
+        return input2;
     }
 
     private void setDecompiled(boolean decompiled) {
@@ -676,8 +695,10 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
         }
 
         IClassFile classFile = getClassFile();
-        BytecodeBufferManager.removeBuffer(BytecodeBufferManager
-            .getBuffer(classFile));
+        if(classFile != null) {
+            BytecodeBufferManager.removeBuffer(BytecodeBufferManager
+                .getBuffer(classFile));
+        }
         super.dispose();
     }
 
