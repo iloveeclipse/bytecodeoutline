@@ -69,6 +69,7 @@ import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.TypeNameRequestor;
 import org.eclipse.jdt.internal.compiler.util.Util;
+import org.eclipse.jdt.internal.core.JavaElement;
 import org.eclipse.jface.text.ITextSelection;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.InnerClassNode;
@@ -914,8 +915,15 @@ public class JdtUtils {
                 // this is a class file that is not in java model
                 underlyingResource = classFile.getResource();
             }
+            if(underlyingResource == null){
+                // Looks like class folders are different...
+                underlyingResource = ((JavaElement)classFile).resource();
+            }
         } catch (JavaModelException e) {
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
+            return null;
+        }
+        if(underlyingResource == null) {
             return null;
         }
         IPath rawLocation = underlyingResource.getRawLocation();
