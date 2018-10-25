@@ -15,9 +15,6 @@
   <property name="lib"                value="${basedir}/lib"/>
   <property name="out.build"          value="${out}/build"/>
 
-  <property name="asm-debug-all.jar" value="${asm.project.dir}/output/dist/lib/all/asm-debug-all-${product.version}.jar"/>
-  <property name="asm.jar" value="${lib}/asm-debug-all.jar"/>
-
    <path id="saxon.classpath">
         <fileset dir="${saxon.home}" includes="*.jar"/>
     </path>
@@ -58,46 +55,25 @@
     </loadfile>
     <property name="plugin.jar"   value="${plugin.id}_${plugin.version}.jar"/>
     <property name="feature.jar"  value="${plugin.id}.feature_${plugin.version}.jar"/>
-    <condition property="asm.recompile" >
-        <not><available file="${asm.jar}" /></not>
-    </condition>
   </target>
 
     <scriptdef name="getAndCheckLibrary" language="javascript">
         <attribute name="url"/>
         <attribute name="path"/>
-        <attribute name="checksum"/>
         <![CDATA[
            var URL = Java.type("java.net.URL");
            var File = Java.type("java.io.File");
 
            var path = attributes.get("path");
            var url = attributes.get("url");
-           var checksum = attributes.get("checksum");
-           print(path + " / " + url + " : " + checksum);
+           print(path + " / " + url);
 
            var file = new File(path);
 
-           check = project.createTask("checksum");
-           check.setFile(file);
-           check.setProperty(checksum);
-           check.setVerifyproperty("check.result");
-
            result = false;
            if(file.exists()){
-               print("File exists, verifying checksum...")
-               result = check.eval();
-               if(!result){
-    			  check = project.createTask("checksum");
-    	          check.setFile(file);
-    	          check.setProperty("fileChecksum");
-    			  check.execute();
-    			  print("expected: " + checksum + ", actual: " + project.getProperty("fileChecksum"))
-                  print("Checksum check failed, deleting!")
-                  file.delete();
-               } else {
-                  print("Checksum check succeeded!")
-               }
+               print("File exists.")
+               result = true;
            }
            if(result == false){
                print("Downloading file...")
@@ -105,65 +81,38 @@
                get.setSrc(new URL(url));
                get.setDest(file)
                get.perform();
-               result = check.eval();
-               if(!result ){
-                   fail = project.createTask("fail");
-                   fail.setMessage("Download and checksum check failed for: " + path);
-                   fail.perform();
-               }
            }
         ]]>
     </scriptdef>
 
     <target name="getasm" >
-    	<property name="asmRoot" value="https://repository.ow2.org/nexus/service/local/repositories/releases/content/org/ow2/asm" />
-    	<property name="asmVersion" value="6.0" />
+    	<property name="asmRoot" value="http://download.eclipse.org/tools/orbit/downloads/drops2/R20180905201904/repository/plugins" />
+    	<property name="asmVersion" value="6.2.1.v20180823-1831" />
     	<mkdir dir="${lib}"/>
         <getAndCheckLibrary
-            url="${asmRoot}/asm/${asmVersion}/asm-${asmVersion}.jar"
+            url="${asmRoot}/org.objectweb.asm_${asmVersion}.jar"
             path="${lib}/asm-${asmVersion}.jar"
-            checksum="305b31315dbca9c3cddac687b4a0e04c"
         />
         <getAndCheckLibrary
-            url="${asmRoot}/asm-analysis/${asmVersion}/asm-analysis-${asmVersion}.jar"
+            url="${asmRoot}/org.objectweb.asm.analysis_${asmVersion}.jar"
             path="${lib}/asm-analysis-${asmVersion}.jar"
-            checksum="78d854d5bf870b360e2dc8414a6a8799"
         />
         <getAndCheckLibrary
-            url="${asmRoot}/asm-commons/${asmVersion}/asm-commons-${asmVersion}.jar"
+            url="${asmRoot}/org.objectweb.asm.commons_${asmVersion}.jar"
             path="${lib}/asm-commons-${asmVersion}.jar"
-            checksum="cbe9c8e4ed2a7e27de503b43f6dc4d61"
         />
         <getAndCheckLibrary
-            url="${asmRoot}/asm-tree/${asmVersion}/asm-tree-${asmVersion}.jar"
+            url="${asmRoot}/org.objectweb.asm.tree_${asmVersion}.jar"
             path="${lib}/asm-tree-${asmVersion}.jar"
-            checksum="076f7668703c07ff671837ad17f59ea1"
         />
         <getAndCheckLibrary
-            url="${asmRoot}/asm-util/${asmVersion}/asm-util-${asmVersion}.jar"
+            url="${asmRoot}/org.objectweb.asm.util_${asmVersion}.jar"
             path="${lib}/asm-util-${asmVersion}.jar"
-            checksum="ddd94acc28c09f938523c9f440cd97cc"
         />
     </target>
-	
-    <!-- Trigger (re-)compilation of asm-debug-all.jar, if it is is not available -->
-    <target name="asmcompile" if="asm.recompile" >
-        <echo message="TODO Building ASM core libraries"/>
-    	<!--
-        <ant dir="${asm.project.dir}" inheritall="false" target="jar" >
-        	<property name="product.noshrink" value="true"/>
-    	</ant>
-        <copy tofile="${asm.jar}" preservelastmodified="true" file="${asm-debug-all.jar}" />
-        -->
-    </target>
 
-    <!-- use it to force recompilation of asm core libraries -->
-    <target name="force_recompile">
-        <property name="asm.recompile" value="true" />
-        <antcall target="compile" />
-    </target>
 
-  <target name="compile" depends="init, asmcompile">
+  <target name="compile" depends="init">
     <path id="classpath">
       <fileset dir="lib" includes="*.jar"/>
       <fileset dir="${eclipse.home}" includes="plugins/**/*.jar"/>
@@ -237,7 +186,6 @@
         <include name="about.properties"/>
         <include name="about32.png"/>
         <include name="*.txt"/>
-        <include name="lib/*.jar"/>
       </fileset>
       <fileset dir="${out.build}">
         <include name="**/*"/>
