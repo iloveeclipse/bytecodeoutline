@@ -9,7 +9,11 @@ package de.loskutov.bco.asm;
 
 import java.util.BitSet;
 
+import org.objectweb.asm.Opcodes;
+
 public class DecompilerOptions {
+
+    public static int LATEST_VERSION = Opcodes.ASM7_EXPERIMENTAL;
 
     public final String fieldFilter;
     public final String methodFilter;
