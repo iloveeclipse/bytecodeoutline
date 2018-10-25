@@ -45,7 +45,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
     private final ClassNode classNode;
 
     private CommentedASMifierClassVisitor(ClassNode classNode, final DecompilerOptions options, String name, int id) {
-        super(Opcodes.ASM6, name, id);
+        super(DecompilerOptions.LATEST_ASM_VERSION, name, id);
         this.classNode = classNode;
         this.options = options;
         showLines = options.modes.get(BCOConstants.F_SHOW_LINE_INFO);
@@ -320,7 +320,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 
     private ASMifier getDummyVisitor(){
         if (dummyAnnVisitor == null) {
-            dummyAnnVisitor = new ASMifier(Opcodes.ASM6, "", -1) {
+            dummyAnnVisitor = new ASMifier(DecompilerOptions.LATEST_ASM_VERSION, "", -1) {
                 @Override
                 public void visitAnnotationEnd() {
                     text.clear();

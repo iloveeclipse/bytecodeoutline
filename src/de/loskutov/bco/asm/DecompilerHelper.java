@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.util.Printer;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -28,7 +27,7 @@ public class DecompilerHelper  {
     public static DecompiledClass getDecompiledClass(final byte[] bytes,
         DecompilerOptions options) throws UnsupportedClassVersionError {
         ClassReader cr = new ClassReader(bytes);
-        ClassNode cn = new ClassNode(Opcodes.ASM6);
+        ClassNode cn = new ClassNode(DecompilerOptions.LATEST_ASM_VERSION);
         int crFlags = 0;
         if(options.modes.get(BCOConstants.F_EXPAND_STACKMAP)) {
             crFlags |= ClassReader.EXPAND_FRAMES;
