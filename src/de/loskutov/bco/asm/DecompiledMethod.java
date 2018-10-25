@@ -25,7 +25,9 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.BasicValue;
+import org.objectweb.asm.tree.analysis.BasicVerifier;
 import org.objectweb.asm.tree.analysis.Frame;
+import org.objectweb.asm.tree.analysis.Interpreter;
 import org.objectweb.asm.tree.analysis.SimpleVerifier;
 import org.objectweb.asm.tree.analysis.Value;
 
@@ -182,21 +184,19 @@ public class DecompiledMethod {
     }
 
     private void analyzeMethod(final ClassLoader cl) {
-        Analyzer<BasicValue> a = new Analyzer<BasicValue>(new SimpleVerifier() {
+        Interpreter<BasicValue> interpreter;
+        try {
+            Type type = Type.getType(owner);
+            interpreter = new SimpleVerifier(
+                DecompilerOptions.LATEST_ASM_VERSION, type, null,
+                null, false) {
+                //
+            };
+        } catch (Exception e) {
+            interpreter = new BasicVerifier();
+        }
 
-            @Override
-            protected Class getClass(final Type t) {
-                try {
-                    if (t.getSort() == Type.ARRAY) {
-                        return Class.forName(t.getDescriptor().replace(
-                            '/', '.'), true, cl);
-                    }
-                    return cl.loadClass(t.getClassName());
-                } catch (ClassNotFoundException e) {
-                    throw new RuntimeException(e.toString()+" " +cl, e);
-                }
-            }
-        });
+        Analyzer<BasicValue> a = new Analyzer<BasicValue>(interpreter);
         try {
             a.analyze(owner, meth);
         } catch (AnalyzerException e) {
@@ -590,6 +590,10 @@ public class DecompiledMethod {
           }
           // this is the case on LVT view - ignore it
           if("." == s){
+              return arraySymbols  + s;
+          }
+          // XXX Unresolved type
+          if("R" == s){
               return arraySymbols  + s;
           }
           // resolve primitive types
