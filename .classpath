@@ -2,11 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry excluding="JCL/" kind="src" path="test"/>
-	<classpathentry exported="true" kind="lib" path="lib/asm-6.0.jar" sourcepath="/asm/src/main/java"/>
-	<classpathentry exported="true" kind="lib" path="lib/asm-analysis-6.0.jar" sourcepath="/asm-analysis/src/main/java"/>
-	<classpathentry exported="true" kind="lib" path="lib/asm-commons-6.0.jar" sourcepath="/asm-commons/src/main/java"/>
-	<classpathentry exported="true" kind="lib" path="lib/asm-tree-6.0.jar" sourcepath="/asm-tree/src/main/java"/>
-	<classpathentry exported="true" kind="lib" path="lib/asm-util-6.0.jar" sourcepath="/asm-util/src/main/java"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins">
 		<accessrules>
 			<accessrule kind="accessible" pattern="**/jdt/internal/**"/>
