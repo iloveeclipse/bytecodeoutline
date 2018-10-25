@@ -156,10 +156,10 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 
     @Override
     protected void appendDescriptor(final int type, final String desc) {
-        appendDescriptor(buf, type, desc, raw);
+        appendDescriptor(stringBuilder, type, desc, raw);
     }
 
-    protected void appendDescriptor(final StringBuffer buf1, final int type,
+    protected void appendDescriptor(final StringBuilder buf1, final int type,
         final String desc, final boolean raw1) {
         if (desc == null) {
             return;
@@ -205,8 +205,8 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
                 case METHOD_SIGNATURE :
                 case FIELD_SIGNATURE :
                     // fine tuning of identation - we have two tabs in this case
-                    if (buf.lastIndexOf(tab) == buf.length() - tab.length()) {
-                        buf.delete(buf.lastIndexOf(tab), buf.length());
+                    if (stringBuilder.lastIndexOf(tab) == stringBuilder.length() - tab.length()) {
+                        stringBuilder.delete(stringBuilder.lastIndexOf(tab), stringBuilder.length());
                     }
                     break;
 
@@ -315,13 +315,13 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
     public void visitMethodInsn(final int opcode, final String owner,
         final String name, final String desc, boolean itf) {
         addIndex(opcode);
-        buf.setLength(0);
-        buf.append(tab2).append(OPCODES[opcode]).append(' ');
+        stringBuilder.setLength(0);
+        stringBuilder.append(tab2).append(OPCODES[opcode]).append(' ');
         appendDescriptor(INTERNAL_NAME, owner);
-        buf.append('.').append(name);
+        stringBuilder.append('.').append(name);
         appendDescriptor(METHOD_DESCRIPTOR, desc);
-        buf.append('\n');
-        text.add(buf.toString());
+        stringBuilder.append('\n');
+        text.add(stringBuilder.toString());
     }
 
     @Override
@@ -337,15 +337,15 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
     @Override
     public void visitLabel(Label label) {
         addIndex(-1);
-        buf.setLength(0);
-        buf.append(ltab);
+        stringBuilder.setLength(0);
+        stringBuilder.append(ltab);
         appendLabel(label);
         Index index = getIndex(label);
         if (index != null) {
-            buf.append(" (").append(index.insn).append(")");
+            stringBuilder.append(" (").append(index.insn).append(")");
         }
-        buf.append('\n');
-        text.add(buf.toString());
+        stringBuilder.append('\n');
+        text.add(stringBuilder.toString());
         InsnList instructions = currMethod.meth.instructions;
         LabelNode currLabel = null;
         for (int i = 0; i < instructions.size(); i++) {
@@ -380,12 +380,12 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
     @Override
     public void visitIntInsn(int opcode, int operand) {
         addIndex(opcode);
-        buf.setLength(0);
-        buf.append(tab2).append(OPCODES[opcode]).append(' ').append(
+        stringBuilder.setLength(0);
+        stringBuilder.append(tab2).append(OPCODES[opcode]).append(' ').append(
             opcode == Opcodes.NEWARRAY
             ? TYPES[operand]
                 : formatValue(operand)).append('\n');
-        text.add(buf.toString());
+        text.add(stringBuilder.toString());
     }
 
     private String formatValue(int operand) {
@@ -469,10 +469,10 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
     @Override
     public void visitLdcInsn(final Object cst) {
         addIndex(Opcodes.LDC);
-        buf.setLength(0);
-        buf.append(tab2).append("LDC ");
+        stringBuilder.setLength(0);
+        stringBuilder.append(tab2).append("LDC ");
         if (cst instanceof String) {
-            Printer.appendString(buf, (String) cst);
+            Printer.appendString(stringBuilder, (String) cst);
         } else if (cst instanceof Type) {
             Type type = (Type) cst;
             String descriptor = type.getDescriptor();
@@ -483,10 +483,10 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
                 appendDescriptor(INTERNAL_NAME, descr + ".class");
             }
         } else {
-            buf.append(formatValue(cst));
+            stringBuilder.append(formatValue(cst));
         }
-        buf.append('\n');
-        text.add(buf.toString());
+        stringBuilder.append('\n');
+        text.add(stringBuilder.toString());
     }
 
     @Override
