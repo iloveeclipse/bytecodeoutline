@@ -218,9 +218,6 @@
          </action>
       </editorContribution>
    </extension>
-  <extension point="org.eclipse.help.toc">
-    <toc file="doc/toc.xml" primary="true" />
-  </extension>
 
  <!-- because of org.eclipse.jdt.internal.ui.javaeditor.ClassFileEditor replacement
   <extension point="org.eclipse.core.runtime.adapters">

@@ -12,40 +12,18 @@ package de.loskutov.bco.views;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Scanner;
 
-import org.eclipse.core.runtime.Platform;
-import org.eclipse.help.internal.base.BaseHelpSystem;
-import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.ui.text.java.hover.JavadocHover;
-import org.eclipse.jdt.ui.PreferenceConstants;
-import org.eclipse.jface.internal.text.html.HTMLPrinter;
-import org.eclipse.jface.resource.JFaceResources;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.FontData;
-import org.eclipse.swt.graphics.RGB;
-import org.eclipse.swt.widgets.Display;
 import org.objectweb.asm.util.Printer;
-import org.osgi.framework.Bundle;
-
-import de.loskutov.bco.BytecodeOutlinePlugin;
 
 
 public class HelpUtils {
-    private static String styleSheet;
-    private static final String DOC_BASE = "/" + BytecodeOutlinePlugin.getDefault().getBundle().getSymbolicName() + "/doc/";
-    private static RGB bg_color_rgb = new RGB(255, 255, 255);
-    private static RGB fg_color_rgb = new RGB(0, 0, 0);
-
-    static {
-        Display.getDefault().asyncExec(new Runnable() {
-            @Override
-            public void run() {
-                bg_color_rgb = Display.getDefault().getSystemColor(SWT.COLOR_INFO_BACKGROUND).getRGB();
-                fg_color_rgb = Display.getDefault().getSystemColor(SWT.COLOR_INFO_FOREGROUND).getRGB();
-            }
-        });
-    }
+    // TODO: configure it via preference
+    private static final String SPECS_HTML = "https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-6.html";
+    private static String fullSpec;
+    private static String htmlHead;
 
     private static String checkOpcodeName(String opcodeName) {
         opcodeName = opcodeName.toLowerCase();
@@ -75,7 +53,7 @@ public class HelpUtils {
         return opcodeName;
     }
 
-    public static URL getHelpResource(int opcode) {
+    private static String getOpcodeName(int opcode) {
         if(opcode < 0 || opcode >= Printer.OPCODES.length) {
             return null;
         }
@@ -86,145 +64,97 @@ public class HelpUtils {
         if(opcodeName == null) {
             return null;
         }
-        return getHelpResource(opcodeName);
+        return opcodeName;
     }
 
-    private static URL getHelpResource(String name) {
-        String href = DOC_BASE + "ref-" + name + ".html";
-        return resolveToHelpUrl(href);
-    }
-
-    public static URL getHelpIndex() {
-        String href = DOC_BASE + "opcodes.html";
-        return resolveToHelpUrl(href);
-    }
-
-    private static String getDocBase() {
-        URL base = resolveToHelpUrl(DOC_BASE);
-        if (base != null) {
-            return base.toString();
-        }
-        return null;
-    }
-
-    private static URL resolveToHelpUrl(String path) {
+    private static URL toUrl(String href) {
         try {
-            return BaseHelpSystem.resolve(path, true);
-        } catch (Exception e) {
+            return new URL(href);
+        } catch (MalformedURLException e) {
             return null;
         }
     }
 
-    private static void appendColor(StringBuilder buffer, RGB rgb) {
-        buffer.append('#');
-        appendAsHexString(buffer, rgb.red);
-        appendAsHexString(buffer, rgb.green);
-        appendAsHexString(buffer, rgb.blue);
+    public static URL getHelpIndex() {
+        return toUrl(SPECS_HTML);
     }
 
-    private static void appendAsHexString(StringBuilder buffer, int intValue) {
-        String hexValue= Integer.toHexString(intValue);
-        if (hexValue.length() == 1) {
-            buffer.append('0');
+    private static String readFullSpec() {
+        URL helpResource = toUrl(SPECS_HTML);
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(helpResource.openStream(), "UTF-8"))){
+            String line;
+            while ((line = in.readLine()) != null) {
+                    sb.append(line).append('\n');
+            }
+        } catch (IOException e) {
+            sb.append("Error trying access JVM specification at ").append(SPECS_HTML);
+            sb.append(":");
+            sb.append(e);
         }
-        buffer.append(hexValue);
-    }
-
-
-    /**
-     * From {@link JavadocHover} class: returns the Javadoc hover style sheet with the
-     * current Javadoc font from the preferences.
-     * @return the updated style sheet
-     */
-    public static String getHelpStyleSheet() {
-        if (styleSheet == null) {
-            styleSheet = loadStyleSheet();
-        }
-        String css = styleSheet;
-        if (css == null || css.isEmpty()) {
-            return "";
-        }
-        FontData fontData= JFaceResources.getFontRegistry().getFontData(
-            PreferenceConstants.APPEARANCE_JAVADOC_FONT)[0];
-        css = HTMLPrinter.convertTopLevelFont(css, fontData);
-        StringBuilder sb = new StringBuilder(css);
-        sb.append("\nbody {  background-color:");
-        appendColor(sb, bg_color_rgb);
-        sb.append(";  color:");
-        appendColor(sb, fg_color_rgb);
-        sb.append(";  }\n");
         return sb.toString();
     }
 
-
-
-    /**
-     * From {@link JavadocHover} class: loads and returns the Javadoc hover style sheet.
-     * @return the style sheet, or empty string if unable to load
-     */
-    private static String loadStyleSheet() {
-        Bundle bundle= Platform.getBundle(JavaPlugin.getPluginId());
-        URL styleSheetURL= bundle.getEntry("/JavadocHoverStyleSheet.css"); //$NON-NLS-1$
-        if (styleSheetURL == null) {
-            return "";
+    public static StringBuilder getOpcodeHelpFor(int opcode) {
+        if(fullSpec == null) {
+            fullSpec = readFullSpec();
+            htmlHead = readHtmlHead();
         }
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new InputStreamReader(styleSheetURL.openStream(), "UTF-8"));
-            StringBuilder sb = new StringBuilder(1500);
+        StringBuilder sb = new StringBuilder();
+        String opcodeName = getOpcodeName(opcode);
+        if(opcodeName == null) {
+            return sb;
+        }
+        sb.append(htmlHead);
+
+        // Extract only important part related to the given opcode
+        String patternStart = "<div class=\"section-execution\" title=\"" + opcodeName + "\"";
+        String patternEnd = "<div class=\"section-execution\" title=\"";
+        try (Scanner in = new Scanner(fullSpec)){
             String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-                sb.append('\n');
-            }
-            return sb.toString();
-        } catch (IOException ex) {
-            return "";
-        } finally {
-            try {
-                if (reader != null) {
-                    reader.close();
+            boolean foundStart = false;
+            boolean checkEnd = false;
+            while (in.hasNextLine()) {
+                line = in.nextLine();
+                if(checkEnd && line.contains(patternEnd)) {
+                    break;
                 }
-            } catch (IOException e) {
-                //
+                if(!foundStart && line.contains(patternStart)) {
+                    foundStart = true;
+                    checkEnd = true;
+                }
+                if(foundStart) {
+                    sb.append(line);
+                }
             }
         }
+
+        // Allow navigation relative to the document
+        int endHeadIdx= sb.indexOf("</head>"); //$NON-NLS-1$
+        if(endHeadIdx > 0) {
+            sb.insert(endHeadIdx, "\n<base href='" + SPECS_HTML + "'>\n");
+        }
+        sb.append("</body></html>");
+        return sb;
     }
 
-    public static StringBuilder getOpcodeHelpFor(int opcode) {
-        URL helpResource = getHelpResource(opcode);
+    private static String readHtmlHead() {
         StringBuilder sb = new StringBuilder();
-        if(helpResource == null) {
-            return sb;
+        if(fullSpec == null) {
+            return sb.toString();
         }
-        BufferedReader in = null;
-        try {
-            in = new BufferedReader(new InputStreamReader(helpResource.openStream(), "UTF-8"));
+        try (Scanner in = new Scanner(fullSpec)){
             String line;
-            while ((line = in.readLine()) != null) {
+            while (in.hasNextLine()) {
+                line = in.nextLine();
+                if(line.contains("<body")) {
+                    sb.append(line.substring(0, line.indexOf("<body")));
+                    break;
+                }
                 sb.append(line);
             }
-        } catch (IOException e) {
-            return sb;
-        } finally {
-            if(in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    //
-                }
-            }
         }
-        int styleEnd = sb.indexOf("</style>");
-        if(styleEnd > 0) {
-            sb.insert(styleEnd, getHelpStyleSheet());
-        }
-        int endHeadIdx= sb.indexOf("</head>"); //$NON-NLS-1$
-        String base = getDocBase();
-        if(base != null) {
-            sb.insert(endHeadIdx, "\n<base href='" + base + "'>\n");
-        }
-        return sb;
+        return sb.toString();
     }
 
 }

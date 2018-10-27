@@ -9,8 +9,6 @@
 
 package de.loskutov.bco.views;
 
-import java.net.URL;
-
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.text.ITextSelection;
@@ -184,9 +182,9 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
         } else {
             opcode = ((BytecodeClassFileEditor)part).getBytecodeInstructionAtLine(line);
         }
-        URL url = HelpUtils.getHelpResource(opcode);
-        if (url != null) {
-            browser.setUrl(url.toString());
+        StringBuilder helpFor = HelpUtils.getOpcodeHelpFor(opcode);
+        if (helpFor.length() > 0) {
+            browser.setText(helpFor.toString());
         } else {
             shouDefaultEmptyPage();
         }

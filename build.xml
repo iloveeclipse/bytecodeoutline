@@ -15,10 +15,6 @@
   <property name="lib"                value="${basedir}/lib"/>
   <property name="out.build"          value="${out}/build"/>
 
-   <path id="saxon.classpath">
-        <fileset dir="${saxon.home}" includes="*.jar"/>
-    </path>
-
   	<tstamp><format property="plugin.date" pattern="yyyyMMddHHmm" /></tstamp>
 	
 	<target name="get-git-revision">
@@ -175,7 +171,7 @@
     </zip>
   </target>
 
-  <target name="plugin" depends="jars,xslt">
+  <target name="plugin" depends="jars">
     <zip zipfile="${out}/${plugin.jar}">
       <zipfileset dir="${out}" includes="BytecodeOutlinesrc.zip"/>
       <fileset dir=".">
@@ -190,7 +186,6 @@
       <fileset dir="${out.build}">
         <include name="**/*"/>
       </fileset>
-      <zipfileset dir="${out}/doc" includes="toc.xml,opcodes.html,ref-*.html" prefix="doc"/>
     </zip>
   </target>
 
@@ -219,14 +214,6 @@
     <delete failonerror="false" includeEmptyDirs="true">
       <fileset dir="${out}" includes="**/*"/>
     </delete>
-  </target>
-
-  <target name="xslt" depends="init">
-    <mkdir dir="${out}/doc"/>
-    <xslt basedir="." destdir="${out}/doc" includes="opcodes.xml" classpathref="saxon.classpath"
-          style="opcodes-doc.xsl" force="true">
-       <factory name="net.sf.saxon.TransformerFactoryImpl" />
-    </xslt>
   </target>
 
 </project>
