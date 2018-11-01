@@ -119,7 +119,7 @@ public class BytecodeClassFileEditor extends ClassFileEditor {
 
     private ClassFileDocumentProvider getClassFileDocumentProvider() {
         if (fClassFileDocumentProvider == null) {
-            fClassFileDocumentProvider = new BytecodeDocumentProvider(this);
+            fClassFileDocumentProvider = new BytecodeDocumentProvider(decompilerFlags);
         }
         return fClassFileDocumentProvider;
     }
