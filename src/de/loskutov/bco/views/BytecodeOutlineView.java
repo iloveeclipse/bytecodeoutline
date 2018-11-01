@@ -28,13 +28,13 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaElementHyperlink;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaElementHyperlinkDetector;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaSourceViewer;
 import org.eclipse.jdt.internal.ui.text.JavaWordFinder;
 import org.eclipse.jdt.internal.ui.text.java.hover.JavadocBrowserInformationControlInput;
 import org.eclipse.jdt.internal.ui.text.java.hover.JavadocHover;
+import org.eclipse.jdt.ui.actions.OpenAction;
 import org.eclipse.jdt.ui.actions.SelectionDispatchAction;
 import org.eclipse.jdt.ui.text.IColorManager;
 import org.eclipse.jdt.ui.text.IJavaPartitions;
@@ -93,7 +93,6 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Widget;
 import org.eclipse.ui.IActionBars;
-import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.ISelectionService;
@@ -102,7 +101,6 @@ import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchCommandConstants;
 import org.eclipse.ui.IWorkbenchPart;
-import org.eclipse.ui.IWorkbenchPartSite;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.console.actions.TextViewerAction;
@@ -120,7 +118,6 @@ import de.loskutov.bco.asm.DecompiledMethod;
 import de.loskutov.bco.asm.DecompilerHelper;
 import de.loskutov.bco.asm.DecompilerOptions;
 import de.loskutov.bco.asm.LineRange;
-import de.loskutov.bco.editors.BytecodeClassFileEditor;
 import de.loskutov.bco.preferences.BCOConstants;
 import de.loskutov.bco.ui.EclipseUtils;
 import de.loskutov.bco.ui.JdtUtils;
@@ -215,7 +212,6 @@ public class BytecodeOutlineView extends ViewPart {
     // see org.eclipse.ui.console.TextConsolePage for the reason to do this ;)
     private ISelectionChangedListener textSelectionListener;
     private Control statusControl;
-    private BytecodeClassFileEditor dummyEditorForHyperlinks;
 
     // ------------------------------------------------------------------------
 
@@ -755,24 +751,9 @@ public class BytecodeOutlineView extends ViewPart {
         final JavaSourceViewer viewer = new JavaSourceViewer(
             stackComposite, null, null, true, SWT.V_SCROLL | SWT.H_SCROLL,
             store);
-        dummyEditorForHyperlinks = new BytecodeClassFileEditor() {
-            @Override
-            public IWorkbenchPartSite getSite() {
-                return javaEditor == null? null : javaEditor.getEditorSite();
-            }
-            @Override
-            public IEditorInput getEditorInput() {
-                return javaEditor == null? null : javaEditor.getEditorInput();
-            }
-            @Override
-            public IAction getAction(String actionID) {
-                return javaEditor == null? null : javaEditor.getAction(actionID);
-            }
-
-        };
 
         JavaSourceViewerConfiguration configuration = new JavaConfiguration(
-            JavaPlugin.getDefault().getJavaTextTools().getColorManager(), store, dummyEditorForHyperlinks, IJavaPartitions.JAVA_PARTITIONING);
+            JavaPlugin.getDefault().getJavaTextTools().getColorManager(), store, null, IJavaPartitions.JAVA_PARTITIONING);
 		viewer.configure(configuration);
         viewer.setEditable(false);
         textViewer = viewer;
@@ -1845,15 +1826,11 @@ public class BytecodeOutlineView extends ViewPart {
         @Override
         public IHyperlink[] detectHyperlinks(ITextViewer textViewer1,
             IRegion region, boolean canShowMultipleHyperlinks) {
-            if (region == null || dummyEditorForHyperlinks == null || javaInput == null) {
+            if (region == null || javaInput == null) {
                 return null;
             }
 
-            IAction openAction = dummyEditorForHyperlinks.getAction("OpenEditor"); //$NON-NLS-1$
-            if (!(openAction instanceof SelectionDispatchAction)) {
-                return null;
-            }
-
+            IAction openAction = new OpenAction(getSite());
             int offset = region.getOffset();
 
             IDocument document = textViewer1.getDocument();
@@ -1881,7 +1858,7 @@ public class BytecodeOutlineView extends ViewPart {
                 }
                 addHyperlinks2(
                     links, wordRegion, (SelectionDispatchAction) openAction,
-                    elements[i], elements.length > 1, dummyEditorForHyperlinks);
+                    elements[i], elements.length > 1);
             }
             if (links.size() == 0) {
                 return null;
@@ -1904,7 +1881,7 @@ public class BytecodeOutlineView extends ViewPart {
          *
          * @since 3.7.1
          */
-        protected void addHyperlinks2(List<IHyperlink> hyperlinksCollector, IRegion wordRegion, SelectionDispatchAction openAction, IJavaElement element, boolean qualify, JavaEditor editor) {
+        protected void addHyperlinks2(List<IHyperlink> hyperlinksCollector, IRegion wordRegion, SelectionDispatchAction openAction, IJavaElement element, boolean qualify) {
             hyperlinksCollector.add(new JavaElementHyperlink(wordRegion, openAction, element, qualify));
         }
 
