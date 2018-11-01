@@ -1,11 +1,16 @@
 /*******************************************************************************
- * Copyright (c) 2011 Eric Bruneton.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the BSD License
+ * Copyright (c) 2018 Eric Bruneton and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
  * which accompanies this distribution, and is available at
- * http://www.opensource.org/licenses/bsd-license.php
- * Contributor:  Eric Bruneton - initial API and implementation
- * Contributor:  Andrey Loskutov - fixes
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Eric Bruneton - initial API and implementation
+ *     Andrey Loskutov - initial API and implementation
  *******************************************************************************/
 package de.loskutov.bco.asm;
 
@@ -33,10 +38,6 @@ import org.objectweb.asm.tree.analysis.Value;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.preferences.BCOConstants;
-
-/**
- * @author Eric Bruneton
- */
 
 public class DecompiledMethod {
 

@@ -1,12 +1,17 @@
-/*****************************************************************************************
- * Copyright (c) 2011 Andrey Loskutov. All rights reserved. This program and the
- * accompanying materials are made available under the terms of the BSD License which
- * accompanies this distribution, and is available at
- * http://www.opensource.org/licenses/bsd-license.php
- * Contributors: Eugene Kuleshov - initial API and implementation
- *               Andrey Loskutov - fixes
- ****************************************************************************************/
-
+/*******************************************************************************
+ * Copyright (c) 2018 Eugene Kuleshov and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Eugene Kuleshov - initial API and implementation
+ *     Andrey Loskutov - initial API and implementation
+ *******************************************************************************/
 package de.loskutov.bco.views;
 
 import org.eclipse.core.runtime.IStatus;
@@ -32,7 +37,6 @@ import org.eclipse.ui.part.ViewPart;
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.preferences.BCOConstants;
 import de.loskutov.bco.ui.actions.DefaultToggleAction;
-
 
 public class BytecodeReferenceView extends ViewPart implements IPartListener2, ISelectionListener {
 

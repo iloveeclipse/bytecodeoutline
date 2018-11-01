@@ -1,11 +1,15 @@
 /*******************************************************************************
- * Copyright (c) 2011 Andrey Loskutov.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2018 Andrey Loskutov and others.
  *
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Andrey Loskutov - initial API and implementation
  *******************************************************************************/
 package de.loskutov.bco.views;
 
@@ -125,7 +129,6 @@ import de.loskutov.bco.ui.actions.DefaultToggleAction;
 
 /**
  * This view shows decompiled java bytecode
- * @author Andrei
  */
 public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 

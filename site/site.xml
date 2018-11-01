@@ -40,8 +40,8 @@
    <category-def name="Bytecode Outline for Eclipse 3.6-4.4" label="Bytecode Outline for Eclipse 3.6-4.4"/>
 
    <feature url="features/de.loskutov.BytecodeOutline.feature_@FEATURE_VERSION@.jar" id="de.loskutov.BytecodeOutline.feature" version="@FEATURE_VERSION@">
-      <category name="Bytecode Outline for Eclipse 4.7-4.8"/>
+      <category name="Bytecode Outline for Eclipse 4.7-4.10"/>
    </feature>
-   <category-def name="Bytecode Outline for Eclipse 4.7-4.8" label="Bytecode Outline for Eclipse 4.7-4.8"/>
+   <category-def name="Bytecode Outline for Eclipse 4.7-4.10" label="Bytecode Outline for Eclipse 4.7-4.10"/>
 
 </site>

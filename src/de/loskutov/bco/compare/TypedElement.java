@@ -1,11 +1,16 @@
-/*****************************************************************************************
- * Copyright (c) 2011 Andrey Loskutov. All rights reserved. This program and the
- * accompanying materials are made available under the terms of the BSD License which
- * accompanies this distribution, and is available at
- * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrey Loskutov -
- * initial API and implementation
- ****************************************************************************************/
-
+/*******************************************************************************
+ * Copyright (c) 2018 Andrey Loskutov and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Andrey Loskutov - initial API and implementation
+ *******************************************************************************/
 package de.loskutov.bco.compare;
 
 import java.io.ByteArrayInputStream;
@@ -29,9 +34,6 @@ import de.loskutov.bco.asm.DecompilerHelper;
 import de.loskutov.bco.asm.DecompilerOptions;
 import de.loskutov.bco.ui.JdtUtils;
 
-/**
- * @author Andrei
- */
 public class TypedElement extends BufferedContent
     implements
         ITypedElement,

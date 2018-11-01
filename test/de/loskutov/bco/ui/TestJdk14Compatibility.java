@@ -1,5 +1,17 @@
+/*******************************************************************************
+ * Copyright (c) 2018 Andrey Loskutov and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Andrey Loskutov - initial API and implementation
+ *******************************************************************************/
 package de.loskutov.bco.ui;
-
 
 public class TestJdk14Compatibility extends TestJdtUtils {
 
@@ -31,10 +43,12 @@ public class TestJdk14Compatibility extends TestJdtUtils {
         doTest("Anon5");
     }
 
+    @Override
     protected String getJdkVersion() {
         return "1.4";
     }
 
+    @Override
     protected String getFieldName() {
         return "v14";
     }

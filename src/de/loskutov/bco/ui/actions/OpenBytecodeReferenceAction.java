@@ -1,10 +1,16 @@
-/*****************************************************************************************
- * Copyright (c) 2007 Andrei Loskutov. All rights reserved. This program and the
- * accompanying materials are made available under the terms of the BSD License which
- * accompanies this distribution, and is available at
- * http://www.opensource.org/licenses/bsd-license.php Contributor: Andrei Loskutov -
- * initial API and implementation
- ****************************************************************************************/
+/*******************************************************************************
+ * Copyright (c) 2018 Andrey Loskutov and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Andrey Loskutov - initial API and implementation
+ *******************************************************************************/
 package de.loskutov.bco.ui.actions;
 
 import org.eclipse.jface.action.IAction;
@@ -18,7 +24,6 @@ import de.loskutov.bco.BytecodeOutlinePlugin;
 
 /**
  * Opens a bytecode reference from view
- * @author Andrei
  */
 public class OpenBytecodeReferenceAction implements IViewActionDelegate {
 

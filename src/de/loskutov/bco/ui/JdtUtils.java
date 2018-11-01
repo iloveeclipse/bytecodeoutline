@@ -1,11 +1,15 @@
 /*******************************************************************************
- * Copyright (c) 2011 Andrey Loskutov.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (c) 2018 Andrey Loskutov and others.
  *
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *
+ * Contributors:
+ *     Andrey Loskutov - initial API and implementation
  *******************************************************************************/
 package de.loskutov.bco.ui;
 
@@ -66,9 +70,6 @@ import org.objectweb.asm.tree.InnerClassNode;
 import de.loskutov.bco.BytecodeOutlinePlugin;
 import de.loskutov.bco.asm.DecompiledClass;
 
-/**
- * @author Andrei
- */
 public class JdtUtils {
     /** package separator in bytecode notation */
     private static final char PACKAGE_SEPARATOR = '/';
