@@ -56,16 +56,6 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
     }
 
     /**
-     * This method is called when the plug-in is stopped
-     * @param context
-     * @throws Exception
-     */
-    @Override
-    public void stop(BundleContext context) throws Exception {
-        super.stop(context);
-    }
-
-    /**
      * Returns the shared instance.
      * @return plugin
      */

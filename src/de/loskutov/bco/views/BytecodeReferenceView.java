@@ -30,7 +30,6 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.ViewPart;
 
 import de.loskutov.bco.BytecodeOutlinePlugin;
-import de.loskutov.bco.editors.BytecodeClassFileEditor;
 import de.loskutov.bco.preferences.BCOConstants;
 import de.loskutov.bco.ui.actions.DefaultToggleAction;
 
@@ -156,9 +155,8 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
 
     @Override
     public void selectionChanged(IWorkbenchPart part, ISelection selection) {
-        boolean isViewSelection = part instanceof BytecodeOutlineView;
-        if (!linkWithView || !(isViewSelection
-                || part instanceof BytecodeClassFileEditor)) {
+        boolean isBytecodePartSelection = part instanceof IBytecodePart;
+        if (!linkWithView || !isBytecodePartSelection) {
             return;
         }
         int line = -1;
@@ -176,12 +174,7 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
             shouDefaultEmptyPage();
             return;
         }
-        int opcode;
-        if(isViewSelection) {
-            opcode = ((BytecodeOutlineView)part).getBytecodeInstructionAtLine(line);
-        } else {
-            opcode = ((BytecodeClassFileEditor)part).getBytecodeInstructionAtLine(line);
-        }
+        int opcode = ((IBytecodePart)part).getBytecodeInstructionAtLine(line);
         StringBuilder helpFor = HelpUtils.getOpcodeHelpFor(opcode);
         if (helpFor.length() > 0) {
             browser.setText(helpFor.toString());

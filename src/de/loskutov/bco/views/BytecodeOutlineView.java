@@ -127,7 +127,7 @@ import de.loskutov.bco.ui.actions.DefaultToggleAction;
  * This view shows decompiled java bytecode
  * @author Andrei
  */
-public class BytecodeOutlineView extends ViewPart {
+public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
     // orientations
     static final int VIEW_ORIENTATION_VERTICAL = 0;
@@ -1216,6 +1216,7 @@ public class BytecodeOutlineView extends ViewPart {
 
     }
 
+    @Override
     public int getBytecodeInstructionAtLine(int line) {
         if (lastDecompiledResult != null) {
             return lastDecompiledResult.getBytecodeInsn(line);
