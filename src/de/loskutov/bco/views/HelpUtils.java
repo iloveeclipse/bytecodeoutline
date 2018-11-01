@@ -32,24 +32,44 @@ public class HelpUtils {
          * to convert it to DCONST_D etc
          */
         int sepIndex = opcodeName.indexOf('_');
-        if(sepIndex > 0 && Character.isDigit(opcodeName.charAt(sepIndex + 1))){
-            opcodeName = opcodeName.substring(0, sepIndex);
-            switch(opcodeName.charAt(0)){
-                case 'd':
-                    opcodeName += "_d";
-                    break;
-                case 'f':
-                    opcodeName += "_f";
-                    break;
-                case 'l':
-                    opcodeName += "_l";
-                    break;
-                default:
-                    // ICONST uses "n"
-                    opcodeName += "_n";
-                    break;
+        if(sepIndex > 0) {
+            if (Character.isDigit(opcodeName.charAt(sepIndex + 1))) {
+                opcodeName = opcodeName.substring(0, sepIndex);
+                switch(opcodeName.charAt(0)){
+                    case 'd':
+                        opcodeName += "_<d&gt;";
+                        break;
+                    case 'f':
+                        opcodeName += "_<f&gt;";
+                        break;
+                    case 'l':
+                        opcodeName += "_<l&gt;";
+                        break;
+                    default:
+                        // ICONST uses "n"
+                        opcodeName += "_<n&gt;";
+                        break;
+                }
             }
-        }
+            if(opcodeName.startsWith("if_acmp")) {
+                opcodeName = "if_acmp<cond&gt;";
+            } else
+            if(opcodeName.startsWith("if_icmp")) {
+                opcodeName = "if_icmp<cond&gt;";
+            } else
+            if(opcodeName.startsWith("if_")) {
+                opcodeName = "if<cond&gt;";
+            } else
+            if(opcodeName.startsWith("aload_")) {
+                opcodeName = "aload_<n&gt;";
+            } else
+            if(opcodeName.startsWith("iconst_")) {
+                opcodeName = "iconst_<i&gt;";
+            }
+        }  else
+            if(opcodeName.startsWith("if")) {
+                opcodeName = "if<cond&gt;";
+            }
         return opcodeName;
     }
 
@@ -58,9 +78,6 @@ public class HelpUtils {
             return null;
         }
         String opcodeName = Printer.OPCODES[opcode];
-        if (opcodeName != null) {
-            opcodeName = checkOpcodeName(opcodeName);
-        }
         if(opcodeName == null) {
             return null;
         }
@@ -104,6 +121,18 @@ public class HelpUtils {
         String opcodeName = getOpcodeName(opcode);
         if(opcodeName == null) {
             return sb;
+        }
+        return getOpcodeHelpFor(opcodeName);
+    }
+
+    public static StringBuilder getOpcodeHelpFor(String opcodeName) {
+        if(fullSpec == null) {
+            fullSpec = readFullSpec();
+            htmlHead = readHtmlHead();
+        }
+        StringBuilder sb = new StringBuilder();
+        if (opcodeName != null) {
+            opcodeName = checkOpcodeName(opcodeName);
         }
         sb.append(htmlHead);
 
