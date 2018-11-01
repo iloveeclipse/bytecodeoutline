@@ -1,10 +1,10 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Bytecode Outline
-Bundle-SymbolicName: de.loskutov.BytecodeOutline;singleton:=true
-Bundle-Version: 2.6.0.qualifier
+Bundle-SymbolicName: org.eclipse.jdt.bcoview;singleton:=true
+Bundle-Version: 1.0.0.qualifier
 Bundle-ClassPath: .
-Bundle-Activator: de.loskutov.bco.BytecodeOutlinePlugin
+Bundle-Activator: org.eclipse.jdt.bcoview.BytecodeOutlinePlugin
 Bundle-Vendor: Andrey Loskutov
 Require-Bundle: org.eclipse.ui,
  org.eclipse.ui.editors,

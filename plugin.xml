@@ -7,25 +7,25 @@
             name="Bytecode"
             icon="icons/bytecodeview.gif"
             category="org.eclipse.jdt.ui.java"
-            class="de.loskutov.bco.views.BytecodeOutlineView"
-            id="de.loskutov.bco.views.BytecodeOutlineView"/>
+            class="org.eclipse.jdt.bcoview.views.BytecodeOutlineView"
+            id="org.eclipse.jdt.bcoview.views.BytecodeOutlineView"/>
       <view
             name="Bytecode Reference"
             icon="icons/reference.gif"
             category="org.eclipse.jdt.ui.java"
-            class="de.loskutov.bco.views.BytecodeReferenceView"
-            id="de.loskutov.bco.views.BytecodeReferenceView"/>
+            class="org.eclipse.jdt.bcoview.views.BytecodeReferenceView"
+            id="org.eclipse.jdt.bcoview.views.BytecodeReferenceView"/>
    </extension>
 
    <extension point="org.eclipse.core.runtime.preferences">
-      <initializer class="de.loskutov.bco.preferences.BCOPreferenceInitializer"/>
+      <initializer class="org.eclipse.jdt.bcoview.preferences.BCOPreferenceInitializer"/>
    </extension>
 
    <extension
          point="org.eclipse.ui.popupMenus">
       <objectContribution
             objectClass="org.eclipse.jdt.core.IOpenable"
-            id="de.loskutov.bco.CompareBytecodeActionContribution1">
+            id="org.eclipse.jdt.bcoview.CompareBytecodeActionContribution1">
 
          <visibility>
             <or>
@@ -46,24 +46,24 @@
                enablesFor="1"
                label="Another Class Bytecode"
                icon="icons/bytecodeview.gif"
-               class="de.loskutov.bco.ui.actions.OpenAction"
+               class="org.eclipse.jdt.bcoview.ui.actions.OpenAction"
                menubarPath="compareWithMenu/compareWithGroup"
-               id="de.loskutov.bco.CompareBytecodeAction">
+               id="org.eclipse.jdt.bcoview.CompareBytecodeAction">
          </action>
          <action
                enablesFor="2"
                label="Each Other Bytecode"
                icon="icons/bytecodeview.gif"
-               class="de.loskutov.bco.ui.actions.CompareBytecodeAction"
+               class="org.eclipse.jdt.bcoview.ui.actions.CompareBytecodeAction"
                menubarPath="compareWithMenu/compareWithGroup"
-               id="de.loskutov.bco.OpenAction">
+               id="org.eclipse.jdt.bcoview.OpenAction">
          </action>
        </objectContribution>
 
       <objectContribution
             objectClass="org.eclipse.core.resources.IFile"
             nameFilter="*.class"
-            id="de.loskutov.bco.CompareBytecodeActionContribution2">
+            id="org.eclipse.jdt.bcoview.CompareBytecodeActionContribution2">
 
          <visibility>
             <not>
@@ -86,24 +86,24 @@
                enablesFor="1"
                label="Another Class Bytecode"
                icon="icons/bytecodeview.gif"
-               class="de.loskutov.bco.ui.actions.OpenAction"
+               class="org.eclipse.jdt.bcoview.ui.actions.OpenAction"
                menubarPath="compareWithMenu/compareWithGroup"
-               id="de.loskutov.bco.CompareBytecodeAction">
+               id="org.eclipse.jdt.bcoview.CompareBytecodeAction">
          </action>
          <action
                enablesFor="2"
                label="Each Other Bytecode"
                icon="icons/bytecodeview.gif"
-               class="de.loskutov.bco.ui.actions.CompareBytecodeAction"
+               class="org.eclipse.jdt.bcoview.ui.actions.CompareBytecodeAction"
                menubarPath="compareWithMenu/compareWithGroup"
-               id="de.loskutov.bco.OpenAction">
+               id="org.eclipse.jdt.bcoview.OpenAction">
          </action>
        </objectContribution>
 
       <objectContribution
             objectClass="org.eclipse.jdt.core.IMember"
             nameFilter="*"
-            id="de.loskutov.bco.CompareBytecodeActionContribution3">
+            id="org.eclipse.jdt.bcoview.CompareBytecodeActionContribution3">
 
          <visibility>
             <not>
@@ -126,9 +126,9 @@
                enablesFor="2"
                label="Each Other Bytecode"
                icon="icons/bytecodeview.gif"
-               class="de.loskutov.bco.ui.actions.CompareMemberBytecodeAction"
+               class="org.eclipse.jdt.bcoview.ui.actions.CompareMemberBytecodeAction"
                menubarPath="compareWithMenu/compareWithGroup"
-               id="de.loskutov.bco.OpenAction">
+               id="org.eclipse.jdt.bcoview.OpenAction">
          </action>
        </objectContribution>
 
@@ -137,16 +137,16 @@
    <extension
          point="org.eclipse.ui.popupMenus">
       <viewerContribution
-            targetID="de.loskutov.bco.views.BytecodeOutlineView#ContextMenu"
-            id="de.loskutov.bco.OpenBytecodeReference">
+            targetID="org.eclipse.jdt.bcoview.views.BytecodeOutlineView#ContextMenu"
+            id="org.eclipse.jdt.bcoview.OpenBytecodeReference">
 
          <action
                enablesFor="*"
                label="Open bytecode reference"
                icon="icons/reference.gif"
-               class="de.loskutov.bco.ui.actions.OpenBytecodeReferenceAction"
+               class="org.eclipse.jdt.bcoview.ui.actions.OpenBytecodeReferenceAction"
                menubarPath="additions"
-               id="de.loskutov.bco.OpenReferenceAction"/>
+               id="org.eclipse.jdt.bcoview.OpenReferenceAction"/>
       </viewerContribution>
    </extension>
 
@@ -157,10 +157,10 @@
          <view
                relative="org.eclipse.ui.views.ContentOutline"
                visible="false"
-               id="de.loskutov.bco.views.BytecodeOutlineView"
+               id="org.eclipse.jdt.bcoview.views.BytecodeOutlineView"
                relationship="stack">
          </view>
-         <viewShortcut id="de.loskutov.bco.views.BytecodeOutlineView"/>
+         <viewShortcut id="org.eclipse.jdt.bcoview.views.BytecodeOutlineView"/>
       </perspectiveExtension>
 
    </extension>
@@ -169,8 +169,8 @@
         point="org.eclipse.ui.preferencePages">
      <page
            category="org.eclipse.jdt.ui.preferences.JavaBasePreferencePage"
-           class="de.loskutov.bco.preferences.BCOPreferencePage"
-           id="de.loskutov.ByteCodeOutline.page"
+           class="org.eclipse.jdt.bcoview.preferences.BCOPreferencePage"
+           id="org.eclipse.jdt.bcoview.ByteCodeOutline.page"
            name="Bytecode Outline">
      </page>
   </extension>

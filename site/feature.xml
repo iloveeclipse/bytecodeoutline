@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="de.loskutov.BytecodeOutline.feature"
+      id="org.eclipse.jdt.bcoview.feature"
       label="Bytecode Outline"
       version="@FEATURE_VERSION@"
       provider-name="Andrey Loskutov"
-      plugin="de.loskutov.BytecodeOutline">
+      plugin="org.eclipse.jdt.bcoview">
 
    <description url="http://asm.ow2.org/eclipse/index.html">
       Bytecode outline and bytecode comparison view for java/class files.
@@ -14,14 +14,12 @@
       Copyright (c) 2004-2018 by Andrey Loskutov Loskutov@gmx.de
 	  All rights reserved.
    </copyright>
-   
+
    <license url="https://www.eclipse.org/legal/epl-2.0/">
       Copyright (c) 2004 - 2018 Andrey Loskutov, licensed under the Eclipse Public License 2.0.
    </license>
 
    <url>
-      <update label="ObjectWeb update site" url="http://download.forge.objectweb.org/eclipse-update/"/>
-      <discovery label="ObjectWeb update site" url="http://download.forge.objectweb.org/eclipse-update/"/>
       <discovery label="Andrey Loskutov plugins" url="http://andrei.gmxhome.de/eclipse/"/>
    </url>
 
@@ -42,7 +40,7 @@
    </requires>
 
    <plugin
-         id="de.loskutov.BytecodeOutline"
+         id="org.eclipse.jdt.bcoview"
          download-size="710"
          install-size="710"
          version="@PLUGIN_VERSION@"
