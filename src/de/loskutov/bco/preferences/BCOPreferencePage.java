@@ -12,7 +12,6 @@ import org.eclipse.jface.preference.BooleanFieldEditor;
 import org.eclipse.jface.preference.FieldEditorPreferencePage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.TabFolder;
@@ -36,8 +35,6 @@ public class BCOPreferencePage extends FieldEditorPreferencePage
     implements
         IWorkbenchPreferencePage {
 
-    private Group rateGroup;
-
     public BCOPreferencePage() {
         super(GRID);
         setPreferenceStore(BytecodeOutlinePlugin.getDefault()
@@ -54,7 +51,6 @@ public class BCOPreferencePage extends FieldEditorPreferencePage
     @Override
     protected void adjustGridLayout() {
         super.adjustGridLayout();
-//        ((GridData)rateGroup.getLayoutData()).horizontalSpan = 2;
     }
 
     /*
@@ -78,10 +74,6 @@ public class BCOPreferencePage extends FieldEditorPreferencePage
         tabCompare.setText(BytecodeOutlinePlugin
             .getResourceString("BCOPreferencePage.compareGroup"));
 
-        TabItem tabMisc = new TabItem(tabFolder, SWT.NONE);
-        tabMisc.setText(BytecodeOutlinePlugin
-            .getResourceString("BCOPreferencePage.miscGroup"));
-
         Group viewGroup = new Group(tabFolder, SWT.NONE);
         viewGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
         tabPrefs.setControl(viewGroup);
@@ -89,17 +81,6 @@ public class BCOPreferencePage extends FieldEditorPreferencePage
         Group compareGroup = new Group(tabFolder, SWT.NONE);
         compareGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
         tabCompare.setControl(compareGroup);
-
-        rateGroup = new Group(tabFolder, SWT.NONE);
-        GridData gridData = new GridData(GridData.FILL_BOTH);
-        GridLayout layout = new GridLayout();
-        layout.numColumns = 1;
-        rateGroup.setLayout(layout);
-        rateGroup.setLayoutData(gridData);
-        tabMisc.setControl(rateGroup);
-
-        SupportPanel.createSupportLinks(rateGroup);
-
 
         addField(new BooleanFieldEditor(
             BCOConstants.LINK_VIEW_TO_EDITOR, BytecodeOutlinePlugin

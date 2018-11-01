@@ -4,12 +4,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFolder;
@@ -43,8 +42,8 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.compiler.CharOperation;
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
 import org.eclipse.jdt.internal.core.ClasspathEntry;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.ui.PlatformUI;
+
+import junit.framework.TestCase;
 
 public abstract class TestJdtUtils extends TestCase {
 
@@ -62,6 +61,7 @@ public abstract class TestJdtUtils extends TestCase {
         return "TestJdtUtils" + getFieldName();
     }
 
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         if(project == null){
@@ -74,6 +74,7 @@ public abstract class TestJdtUtils extends TestCase {
         }
     }
 
+    @Override
     protected void tearDown() throws Exception {
         deleteProject(project.getProject());
         super.tearDown();
@@ -170,6 +171,7 @@ public abstract class TestJdtUtils extends TestCase {
         final IJavaProject[] result = new IJavaProject[1];
         IWorkspaceRunnable create = new IWorkspaceRunnable() {
 
+            @Override
             public void run(IProgressMonitor monitor) throws CoreException {
                 // create project
                 createProject(projectName);
@@ -209,15 +211,6 @@ public abstract class TestJdtUtils extends TestCase {
 
                 for (int i = 0; i < libLength; i++) {
                     String lib = libraries[i];
-                    if (lib.startsWith("JCL")) {
-                        // ensure JCL variables are set
-                         try {
-                            setUpJCLClasspathVariables(compliance);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
                     if (lib.indexOf(File.separatorChar) == -1
                         && lib.charAt(0) != '/'
                         && lib.equals(lib.toUpperCase())) { // all upper case is a var
@@ -287,6 +280,7 @@ public abstract class TestJdtUtils extends TestCase {
 
         IWorkspaceRunnable create = new IWorkspaceRunnable() {
 
+            @Override
             public void run(IProgressMonitor monitor) throws CoreException {
                 project1.create(null);
                 project1.open(null);
@@ -323,165 +317,11 @@ public abstract class TestJdtUtils extends TestCase {
         copyDirectory(new File(sourceWorkspacePath), new File(
             targetWorkspacePath + "/" + projectName, "src"));
 
-        // ensure variables are set
-        setUpJCLClasspathVariables(compliance);
-
-        String sdkLib = "JCL15_LIB";
-        if(!"1.5".equals(compliance)){
-            sdkLib = "JCL_LIB";
-        }
-
         // create project
         IJavaProject javaProject = createJavaProject(
-            projectName, new String[]{"src"}, new String[] {sdkLib}, "bin", compliance);
+            projectName, new String[]{"src"}, new String[] {}, "bin", compliance);
 
-        setUpProjectCompliance(javaProject, compliance);
         return javaProject;
-    }
-
-    protected void setUpProjectCompliance(IJavaProject javaProject,
-        String compliance) throws JavaModelException, IOException {
-        // Look for version to set and return if that's already done
-        String version = CompilerOptions.VERSION_1_4;
-        String jclLibString = null;
-        String newJclLibString = null;
-        switch (compliance.charAt(2)) {
-            case '5' :
-                version = CompilerOptions.VERSION_1_5;
-                if (version.equals(javaProject.getOption(
-                    CompilerOptions.OPTION_Compliance, false))) {
-                    return;
-                }
-                jclLibString = "JCL_LIB";
-                newJclLibString = "JCL15_LIB";
-                break;
-            case '3' :
-                version = CompilerOptions.VERSION_1_3;
-            default :
-                if (version.equals(javaProject.getOption(
-                    CompilerOptions.OPTION_Compliance, false))) {
-                    return;
-                }
-                jclLibString = "JCL15_LIB";
-                newJclLibString = "JCL_LIB";
-                break;
-        }
-
-        // ensure variables are set
-        setUpJCLClasspathVariables(compliance);
-
-        // set options
-        Map<String, String> options = new HashMap<String, String>();
-        options.put(CompilerOptions.OPTION_Compliance, version);
-        options.put(CompilerOptions.OPTION_Source, version);
-        options.put(CompilerOptions.OPTION_TargetPlatform, version);
-        javaProject.setOptions(options);
-
-        // replace JCL_LIB with JCL15_LIB, and JCL_SRC with JCL15_SRC
-        IClasspathEntry[] classpath = javaProject.getRawClasspath();
-        IPath jclLib = new Path(jclLibString);
-        for (int i = 0, length = classpath.length; i < length; i++) {
-            IClasspathEntry entry = classpath[i];
-            if (entry.getPath().equals(jclLib)) {
-                classpath[i] = JavaCore.newVariableEntry(
-                    new Path(newJclLibString), null, entry
-                        .getSourceAttachmentRootPath(), entry.getAccessRules(),
-                    new IClasspathAttribute[0], entry.isExported());
-                break;
-            }
-        }
-        javaProject.setRawClasspath(classpath, null);
-    }
-
-    protected void setUpJCLClasspathVariables(String compliance) throws JavaModelException, IOException {
-        if ("1.5".equals(compliance)) {
-            if (JavaCore.getClasspathVariable("JCL15_LIB") == null) {
-                setupExternalJCL("jclMin1.5");
-                JavaCore.setClasspathVariables(
-                    new String[] {"JCL15_LIB", "JCL15_SRC", "JCL_SRCROOT"},
-                    new IPath[] {getExternalJCLPath(compliance), null, null},
-                    null);
-            }
-        } else {
-            if (JavaCore.getClasspathVariable("JCL_LIB") == null) {
-                setupExternalJCL("jclMin");
-                JavaCore.setClasspathVariables(
-                    new String[] {"JCL_LIB", "JCL_SRC", "JCL_SRCROOT"},
-                    new IPath[] {getExternalJCLPath(), null, null},
-                    null);
-            }
-        }
-    }
-
-    /**
-     * Returns the IPath to the external java class library (e.g. jclMin.jar)
-     */
-    protected IPath getExternalJCLPath() {
-        return new Path(getExternalJCLPathString(""));
-    }
-    /**
-     * Returns the IPath to the external java class library (e.g. jclMin.jar)
-     */
-    protected IPath getExternalJCLPath(String compliance) {
-        return new Path(getExternalJCLPathString(compliance));
-    }
-
-    /**
-     * Returns the java.io path to the external java class library (e.g. jclMin.jar)
-     */
-    protected String getExternalJCLPathString(String compliance) {
-        return getExternalPath() + "jclMin" + compliance + ".jar";
-    }
-
-    /**
-     * Check locally for the required JCL files, <jclName>.jar and <jclName>src.zip.
-     * If not available, copy from the project resources.
-     */
-    protected void setupExternalJCL(String jclName) throws IOException {
-        String externalPath = getExternalPath();
-        String separator = java.io.File.separator;
-        String resourceJCLDir = getPluginDirectoryPath() + separator + "test" + separator + "JCL";
-        java.io.File jclDir = new java.io.File(externalPath);
-        java.io.File jclMin =
-            new java.io.File(externalPath + jclName + ".jar");
-        if (!jclDir.exists()) {
-            if (!jclDir.mkdir()) {
-                //mkdir failed
-                throw new IOException("Could not create the directory " + jclDir);
-            }
-            //copy the file to the JCL directory
-            java.io.File resourceJCLMin =
-                new java.io.File(resourceJCLDir + separator + jclName + ".jar");
-            copy(resourceJCLMin, jclMin);
-        } else {
-            //check that the file, jclMin.jar present
-            //copy either file that is missing or less recent than the one in workspace
-            java.io.File resourceJCLMin =
-                new java.io.File(resourceJCLDir + separator + jclName + ".jar");
-            if ((jclMin.lastModified() < resourceJCLMin.lastModified())
-                    || (jclMin.length() != resourceJCLMin.length())) {
-                copy(resourceJCLMin, jclMin);
-            }
-        }
-    }
-
-    /*
-     * Returns the OS path to the external directory that contains external jar files.
-     * This path ends with a File.separatorChar.
-     */
-    protected String getExternalPath() {
-        if (EXTERNAL_JAR_DIR_PATH == null) {
-            try {
-                String path = root.getLocation().toFile().getParentFile().getCanonicalPath();
-                if (path.charAt(path.length()-1) != File.separatorChar) {
-                    path += File.separatorChar;
-                }
-                EXTERNAL_JAR_DIR_PATH = path;
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return EXTERNAL_JAR_DIR_PATH;
     }
 
     /**
@@ -529,18 +369,7 @@ public abstract class TestJdtUtils extends TestCase {
     }
 
     protected byte[] read(java.io.File file) throws java.io.IOException {
-        int fileLength;
-        byte[] fileBytes = new byte[fileLength = (int) file.length()];
-        java.io.FileInputStream stream = new java.io.FileInputStream(file);
-        int bytesRead = 0;
-        int lastReadSize = 0;
-        while ((lastReadSize != -1) && (bytesRead != fileLength)) {
-            lastReadSize = stream.read(fileBytes, bytesRead, fileLength
-                - bytesRead);
-            bytesRead += lastReadSize;
-        }
-        stream.close();
-        return fileBytes;
+        return Files.readAllBytes(file.toPath());
     }
 
     /**
@@ -616,17 +445,4 @@ public abstract class TestJdtUtils extends TestCase {
         }
     }
 
-    protected void pauseTests() throws InterruptedException {
-        while (true) {
-            synchronized (this) {
-                wait(50);
-                while (Display.getDefault().readAndDispatch()) {
-                    // do events
-                }
-            }
-            if (PlatformUI.getWorkbench().isClosing()) {
-                break;
-            }
-        }
-    }
 }
