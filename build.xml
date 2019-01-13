@@ -198,8 +198,8 @@
   <target name="site" depends="cleanOutput,feature">
     <zip zipfile="${out}/${plugin.id}.update_${plugin.version}.zip">
       <zipfileset dir="${out}/site" includes="site.xml"/>
-      <zipfileset dir="${out}" includes="${out}/site/features/${feature.jar}" prefix="features"/>
-      <zipfileset dir="${out}" includes="${out}/site/plugins/${plugin.jar}"  prefix="plugins"/>
+      <zipfileset dir="${out}/site/features" includes="${feature.jar}" prefix="features"/>
+      <zipfileset dir="${out}/site/plugins" includes="${plugin.jar}"  prefix="plugins"/>
     </zip>
   </target>
 
