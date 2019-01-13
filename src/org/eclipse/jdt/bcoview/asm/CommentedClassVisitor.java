@@ -159,7 +159,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
         meth.accept(tm);
 
         Object methodtext = text.remove(text.size() - 1);
-        currMethod.setText((List) methodtext);
+        currMethod.setText((List<?>) methodtext);
         text.add(currMethod);
         return textifier;
     }
@@ -222,15 +222,6 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 
                 case CLASS_SIGNATURE :
                     // ignore - show only in "raw" mode
-                    break;
-                case TYPE_DECLARATION :
-                    buf1.append(eatPackageNames(desc, '.'));
-                    break;
-                case CLASS_DECLARATION :
-                    buf1.append(eatPackageNames(desc, '.'));
-                    break;
-                case PARAMETERS_DECLARATION :
-                    buf1.append(eatPackageNames(desc, '.'));
                     break;
                 default :
                     buf1.append(desc);

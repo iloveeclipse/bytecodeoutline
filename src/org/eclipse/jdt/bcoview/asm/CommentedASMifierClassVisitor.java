@@ -158,7 +158,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 
         Object methodEnd = text.remove(text.size() - 1);
         Object methodtext = text.remove(text.size() - 1);
-        currMethod.setText((List) methodtext);
+        currMethod.setText((List<?>) methodtext);
         text.add(currMethod);
         text.add(methodEnd);
         return textifier;

@@ -23,10 +23,9 @@ import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.IObjectActionDelegate;
 import org.eclipse.ui.dialogs.ResourceListSelectionDialog;
 
-public class OpenAction extends BytecodeAction implements IObjectActionDelegate {
+public class OpenAction extends BytecodeAction {
 
     @Override
     public void run(IAction action) {

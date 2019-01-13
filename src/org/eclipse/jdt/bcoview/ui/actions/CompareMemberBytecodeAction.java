@@ -39,8 +39,8 @@ public class CompareMemberBytecodeAction extends BytecodeAction {
     protected IJavaElement[] getSelectedResources() {
         ArrayList<Object> resources = null;
         if (!selection.isEmpty()) {
-            resources = new ArrayList<Object>();
-            for (Iterator elements = selection.iterator(); elements.hasNext();) {
+            resources = new ArrayList<>();
+            for (Iterator<?> elements = selection.iterator(); elements.hasNext();) {
                 Object next = elements.next();
                 if (next instanceof IMember) {
                     resources.add(next);

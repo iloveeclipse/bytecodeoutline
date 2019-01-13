@@ -16,9 +16,8 @@ package org.eclipse.jdt.bcoview.ui.actions;
 import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.ui.IObjectActionDelegate;
 
-public class CompareBytecodeAction extends BytecodeAction implements IObjectActionDelegate {
+public class CompareBytecodeAction extends BytecodeAction {
 
     @Override
     public void run(IAction action) {

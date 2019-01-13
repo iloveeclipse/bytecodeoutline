@@ -16,6 +16,7 @@ package org.eclipse.jdt.bcoview.ui;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -28,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.core.filesystem.URIUtil;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IPathVariableManager;
@@ -410,10 +412,10 @@ public class JdtUtils {
          * Therefore we do not use Eclipse API and use ClassNode->InnerClassNode elements
          */
         ClassNode cn = dc.getClassNode();
-        List/*<InnerClassNode>*/ innerClasses = cn.innerClasses;
+        List<InnerClassNode> innerClasses = cn.innerClasses;
 
         for (int i = 0; i < innerClasses.size(); i++) {
-            InnerClassNode in = (InnerClassNode) innerClasses.get(i);
+            InnerClassNode in = innerClasses.get(i);
             if(typeSignature.equals(in.name)){
                 int idx = typeSignature.lastIndexOf(PACKAGE_SEPARATOR);
                 String className = typeSignature;
@@ -533,7 +535,7 @@ public class JdtUtils {
     public static String getElementName(IJavaElement javaElement) {
         if (isAnonymousType(javaElement)) {
             IType anonType = (IType) javaElement;
-            List<IJavaElement> allAnonymous = new ArrayList<IJavaElement>();
+            List<IJavaElement> allAnonymous = new ArrayList<>();
             /*
              * in order to resolve anon. class name we need to know about all other
              * anonymous classes in declaring class, therefore we need to collect all here
@@ -777,7 +779,10 @@ public class JdtUtils {
         // here we should resolve path variables,
         // probably existing at first place of path
         IPathVariableManager pathManager = workspace.getPathVariableManager();
-        path = pathManager.resolvePath(path);
+        URI resolvedURI = pathManager.resolveURI(URIUtil.toURI(path));
+        if(resolvedURI != null) {
+            path = URIUtil.toPath(resolvedURI);
+        }
 
         if (path == null) {
             return dir;
@@ -1033,8 +1038,6 @@ public class JdtUtils {
     private static void sortAnonymous(List<IJavaElement> anonymous, IType anonType) {
         SourceOffsetComparator sourceComparator = new SourceOffsetComparator();
 
-//        Collections.sort(anonymous, sourceComparator);
-
         final AnonymClassComparator classComparator = new AnonymClassComparator(
             anonType, sourceComparator);
         Collections.sort(anonymous, classComparator);
@@ -1047,10 +1050,10 @@ public class JdtUtils {
     private static void debugCompilePrio(
         final AnonymClassComparator classComparator) {
         final Map<IType, Integer> map = classComparator.map;
-        Comparator<IType> prioComp = new Comparator() {
+        Comparator<IType> prioComp = new Comparator<IType>() {
 
             @Override
-            public int compare(Object e1, Object e2) {
+            public int compare(IType e1, IType e2) {
                 int result = map.get(e2).compareTo(map.get(e1));
                 if (result == 0) {
                     return e1.toString().compareTo(e2.toString());
@@ -1060,7 +1063,7 @@ public class JdtUtils {
 
         };
 
-        List<IType> keys = new ArrayList<IType>(map.keySet());
+        List<IType> keys = new ArrayList<>(map.keySet());
         Collections.sort(keys, prioComp);
         for (Iterator<IType> iterator = keys.iterator(); iterator.hasNext();) {
             Object key = iterator.next();
@@ -1148,7 +1151,7 @@ public class JdtUtils {
         ClassLoader cl;
 
         IJavaProject javaProject = type.getJavaProject();
-        List<URL> urls = new ArrayList<URL>();
+        List<URL> urls = new ArrayList<>();
 
         getClassURLs(javaProject, urls);
 
@@ -1272,18 +1275,18 @@ public class JdtUtils {
         return abstractOrInterface;
     }
 
-    static class SourceOffsetComparator implements Comparator {
+    static class SourceOffsetComparator implements Comparator<IType> {
 
         /**
-         * First source occurence win.
+         * First source occurrence win.
          * @param o1 should be IType
          * @param o2 should be IType
          * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
          */
         @Override
-        public int compare(Object o1, Object o2) {
-            IType m1 = (IType) o1;
-            IType m2 = (IType) o2;
+        public int compare(IType o1, IType o2) {
+            IType m1 = o1;
+            IType m2 = o2;
             int idx1, idx2;
             try {
                 ISourceRange sr1 = m1.getSourceRange();
@@ -1301,12 +1304,12 @@ public class JdtUtils {
         }
     }
 
-    static class AnonymClassComparator implements Comparator {
+    static class AnonymClassComparator implements Comparator<IJavaElement> {
 
         private final IType topAncestorType;
         private final SourceOffsetComparator sourceComparator;
         private final boolean is50OrHigher;
-        private final Map/*<IJavaElement,Integer>*/<IType, Integer> map;
+        private final Map<IType, Integer> map;
 
         /**
          * @param javaElement
@@ -1317,7 +1320,7 @@ public class JdtUtils {
             this.sourceComparator = sourceComparator;
             is50OrHigher = is50OrHigher(javaElement);
             topAncestorType = (IType) getLastAncestor(javaElement, IJavaElement.TYPE);
-            map = new IdentityHashMap<IType, Integer>();
+            map = new IdentityHashMap<>();
         }
 
         /**
@@ -1355,7 +1358,7 @@ public class JdtUtils {
          * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
          */
         @Override
-        public int compare(Object o1, Object o2) {
+        public int compare(IJavaElement o1, IJavaElement o2) {
             if(o1 == o2){
                 return 0;
             }
@@ -1389,12 +1392,12 @@ public class JdtUtils {
                             return fromInitBlock1? -1 : 1;
                         }
                     }
-                    return sourceComparator.compare(o1, o2);
+                    return sourceComparator.compare(m1, m2);
                 }
 
                 boolean isLocal = isLocal(firstAncestor1) || isLocal(firstAncestor2);
                 if(isLocal){
-                    return sourceComparator.compare(o1, o2);
+                    return sourceComparator.compare(m1, m2);
                 }
 
                 /*
@@ -1410,7 +1413,7 @@ public class JdtUtils {
                 } else if (topAncestorDistance1 < topAncestorDistance2) {
                     return 1;
                 } else {
-                    return sourceComparator.compare(o1, o2);
+                    return sourceComparator.compare(m1, m2);
                 }
             }
         }
@@ -1444,7 +1447,7 @@ public class JdtUtils {
     public static IType[] getTypeForName(String simpleTypeName,
         final IJavaSearchScope searchScope, IProgressMonitor monitor)
             throws JavaModelException {
-        final List<IType> result = new ArrayList<IType>();
+        final List<IType> result = new ArrayList<>();
         final TypeFactory fFactory = new TypeFactory();
         TypeNameRequestor requestor = new TypeNameRequestor() {
             @Override
@@ -1474,7 +1477,7 @@ public class JdtUtils {
      * @return the openable elements
      */
     public static IJavaElement[] selectOpenableElements(IJavaElement[] elements) {
-        List<IJavaElement> result= new ArrayList<IJavaElement>(elements.length);
+        List<IJavaElement> result= new ArrayList<>(elements.length);
         for (int i= 0; i < elements.length; i++) {
             IJavaElement element= elements[i];
             if(element == null) {

@@ -209,11 +209,11 @@ public class TypeFactory {
         // We have to sort the list of project names to make sure that we cut of the longest
         // project from the path, if two projects with the same prefix exist. For example
         // org.eclipse.jdt.ui and org.eclipse.jdt.ui.tests.
-        Arrays.sort(result, new Comparator() {
+        Arrays.sort(result, new Comparator<String>() {
             @Override
-            public int compare(Object o1, Object o2) {
-                int l1 = ((String) o1).length();
-                int l2 = ((String) o2).length();
+            public int compare(String o1, String o2) {
+                int l1 = o1.length();
+                int l2 = o2.length();
                 if (l1 < l2) {
                     return 1;
                 }
@@ -300,7 +300,7 @@ public class TypeFactory {
                     }
                 }
             }
-            List paths = Arrays.asList(enclosedPaths);
+            List<IPath> paths = Arrays.asList(enclosedPaths);
             IJavaProject[] projects = jmodel.getJavaProjects();
             for (int i = 0; i < projects.length; i++) {
                 IJavaProject jproject = projects[i];

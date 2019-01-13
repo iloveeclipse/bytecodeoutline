@@ -42,7 +42,7 @@ public class DecompiledMethod {
 
     private final List<Object> text;
 
-    private final List localVariables;
+    private final List<LocalVariableNode> localVariables;
 
     /**
      * decompiled line -> source line
@@ -83,7 +83,7 @@ public class DecompiledMethod {
 
     MethodNode meth;
 
-    private Frame[] frames;
+    private Frame<?>[] frames;
 
     private String error;
 
@@ -106,16 +106,16 @@ public class DecompiledMethod {
         this.lineNumbers = lineNumbers;
         this.options = options;
         this.access = access;
-        this.text = new ArrayList<Object>();
+        this.text = new ArrayList<>();
         this.localVariables = meth.localVariables;
-        this.sourceLines = new HashMap<Integer, Integer>();
-        this.decompiledLines = new HashMap<Integer, Integer>();
-        this.insns = new HashMap<Integer, Integer>();
-        this.opcodes = new HashMap<Integer, Integer>();
-        this.insnLines = new HashMap<Integer, Integer>();
+        this.sourceLines = new HashMap<>();
+        this.decompiledLines = new HashMap<>();
+        this.insns = new HashMap<>();
+        this.opcodes = new HashMap<>();
+        this.insnLines = new HashMap<>();
     }
 
-    void setText(final List inputText) {
+    void setText(final List<?> inputText) {
         formatText(inputText, new HashMap<Integer, String>(), new StringBuffer(), this.text);
         computeMaps(lineNumbers);
 
@@ -196,7 +196,7 @@ public class DecompiledMethod {
             interpreter = new BasicVerifier();
         }
 
-        Analyzer<BasicValue> a = new Analyzer<BasicValue>(interpreter);
+        Analyzer<BasicValue> a = new Analyzer<>(interpreter);
         try {
             a.analyze(owner, meth);
         } catch (AnalyzerException e) {
@@ -214,12 +214,12 @@ public class DecompiledMethod {
         frames = a.getFrames();
     }
 
-    private void formatText(final List input, final Map<Integer, String> locals, StringBuffer line,
+    private void formatText(final List<?> input, final Map<Integer, String> locals, StringBuffer line,
         final List<Object> result) {
         for (int i = 0; i < input.size(); ++i) {
             Object o = input.get(i);
             if (o instanceof List) {
-                formatText((List) o, locals, line, result);
+                formatText((List<?>) o, locals, line, result);
             } else if (o instanceof Index) {
                 result.add(o);
                 updateLocals((Index) o, locals);
@@ -252,7 +252,7 @@ public class DecompiledMethod {
         }
     }
 
-    private static Index getNextIndex(List input, int startOffset) {
+    private static Index getNextIndex(List<?> input, int startOffset) {
         for (int i = startOffset + 1; i < input.size(); i++) {
             Object object = input.get(i);
             if(object instanceof Index){
@@ -264,7 +264,7 @@ public class DecompiledMethod {
 
     private void updateLocals(final Index index, final Map<Integer, String> locals) {
         for (int i = 0; i < localVariables.size(); ++i) {
-            LocalVariableNode lvNode = (LocalVariableNode) localVariables.get(i);
+            LocalVariableNode lvNode = localVariables.get(i);
             if (lvNode.start == index.labelNode) {
                 locals.put(Integer.valueOf(lvNode.index), lvNode.name);
             } else if (lvNode.end == index.labelNode) {
@@ -335,9 +335,9 @@ public class DecompiledMethod {
     }
 
     public String[][] getTextTable() {
-        Frame frame = null;
+        Frame<?> frame = null;
         String error1 = "";
-        List<String[]> lines = new ArrayList<String[]>();
+        List<String[]> lines = new ArrayList<>();
         String offsStr = null;
         for (int i = 0; i < text.size(); ++i) {
             Object o = text.get(i);
@@ -399,7 +399,7 @@ public class DecompiledMethod {
             : i.intValue();
     }
 
-    private static void appendFrame(final StringBuffer buf, final Frame f) {
+    private static void appendFrame(final StringBuffer buf, final Frame<?> f) {
         try {
             for (int i = 0; i < f.getLocals(); ++i) {
                 appendValue(buf, f.getLocal(i));
@@ -448,7 +448,7 @@ public class DecompiledMethod {
             return new String [] {error,error};
         }
         if (frames != null && insn != null) {
-            Frame f = frames[insn.intValue()];
+            Frame<?> f = frames[insn.intValue()];
             if (f == null) {
                 return null;
             }
@@ -460,8 +460,8 @@ public class DecompiledMethod {
                     String s = f.getLocal(i).toString();
                     appendTypeName(i, useQualifiedNames, localsBuf, s);
 
-                    for (Iterator it = localVariables.iterator(); it.hasNext();) {
-                        LocalVariableNode lvnode = (LocalVariableNode) it.next();
+                    for (Iterator<LocalVariableNode> it = localVariables.iterator(); it.hasNext();) {
+                        LocalVariableNode lvnode = it.next();
                         int n = lvnode.index;
                         if( n==i) {
                           localsBuf.append( " : ").append( lvnode.name);
@@ -507,17 +507,17 @@ public class DecompiledMethod {
             return null;
         }
         if (frames != null && insn >= 0 && insn < frames.length) {
-            Frame f = frames[insn];
+            Frame<?> f = frames[insn];
             if (f == null) {
                 return null;
             }
 
             try {
-                ArrayList<String[]> locals = new ArrayList<String[]>();
+                ArrayList<String[]> locals = new ArrayList<>();
                 for (int i = 0; i < f.getLocals(); ++i) {
                     String varName = "";
-                    for (Iterator it = localVariables.iterator(); it.hasNext();) {
-                        LocalVariableNode lvnode = (LocalVariableNode) it.next();
+                    for (Iterator<LocalVariableNode> it = localVariables.iterator(); it.hasNext();) {
+                        LocalVariableNode lvnode = it.next();
                         int n = lvnode.index;
                         if( n==i) {
                             varName = lvnode.name;
@@ -532,7 +532,7 @@ public class DecompiledMethod {
                         varName});
                 }
 
-                ArrayList<String[]> stack = new ArrayList<String[]>();
+                ArrayList<String[]> stack = new ArrayList<>();
                 for (int i = 0; i < f.getStackSize(); ++i) {
                     stack.add( new String[] {
                         ""+i,

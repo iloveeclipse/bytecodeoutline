@@ -228,8 +228,8 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
     public BytecodeOutlineView() {
         super();
         modes = new BitSet();
-        globalActions = new HashMap<String, IAction>();
-        selectionActions = new ArrayList<String>();
+        globalActions = new HashMap<>();
+        selectionActions = new ArrayList<>();
     }
 
     // ------------------------------------------------------------------------
@@ -1506,9 +1506,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
         }
 
         if (modes.get(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT)) {
-            if (lastChildElement == null
-                || (lastChildElement != null && !lastChildElement
-                    .equals(childEl))) {
+            if (lastChildElement == null || !lastChildElement.equals(childEl)) {
                 return true;
             }
         }
@@ -1618,15 +1616,15 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
     }
 
     @Override
-    public Object getAdapter(Class adapter) {
+    public <T> T getAdapter(Class<T> adapter) {
         if (IFindReplaceTarget.class.equals(adapter)) {
-            return textViewer.getFindReplaceTarget();
+            return adapter.cast(textViewer.getFindReplaceTarget());
         }
         if (Widget.class.equals(adapter)) {
-            return textViewer.getTextWidget();
+            return adapter.cast(textViewer.getTextWidget());
         }
         if (TextViewer.class.equals(adapter)) {
-            return textViewer;
+            return adapter.cast(textViewer);
         }
         return super.getAdapter(adapter);
     }
@@ -1838,7 +1836,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
             IDocument document = textViewer1.getDocument();
             IRegion wordRegion = JavaWordFinder.findWord(document, offset);
-            List<IHyperlink> links = new ArrayList<IHyperlink>();
+            List<IHyperlink> links = new ArrayList<>();
             IJavaElement[] elements;
             try {
                 elements = guessTypesFromSelectionInView(wordRegion);
@@ -1924,7 +1922,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
     private final class JavadocHoverExtension extends JavadocHover {
 
-        private final Set<String> OPCODES = new HashSet<String>(Arrays.asList(Printer.OPCODES));
+        private final Set<String> OPCODES = new HashSet<>(Arrays.asList(Printer.OPCODES));
 
 
         @Override

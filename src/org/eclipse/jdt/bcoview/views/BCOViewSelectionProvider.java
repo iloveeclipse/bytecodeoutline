@@ -40,7 +40,7 @@ class BCOViewSelectionProvider implements IPostSelectionProvider {
 
     public BCOViewSelectionProvider(){
         super();
-        selProviders = new ArrayList<IPostSelectionProvider>();
+        selProviders = new ArrayList<>();
     }
 
     public void setCurrentSelectionProvider(IPostSelectionProvider provider){

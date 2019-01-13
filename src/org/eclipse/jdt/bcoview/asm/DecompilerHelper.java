@@ -46,7 +46,7 @@ public class DecompilerHelper  {
     }
 
     private static DecompiledClass getResult(ICommentedClassVisitor printer,  DecompilerOptions options, ClassNode classNode) {
-        List<Object> classText = new ArrayList<Object>();
+        List<Object> classText = new ArrayList<>();
         formatText(printer.getText(), new StringBuffer(), classText, options.cl);
         while (classText.size() > 0 && classText.get(0).equals("\n")) {
             classText.remove(0);
@@ -56,12 +56,12 @@ public class DecompilerHelper  {
         return new DecompiledClass(classText, classInfo, classNode);
     }
 
-    private static void formatText(final List input, final StringBuffer line, final List<Object> result,
+    private static void formatText(final List<?> input, final StringBuffer line, final List<Object> result,
         final ClassLoader cl) {
         for (int i = 0; i < input.size(); ++i) {
             Object o = input.get(i);
             if (o instanceof List) {
-                formatText((List) o, line, result, cl);
+                formatText((List<?>) o, line, result, cl);
             } else if (o instanceof DecompiledMethod) {
                 result.add(o);
             } else {

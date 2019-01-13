@@ -40,4 +40,9 @@ public class JavaVersion {
         }
         return javaVersion;
     }
+
+    @Override
+    public String toString() {
+        return version + " : " + humanReadable();
+    }
 }

@@ -103,8 +103,8 @@ public abstract class BytecodeAction implements IObjectActionDelegate {
     protected IJavaElement[] getSelectedResources() {
         ArrayList<Object> resources = null;
         if (!selection.isEmpty()) {
-            resources = new ArrayList<Object>();
-            for (Iterator elements = selection.iterator(); elements.hasNext();) {
+            resources = new ArrayList<>();
+            for (Iterator<?> elements = selection.iterator(); elements.hasNext();) {
                 Object next = elements.next();
                 if (next instanceof IFile) {
                     resources.add(JavaCore.create((IFile)next));

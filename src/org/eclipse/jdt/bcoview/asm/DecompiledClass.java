@@ -41,7 +41,7 @@ public class DecompiledClass {
         this.text = text;
         this.classInfo = classInfo;
         this.classNode = classNode;
-        methodToJavaElt = new HashMap<DecompiledMethod, IJavaElement>();
+        methodToJavaElt = new HashMap<>();
     }
 
     /**
@@ -82,7 +82,7 @@ public class DecompiledClass {
     }
 
     public String[][] getTextTable() {
-        List<String[]> lines = new ArrayList<String[]>();
+        List<String[]> lines = new ArrayList<>();
         for (int i = 0; i < text.size(); ++i) {
             Object o = text.get(i);
             if (o instanceof DecompiledMethod) {
@@ -320,7 +320,7 @@ public class DecompiledClass {
     }
 
     public List<Integer> getErrorLines() {
-        List<Integer> errors = new ArrayList<Integer>();
+        List<Integer> errors = new ArrayList<>();
         int currentDecompiledLine = 0;
         for (int i = 0; i < text.size(); ++i) {
             Object o = text.get(i);

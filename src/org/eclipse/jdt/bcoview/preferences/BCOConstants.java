@@ -119,12 +119,12 @@ public interface BCOConstants {
     int F_SHOW_HEX_VALUES = 10;
 
     /**
-     * Key is Integer value from one of F_* constants, value is the String value of one of corresponding
+     * Value is Integer value from one of F_* constants, key is the String value of one of corresponding
      * preference keys. It is not intended that the map would be modified by clients.
      */
-    Map/*<Integer,String>*/ NAME_TO_FLAG_MAP = new ConstantsMap();
+    Map<String, Integer> NAME_TO_FLAG_MAP = new ConstantsMap();
 
-    final class ConstantsMap extends HashMap {
+    final class ConstantsMap extends HashMap<String, Integer> {
         private static final long serialVersionUID = 1L;
 
         private ConstantsMap() {
