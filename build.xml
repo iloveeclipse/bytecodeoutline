@@ -82,8 +82,8 @@
     </scriptdef>
 
     <target name="getasm" >
-    	<property name="asmRoot" value="http://download.eclipse.org/tools/orbit/downloads/drops2/R20180905201904/repository/plugins" />
-    	<property name="asmVersion" value="6.2.1.v20180823-1831" />
+    	<property name="asmRoot" value="http://download.eclipse.org/tools/orbit/downloads/drops2/R20181128170323/repository/plugins" />
+    	<property name="asmVersion" value="7.0.0.v20181030-2244" />
     	<mkdir dir="${lib}"/>
         <getAndCheckLibrary
             url="${asmRoot}/org.objectweb.asm_${asmVersion}.jar"
@@ -172,7 +172,7 @@
   </target>
 
   <target name="plugin" depends="jars">
-    <zip zipfile="${out}/${plugin.jar}">
+    <zip zipfile="${out}/site/plugins/${plugin.jar}">
       <zipfileset dir="${out}" includes="BytecodeOutlinesrc.zip"/>
       <fileset dir=".">
         <include name="icons/**/*"/>
@@ -190,16 +190,16 @@
   </target>
 
   <target name="feature" depends="plugin">
-    <jar zipfile="${out}/${feature.jar}">
+    <zip zipfile="${out}/site/features/${feature.jar}">
       <fileset dir="${out}/site" includes="feature.xml"/>
-    </jar>
+    </zip>
   </target>
 
   <target name="site" depends="cleanOutput,feature">
     <zip zipfile="${out}/${plugin.id}.update_${plugin.version}.zip">
       <zipfileset dir="${out}/site" includes="site.xml"/>
-      <zipfileset dir="${out}" includes="${feature.jar}" prefix="features"/>
-      <zipfileset dir="${out}" includes="${plugin.jar}"  prefix="plugins"/>
+      <zipfileset dir="${out}" includes="${out}/site/features/${feature.jar}" prefix="features"/>
+      <zipfileset dir="${out}" includes="${out}/site/plugins/${plugin.jar}"  prefix="plugins"/>
     </zip>
   </target>
 
