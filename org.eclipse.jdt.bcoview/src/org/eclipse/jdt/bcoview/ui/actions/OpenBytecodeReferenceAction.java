@@ -39,10 +39,10 @@ public class OpenBytecodeReferenceAction implements IViewActionDelegate {
         try {
             PlatformUI.getWorkbench().getActiveWorkbenchWindow()
                 .getActivePage().showView(
-                    "org.eclipse.jdt.bcoview.views.BytecodeReferenceView");
+                    "org.eclipse.jdt.bcoview.views.BytecodeReferenceView"); //$NON-NLS-1$
         } catch (PartInitException e) {
             BytecodeOutlinePlugin.error(
-                "Could not open Bytecode Reference View: " + e.getMessage(), e);
+                "Could not open Bytecode Reference View: " + e.getMessage(), e); //$NON-NLS-1$
         }
 
     }

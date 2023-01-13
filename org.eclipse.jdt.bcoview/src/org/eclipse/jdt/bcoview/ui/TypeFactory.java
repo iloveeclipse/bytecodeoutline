@@ -67,7 +67,7 @@ public class TypeFactory {
             }
             return null;
         } catch (JavaModelException e) {
-            BytecodeOutlinePlugin.error("getType() fails for: " + simpleTypeName, e);
+            BytecodeOutlinePlugin.error("getType() fails for: " + simpleTypeName, e); //$NON-NLS-1$
         }
         return null;
     }
@@ -179,7 +179,7 @@ public class TypeFactory {
             container = info.getContainer(searchScope);
             return getType(searchScope, container);
         } catch (JavaModelException e) {
-            BytecodeOutlinePlugin.error("createJarFileEntryTypeInfo() fails for: " + simpleTypeName, e);
+            BytecodeOutlinePlugin.error("createJarFileEntryTypeInfo() fails for: " + simpleTypeName, e); //$NON-NLS-1$
         }
         return null;
     }
@@ -320,7 +320,7 @@ public class TypeFactory {
             String extension = fExtension;
             String fullName = fFileName + '.' + extension;
 
-            if ("class".equals(extension)) {
+            if ("class".equals(extension)) { //$NON-NLS-1$
                 res = frag.getClassFile(fullName);
             } else if (JavaCore.isJavaLikeFileName(fullName)) {
                 res = frag.getCompilationUnit(fullName);

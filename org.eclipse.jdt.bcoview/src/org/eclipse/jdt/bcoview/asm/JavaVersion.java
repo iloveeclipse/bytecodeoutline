@@ -31,18 +31,18 @@ public class JavaVersion {
         String javaVersion;
         if (javaV > 0) {
             if(javaV > 8) {
-                javaVersion = javaV + "." + minor;
+                javaVersion = javaV + "." + minor; //$NON-NLS-1$
             } else {
-                javaVersion = "1." + javaV;
+                javaVersion = "1." + javaV; //$NON-NLS-1$
             }
         } else {
-            javaVersion = "? " + major;
+            javaVersion = "? " + major; //$NON-NLS-1$
         }
         return javaVersion;
     }
 
     @Override
     public String toString() {
-        return version + " : " + humanReadable();
+        return version + " : " + humanReadable(); //$NON-NLS-1$
     }
 }

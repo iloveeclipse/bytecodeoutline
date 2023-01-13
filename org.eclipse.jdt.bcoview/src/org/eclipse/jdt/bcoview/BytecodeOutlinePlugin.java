@@ -39,7 +39,7 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
     public BytecodeOutlinePlugin() {
         super();
         if(plugin != null){
-            throw new IllegalStateException("Bytecode outline plugin is a singleton!");
+            throw new IllegalStateException("Bytecode outline plugin is a singleton!"); //$NON-NLS-1$
         }
         plugin = this;
         try {
@@ -113,7 +113,7 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
             message = getResourceString(messageID);
         }
         if (error != null) {
-            message += " " + error.getMessage();
+            message += " " + error.getMessage(); //$NON-NLS-1$
         }
         MessageDialog.openError(
             shell, getResourceString("BytecodeOutline.Title"), //$NON-NLS-1$

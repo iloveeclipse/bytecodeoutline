@@ -79,7 +79,7 @@ public abstract class BytecodeAction implements IObjectActionDelegate {
             javaElement.getElementType() == IJavaElement.INITIALIZER){
             methodName = JdtUtils.getMethodSignature(javaElement);
             if(methodName != null){
-                name += ":" + methodName;
+                name += ":" + methodName; //$NON-NLS-1$
             }
         }
         return new TypedElement(name, methodName, TypedElement.TYPE_BYTECODE, javaElement, modes);

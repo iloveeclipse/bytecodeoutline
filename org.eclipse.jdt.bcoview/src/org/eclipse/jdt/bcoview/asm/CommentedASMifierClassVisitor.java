@@ -55,7 +55,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
     }
 
     public CommentedASMifierClassVisitor(ClassNode classNode, final DecompilerOptions options) {
-        this(classNode, options, "cw", 0);
+        this(classNode, options, "cw", 0); //$NON-NLS-1$
     }
 
 
@@ -321,7 +321,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 
     private ASMifier getDummyVisitor(){
         if (dummyAnnVisitor == null) {
-            dummyAnnVisitor = new ASMifier(DecompilerOptions.LATEST_ASM_VERSION, "", -1) {
+            dummyAnnVisitor = new ASMifier(DecompilerOptions.LATEST_ASM_VERSION, "", -1) { //$NON-NLS-1$
                 @Override
                 public void visitAnnotationEnd() {
                     text.clear();

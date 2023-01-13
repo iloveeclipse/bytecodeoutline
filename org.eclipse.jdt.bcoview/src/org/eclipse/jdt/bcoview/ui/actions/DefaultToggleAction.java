@@ -29,7 +29,7 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
  */
 public abstract class DefaultToggleAction extends Action implements IPropertyChangeListener {
 
-    private static final String ACTION = "action";
+    private static final String ACTION = "action"; //$NON-NLS-1$
     boolean avoidUpdate;
     private final IPreferenceStore store;
 
@@ -81,20 +81,20 @@ public abstract class DefaultToggleAction extends Action implements IPropertyCha
 
     private void init(){
         String myId = getId();
-        if(myId != null && myId.startsWith("diff_")) {
-            myId = myId.substring("diff_".length());
+        if(myId != null && myId.startsWith("diff_")) { //$NON-NLS-1$
+            myId = myId.substring("diff_".length()); //$NON-NLS-1$
         }
         setImageDescriptor(AbstractUIPlugin
             .imageDescriptorFromPlugin(
                 BytecodeOutlinePlugin.getDefault().getBundle()
                     .getSymbolicName(),
                 BytecodeOutlinePlugin
-                    .getResourceString(ACTION + "." + myId + "." + IMAGE)));
+                    .getResourceString(ACTION + "." + myId + "." + IMAGE))); //$NON-NLS-1$ //$NON-NLS-2$
 
         setText(BytecodeOutlinePlugin
-            .getResourceString(ACTION + "." + myId + "." + TEXT));
+            .getResourceString(ACTION + "." + myId + "." + TEXT)); //$NON-NLS-1$ //$NON-NLS-2$
         setToolTipText(BytecodeOutlinePlugin
-            .getResourceString(ACTION + "." + myId + "." + TOOL_TIP_TEXT));
+            .getResourceString(ACTION + "." + myId + "." + TOOL_TIP_TEXT)); //$NON-NLS-1$ //$NON-NLS-2$
     }
 
     /**

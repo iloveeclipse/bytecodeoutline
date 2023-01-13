@@ -162,7 +162,7 @@ public class BytecodeCompare extends CompareEditorInput {
 
     public CompareViewerSwitchingPane getInputPane() {
         try {
-            Field field = CompareEditorInput.class.getDeclaredField("fContentInputPane");
+            Field field = CompareEditorInput.class.getDeclaredField("fContentInputPane"); //$NON-NLS-1$
             field.setAccessible(true);
             Object object = field.get(this);
             if(object instanceof CompareViewerSwitchingPane) {

@@ -130,8 +130,8 @@ public class DecompiledMethod {
     }
 
     public boolean isInit() {
-        return ("<init>".equals(meth.name) && "()V".equals(meth.desc))
-            || "<clinit>".equals(meth.name);
+        return ("<init>".equals(meth.name) && "()V".equals(meth.desc)) //$NON-NLS-1$ //$NON-NLS-2$
+            || "<clinit>".equals(meth.name); //$NON-NLS-1$
     }
 
     public boolean hasSourceLinesInfo(){
@@ -201,8 +201,8 @@ public class DecompiledMethod {
             a.analyze(owner, meth);
         } catch (AnalyzerException e) {
             error = e.getMessage();
-            if (error.startsWith("Error at instruction ")) {
-                error = error.substring("Error at instruction ".length());
+            if (error.startsWith("Error at instruction ")) { //$NON-NLS-1$
+                error = error.substring("Error at instruction ".length()); //$NON-NLS-1$
                 errorInsn = Integer.parseInt(error.substring(0, error
                     .indexOf(':')));
                 error = error.substring(error.indexOf(':') + 2);
@@ -233,7 +233,7 @@ public class DecompiledMethod {
                     }
                 }
                 if(localVariableName != null) {
-                    line.append(": ").append(localVariableName);
+                    line.append(": ").append(localVariableName); //$NON-NLS-1$
                 }
             } else {
                 String s = o.toString();
@@ -336,7 +336,7 @@ public class DecompiledMethod {
 
     public String[][] getTextTable() {
         Frame<?> frame = null;
-        String error1 = "";
+        String error1 = ""; //$NON-NLS-1$
         List<String[]> lines = new ArrayList<>();
         String offsStr = null;
         for (int i = 0; i < text.size(); ++i) {
@@ -345,7 +345,7 @@ public class DecompiledMethod {
                 Index index = (Index) o;
                 int insn = index.insn;
 
-                offsStr = "" + insn;
+                offsStr = "" + insn; //$NON-NLS-1$
                 if (frames != null && insn < frames.length) {
                     frame = frames[insn];
                     if (this.error != null && insn == this.errorInsn) {
@@ -354,27 +354,27 @@ public class DecompiledMethod {
                 }
             } else {
                 if(offsStr == null){
-                    offsStr = "";
+                    offsStr = ""; //$NON-NLS-1$
                 }
-                String locals = " ";
-                String stack = " ";
+                String locals = " "; //$NON-NLS-1$
+                String stack = " "; //$NON-NLS-1$
                 if (frame != null) {
                     StringBuffer buf = new StringBuffer();
                     appendFrame(buf, frame);
-                    int p = buf.indexOf(" ");
+                    int p = buf.indexOf(" "); //$NON-NLS-1$
                     locals = buf.substring(0, p);
-                    if("".equals(locals)){
-                        locals = " ";
+                    if("".equals(locals)){ //$NON-NLS-1$
+                        locals = " "; //$NON-NLS-1$
                     }
                     stack = buf.substring(p + 1);
-                    if("".equals(stack)){
-                        stack = " ";
+                    if("".equals(stack)){ //$NON-NLS-1$
+                        stack = " "; //$NON-NLS-1$
                     }
                 }
 
                 lines.add(new String[]{offsStr, locals, stack, o.toString(), error1});
                 frame = null;
-                error1 = "";
+                error1 = ""; //$NON-NLS-1$
                 offsStr = null;
             }
         }
@@ -415,7 +415,7 @@ public class DecompiledMethod {
 
     private static void appendValue(final StringBuffer buf, final Value v) {
         if (((BasicValue) v).isReference()) {
-            buf.append("R");
+            buf.append("R"); //$NON-NLS-1$
         } else {
             buf.append(v.toString());
         }
@@ -464,7 +464,7 @@ public class DecompiledMethod {
                         LocalVariableNode lvnode = it.next();
                         int n = lvnode.index;
                         if( n==i) {
-                          localsBuf.append( " : ").append( lvnode.name);
+                          localsBuf.append( " : ").append( lvnode.name); //$NON-NLS-1$
                         }
                     }
 
@@ -515,7 +515,7 @@ public class DecompiledMethod {
             try {
                 ArrayList<String[]> locals = new ArrayList<>();
                 for (int i = 0; i < f.getLocals(); ++i) {
-                    String varName = "";
+                    String varName = ""; //$NON-NLS-1$
                     for (Iterator<LocalVariableNode> it = localVariables.iterator(); it.hasNext();) {
                         LocalVariableNode lvnode = it.next();
                         int n = lvnode.index;
@@ -527,7 +527,7 @@ public class DecompiledMethod {
                     }
 
                     locals.add( new String[] {
-                        ""+i,
+                        ""+i, //$NON-NLS-1$
                         getTypeName( useQualifiedNames, f.getLocal(i).toString()),
                         varName});
                 }
@@ -535,7 +535,7 @@ public class DecompiledMethod {
                 ArrayList<String[]> stack = new ArrayList<>();
                 for (int i = 0; i < f.getStackSize(); ++i) {
                     stack.add( new String[] {
-                        ""+i,
+                        ""+i, //$NON-NLS-1$
                         getTypeName( useQualifiedNames, f.getStack(i).toString())});
                 }
                 return new String[][][] {
@@ -558,7 +558,7 @@ public class DecompiledMethod {
      * @param s string with bytecode type name, like "Ljava/lang/Object;"
      */
     private static void appendTypeName(int n, final boolean useQualifiedNames, StringBuffer buf, String s) {
-        buf.append(n).append( " ");
+        buf.append(n).append( " "); //$NON-NLS-1$
         if(!useQualifiedNames) {
             int idx = s.lastIndexOf('/');
             if(idx > 0){
@@ -567,8 +567,8 @@ public class DecompiledMethod {
                 return;
             }
         }
-        if("Lnull;".equals(s)){
-            buf.append("null");
+        if("Lnull;".equals(s)){ //$NON-NLS-1$
+            buf.append("null"); //$NON-NLS-1$
         } else {
             buf.append(s);
         }
@@ -577,9 +577,9 @@ public class DecompiledMethod {
     private static String getTypeName(final boolean useQualifiedNames, String s) {
       if (!useQualifiedNames) {
           // get leading array symbols
-          String arraySymbols = "";
-          while (s.startsWith("[")){
-              arraySymbols += "[";
+          String arraySymbols = ""; //$NON-NLS-1$
+          while (s.startsWith("[")){ //$NON-NLS-1$
+              arraySymbols += "["; //$NON-NLS-1$
               s = s.substring(1);
           }
 
@@ -589,18 +589,18 @@ public class DecompiledMethod {
               return arraySymbols  + s.substring(idx + 1, s.length() - 1);
           }
           // this is the case on LVT view - ignore it
-          if("." == s){
+          if("." == s){ //$NON-NLS-1$
               return arraySymbols  + s;
           }
           // XXX Unresolved type
-          if("R" == s){
+          if("R" == s){ //$NON-NLS-1$
               return arraySymbols  + s;
           }
           // resolve primitive types
           return arraySymbols +
               CommentedClassVisitor.getSimpleName(Type.getType(s));
       }
-      return "Lnull;".equals(s) ? "null" : s;
+      return "Lnull;".equals(s) ? "null" : s; //$NON-NLS-1$ //$NON-NLS-2$
     }
 
     public int getDecompiledLine(final int sourceLine) {

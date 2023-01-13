@@ -206,7 +206,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
      * This flag is a workaround and allows us restore the state after internal toggling.
      */
     private boolean restoreVerify;
-    private static final String NLS_PREFIX = "BytecodeOutlineView.";
+    private static final String NLS_PREFIX = "BytecodeOutlineView."; //$NON-NLS-1$
 
     // updates the find replace action if the document length is > 0
     private ITextListener textListener;
@@ -491,7 +491,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
                     return;
                 }
                 String line = items[0].getText(0);
-                if(line == null || "".equals(line)){
+                if(line == null || "".equals(line)){ //$NON-NLS-1$
                     return;
                 }
                 Integer valueOf = Integer.valueOf(line);
@@ -666,16 +666,16 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
         tableControlViewer = new TableViewer(tableControl);
 
         TableColumn tc = new TableColumn(tableControl, SWT.LEFT);
-        tc.setText("#");
-        tc.setToolTipText("ASM instruction offset");
+        tc.setText("#"); //$NON-NLS-1$
+        tc.setToolTipText("ASM instruction offset"); //$NON-NLS-1$
 
         tc = new TableColumn(tableControl, SWT.LEFT);
-        tc.setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "lvt.header"));
-        tc.setToolTipText("Local variables");
+        tc.setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "lvt.header")); //$NON-NLS-1$
+        tc.setToolTipText("Local variables"); //$NON-NLS-1$
 
         tc = new TableColumn(tableControl, SWT.LEFT);
-        tc.setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "stack.header"));
-        tc.setToolTipText("Stack content *before* current instruction is executed");
+        tc.setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "stack.header")); //$NON-NLS-1$
+        tc.setToolTipText("Stack content *before* current instruction is executed"); //$NON-NLS-1$
         new TableColumn(tableControl, SWT.LEFT);
         new TableColumn(tableControl, SWT.LEFT);
         tableControl.setLinesVisible(false);
@@ -687,15 +687,15 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
         lvtTable.setLinesVisible(false);
         lvtTable.setHeaderVisible(true);
 
-        new TableColumn(lvtTable, SWT.LEFT).setText("#");
-        new TableColumn(lvtTable, SWT.LEFT).setText("Var Type");
-        new TableColumn(lvtTable, SWT.LEFT).setText("Name");
+        new TableColumn(lvtTable, SWT.LEFT).setText("#"); //$NON-NLS-1$
+        new TableColumn(lvtTable, SWT.LEFT).setText("Var Type"); //$NON-NLS-1$
+        new TableColumn(lvtTable, SWT.LEFT).setText("Name"); //$NON-NLS-1$
 
         stackTable = new Table(stackAndLvt, SWT.SINGLE | SWT.FULL_SELECTION);
         stackTable.setLinesVisible(false);
         stackTable.setHeaderVisible(true);
-        new TableColumn(stackTable, SWT.LEFT).setText("#");
-        new TableColumn(stackTable, SWT.LEFT).setText("Stack Type");
+        new TableColumn(stackTable, SWT.LEFT).setText("#"); //$NON-NLS-1$
+        new TableColumn(stackTable, SWT.LEFT).setText("Stack Type"); //$NON-NLS-1$
 
         stackAndLvt.setWeights(new int[]{50, 50});
 
@@ -761,7 +761,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
         textViewer = viewer;
 
         textControl = textViewer.getTextWidget();
-        IDocument document = new Document("");
+        IDocument document = new Document(""); //$NON-NLS-1$
         textViewer.setDocument(document);
 
         textSelectionListener = new ISelectionChangedListener() {
@@ -1066,7 +1066,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
         }
         if (textViewer != null && textViewer.getTextWidget() != null
             && !textViewer.getTextWidget().isDisposed()) {
-            IDocument document = new Document("");
+            IDocument document = new Document(""); //$NON-NLS-1$
             textViewer.setDocument(document);
         }
         if (tableControl != null && !tableControl.isDisposed()) {
@@ -1138,7 +1138,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
         lastChildElement = childEl;
         if (clearOutput) {
             if (!modes.get(BCOConstants.F_SHOW_ANALYZER)) {
-                IDocument document = new Document("");
+                IDocument document = new Document(""); //$NON-NLS-1$
                 textViewer.setDocument(document);
             } else {
                 setVerifyTableItems(null);
@@ -1191,22 +1191,22 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
         // clear error messages, if any
         statusLineManager.setErrorMessage(null);
         if (result != null) {
-            currentStatusMessage = "Java:"
-                + result.getJavaVersion() + " | class size:"
+            currentStatusMessage = "Java:" //$NON-NLS-1$
+                + result.getJavaVersion() + " | class size:" //$NON-NLS-1$
                 + result.getClassSize();
             ClassNode classNode = result.getClassNode();
             if(classNode != null && classNode.name != null) {
                 setContentDescription(classNode.name);
             }
         } else {
-            currentStatusMessage = "";
-            setContentDescription("");
+            currentStatusMessage = ""; //$NON-NLS-1$
+            setContentDescription(""); //$NON-NLS-1$
         }
-        String selectionInfo = "";
+        String selectionInfo = ""; //$NON-NLS-1$
         if (bytecodeOffsetStart >= 0) {
-            selectionInfo = " | offset:" + bytecodeOffsetStart;
+            selectionInfo = " | offset:" + bytecodeOffsetStart; //$NON-NLS-1$
             if (bytecodeOffsetEnd >= 0) {
-                selectionInfo += "-" + bytecodeOffsetEnd;
+                selectionInfo += "-" + bytecodeOffsetEnd; //$NON-NLS-1$
             }
         }
         if (hasAnalyzerError) {
@@ -1346,7 +1346,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
                         if (range.endLine > 0 && range.endLine < lineCount) {
                             offsetEnd = textControl
                                 .getOffsetAtLine(range.endLine);
-                            offsetEnd = text.indexOf("LINENUMBER", text
+                            offsetEnd = text.indexOf("LINENUMBER", text //$NON-NLS-1$
                                 .indexOf('\n', offsetEnd));
                             if (offsetEnd < 0) {
                                 offsetEnd = text.indexOf('\n', offsetEnd);
@@ -1569,7 +1569,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
             try {
                 // check if compilation unit is ok - then this is the user problem
                 if (type.isStructureKnown()) {
-                    BytecodeOutlinePlugin.error("Cannot decompile: " + type, e);
+                    BytecodeOutlinePlugin.error("Cannot decompile: " + type, e); //$NON-NLS-1$
                 } else {
                     BytecodeOutlinePlugin.log(e, IStatus.ERROR);
                 }
@@ -1578,10 +1578,10 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
                 BytecodeOutlinePlugin.log(e1, IStatus.WARNING);
             }
         } catch (UnsupportedClassVersionError e) {
-            BytecodeOutlinePlugin.error("Cannot decompile: " + type
-                + ". Error was caused by attempt to "
-                + "load a class compiled with the Java version which is not "
-                + "supported by the current JVM. ", e);
+            BytecodeOutlinePlugin.error("Cannot decompile: " + type //$NON-NLS-1$
+                + ". Error was caused by attempt to " //$NON-NLS-1$
+                + "load a class compiled with the Java version which is not " //$NON-NLS-1$
+                + "supported by the current JVM. ", e); //$NON-NLS-1$
         }
         // remember class file size to show it later in UI
         if (decompiledClass != null) {
@@ -1597,7 +1597,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
                 TableItem item = new TableItem(tableControl, SWT.NONE);
                 for (int j = 0; j < items[i].length; ++j) {
                     String s = items[i][j];
-                    if (s.endsWith("\n")) {
+                    if (s.endsWith("\n")) { //$NON-NLS-1$
                         s = s.substring(0, s.length() - 1);
                         // this is the "cookie" for the bytecode reference, which could be
                         // mapped later to the sourcecode line on selection event in the
@@ -1659,19 +1659,19 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
         action.configureAction(
             BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
-                + "select_all.label"), BytecodeOutlinePlugin
-                .getResourceString(NLS_PREFIX + "select_all.tooltip"),
+                + "select_all.label"), BytecodeOutlinePlugin //$NON-NLS-1$
+                .getResourceString(NLS_PREFIX + "select_all.tooltip"), //$NON-NLS-1$
             BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
-                + "select_all.description"));
+                + "select_all.description")); //$NON-NLS-1$
         setGlobalAction(actionBars, ActionFactory.SELECT_ALL.getId(), action);
 
         action = new TextViewerAction(textViewer, ITextOperationTarget.COPY);
         action.configureAction(
-            BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "copy.label"),
+            BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "copy.label"), //$NON-NLS-1$
             BytecodeOutlinePlugin
-                .getResourceString(NLS_PREFIX + "copy.tooltip"),
+                .getResourceString(NLS_PREFIX + "copy.tooltip"), //$NON-NLS-1$
             BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
-                + "copy.description"));
+                + "copy.description")); //$NON-NLS-1$
         action.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages()
             .getImageDescriptor(ISharedImages.IMG_TOOL_COPY));
         action.setActionDefinitionId(IWorkbenchCommandConstants.EDIT_COPY);
@@ -1815,7 +1815,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
         if(typeName.isEmpty()) {
             return null;
         }
-        if(typeName.contains("$")) {
+        if(typeName.contains("$")) { //$NON-NLS-1$
             typeName = typeName.substring(typeName.lastIndexOf('$') + 1);
         }
         IJavaSearchScope scope = SearchEngine.createJavaSearchScope(new IJavaElement[] {javaInput.getJavaProject()});

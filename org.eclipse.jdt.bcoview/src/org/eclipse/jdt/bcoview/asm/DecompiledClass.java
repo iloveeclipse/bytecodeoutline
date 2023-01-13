@@ -91,7 +91,7 @@ public class DecompiledClass {
                     lines.add(mlines[j]);
                 }
             } else {
-                lines.add(new String[]{"", "", "", o.toString(), ""});
+                lines.add(new String[]{"", "", "", o.toString(), ""}); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
             }
         }
         return lines.toArray(new String[lines.size()][]);

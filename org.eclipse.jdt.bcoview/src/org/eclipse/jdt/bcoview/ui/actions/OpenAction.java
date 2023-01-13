@@ -40,7 +40,7 @@ public class OpenAction extends BytecodeAction {
         try {
             exec(resources[0], element2);
         } catch (Exception e) {
-            BytecodeOutlinePlugin.error("Failed to run Compare: "
+            BytecodeOutlinePlugin.error("Failed to run Compare: " //$NON-NLS-1$
                 + e.getMessage(), e);
         }
     }
@@ -77,8 +77,8 @@ public class OpenAction extends BytecodeAction {
         public OpenClassFileDialog(Shell parentShell, IContainer container,
             int typesMask) {
             super(parentShell, container, typesMask);
-            setTitle("Bytecode compare");
-            setMessage("Please select class file to compare");
+            setTitle("Bytecode compare"); //$NON-NLS-1$
+            setMessage("Please select class file to compare"); //$NON-NLS-1$
         }
 
         /**
@@ -92,7 +92,7 @@ public class OpenAction extends BytecodeAction {
             }
             String fileExtension = resource.getFileExtension();
             return super.select(resource)
-                && ("java".equals(fileExtension) || "class"
+                && ("java".equals(fileExtension) || "class" //$NON-NLS-1$ //$NON-NLS-2$
                     .equals(fileExtension));
         }
     }

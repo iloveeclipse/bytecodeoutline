@@ -24,87 +24,87 @@ public interface BCOConstants {
     /**
      * toggle BCO "view content/selection follows editor selection"
      */
-    String LINK_VIEW_TO_EDITOR = "linkViewToEditor";
+    String LINK_VIEW_TO_EDITOR = "linkViewToEditor"; //$NON-NLS-1$
 
     /**
      * toggle reference "view content/selection follows editor selection"
      */
-    String LINK_REF_VIEW_TO_EDITOR = "linkRefViewToEditor";
+    String LINK_REF_VIEW_TO_EDITOR = "linkRefViewToEditor"; //$NON-NLS-1$
 
     /**
      * show bytecode only for selected element in editor
      */
-    String SHOW_ONLY_SELECTED_ELEMENT = "showOnlySelectedElement";
+    String SHOW_ONLY_SELECTED_ELEMENT = "showOnlySelectedElement"; //$NON-NLS-1$
 
     /**
      * show ASMifier java code instead of bytecode
      */
-    String SHOW_ASMIFIER_CODE = "showASMifierCode";
+    String SHOW_ASMIFIER_CODE = "showASMifierCode"; //$NON-NLS-1$
 
     /**
      * show ASMifier java code instead of bytecode in compare pane
      */
-    String DIFF_SHOW_ASMIFIER_CODE = "diff_showASMifierCode";
+    String DIFF_SHOW_ASMIFIER_CODE = "diff_showASMifierCode"; //$NON-NLS-1$
 
     /**
      * show raw bytecode (without any additional help like readable class names etc)
      */
-    String SHOW_RAW_BYTECODE = "showRawBytecode";
+    String SHOW_RAW_BYTECODE = "showRawBytecode"; //$NON-NLS-1$
 
     /**
      * show line information (if available)
      */
-    String SHOW_LINE_INFO = "showLineInfo";
+    String SHOW_LINE_INFO = "showLineInfo"; //$NON-NLS-1$
 
     /**
      * show line information (if available) in compare pane
      */
-    String DIFF_SHOW_LINE_INFO = "diff_showLineInfo";
+    String DIFF_SHOW_LINE_INFO = "diff_showLineInfo"; //$NON-NLS-1$
 
     /**
      * show variables information (if available)
      */
-    String SHOW_VARIABLES = "showVariables";
+    String SHOW_VARIABLES = "showVariables"; //$NON-NLS-1$
 
     /**
      * show variables information (if available) in compare pane
      */
-    String DIFF_SHOW_VARIABLES = "diff_showVariables";
+    String DIFF_SHOW_VARIABLES = "diff_showVariables"; //$NON-NLS-1$
 
     /**
      * recalculate stackmap (to see computed frames, works for all classes even before MUSTANG)
      */
-    String SHOW_STACKMAP = "showStackmap";
+    String SHOW_STACKMAP = "showStackmap"; //$NON-NLS-1$
 
     /**
      * recalculate stackmap (to see computed frames, works for all classes even before MUSTANG) in compare
      */
-    String DIFF_SHOW_STACKMAP = "diff_showStackmap";
+    String DIFF_SHOW_STACKMAP = "diff_showStackmap"; //$NON-NLS-1$
 
     /**
      * expand stackmap frames
      */
-    String EXPAND_STACKMAP = "expandStackmap";
+    String EXPAND_STACKMAP = "expandStackmap"; //$NON-NLS-1$
 
     /**
      * expand stackmap frames in compare pane
      */
-    String DIFF_EXPAND_STACKMAP = "diff_expandStackmap";
+    String DIFF_EXPAND_STACKMAP = "diff_expandStackmap"; //$NON-NLS-1$
 
     /**
      * recalculate stackmap (to see computed frames, works for all classes even before MUSTANG)
      */
-    String RECALCULATE_STACKMAP = "recalculateStackmap";
+    String RECALCULATE_STACKMAP = "recalculateStackmap"; //$NON-NLS-1$
 
     /**
      * show "analyzer" - LVT and stack tables (for current bytecode selection)
      */
-    String SHOW_ANALYZER = "showAnalyzer";
+    String SHOW_ANALYZER = "showAnalyzer"; //$NON-NLS-1$
 
     /**
      * Show non decimal values for numeric constants in the bytecode
      */
-    String SHOW_HEX_VALUES = "showHexValues";
+    String SHOW_HEX_VALUES = "showHexValues"; //$NON-NLS-1$
 
     int F_LINK_VIEW_TO_EDITOR = 0;
     int F_SHOW_ONLY_SELECTED_ELEMENT = 1;

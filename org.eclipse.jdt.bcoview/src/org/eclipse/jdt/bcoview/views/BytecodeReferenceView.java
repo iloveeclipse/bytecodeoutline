@@ -63,9 +63,9 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
                     try {
                         IViewPart part = workbenchWindow.getActivePage()
                             .showView(
-                                "org.eclipse.jdt.bcoview.views.BytecodeOutlineView");
+                                "org.eclipse.jdt.bcoview.views.BytecodeOutlineView"); //$NON-NLS-1$
                         ISelection selection = selectionService
-                            .getSelection("org.eclipse.jdt.bcoview.views.BytecodeOutlineView");
+                            .getSelection("org.eclipse.jdt.bcoview.views.BytecodeOutlineView"); //$NON-NLS-1$
                         selectionChanged(part, selection);
                     } catch (PartInitException e) {
                         BytecodeOutlinePlugin.log(e, IStatus.ERROR);

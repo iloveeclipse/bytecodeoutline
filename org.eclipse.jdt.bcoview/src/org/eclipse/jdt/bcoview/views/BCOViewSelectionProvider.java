@@ -47,7 +47,7 @@ class BCOViewSelectionProvider implements IPostSelectionProvider {
         if(!selProviders.contains(provider)){
             BytecodeOutlinePlugin.log(
                 new Exception(
-                    "Current selection provider is not registered yet"),
+                    "Current selection provider is not registered yet"), //$NON-NLS-1$
                 IStatus.WARNING);
             return;
         }

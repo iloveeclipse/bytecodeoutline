@@ -24,7 +24,7 @@ import org.objectweb.asm.util.Printer;
 
 public class HelpUtils {
     // TODO: configure it via preference
-    private static final String SPECS_HTML = "https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-6.html";
+    private static final String SPECS_HTML = "https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-6.html"; //$NON-NLS-1$
     private static String fullSpec;
     private static String htmlHead;
 
@@ -40,38 +40,38 @@ public class HelpUtils {
                 opcodeName = opcodeName.substring(0, sepIndex);
                 switch(opcodeName.charAt(0)){
                     case 'd':
-                        opcodeName += "_<d&gt;";
+                        opcodeName += "_<d&gt;"; //$NON-NLS-1$
                         break;
                     case 'f':
-                        opcodeName += "_<f&gt;";
+                        opcodeName += "_<f&gt;"; //$NON-NLS-1$
                         break;
                     case 'l':
-                        opcodeName += "_<l&gt;";
+                        opcodeName += "_<l&gt;"; //$NON-NLS-1$
                         break;
                     default:
                         // ICONST uses "n"
-                        opcodeName += "_<n&gt;";
+                        opcodeName += "_<n&gt;"; //$NON-NLS-1$
                         break;
                 }
             }
-            if(opcodeName.startsWith("if_acmp")) {
-                opcodeName = "if_acmp<cond&gt;";
+            if(opcodeName.startsWith("if_acmp")) { //$NON-NLS-1$
+                opcodeName = "if_acmp<cond&gt;"; //$NON-NLS-1$
             } else
-            if(opcodeName.startsWith("if_icmp")) {
-                opcodeName = "if_icmp<cond&gt;";
+            if(opcodeName.startsWith("if_icmp")) { //$NON-NLS-1$
+                opcodeName = "if_icmp<cond&gt;"; //$NON-NLS-1$
             } else
-            if(opcodeName.startsWith("if_")) {
-                opcodeName = "if<cond&gt;";
+            if(opcodeName.startsWith("if_")) { //$NON-NLS-1$
+                opcodeName = "if<cond&gt;"; //$NON-NLS-1$
             } else
-            if(opcodeName.startsWith("aload_")) {
-                opcodeName = "aload_<n&gt;";
+            if(opcodeName.startsWith("aload_")) { //$NON-NLS-1$
+                opcodeName = "aload_<n&gt;"; //$NON-NLS-1$
             } else
-            if(opcodeName.startsWith("iconst_")) {
-                opcodeName = "iconst_<i&gt;";
+            if(opcodeName.startsWith("iconst_")) { //$NON-NLS-1$
+                opcodeName = "iconst_<i&gt;"; //$NON-NLS-1$
             }
         }  else
-            if(opcodeName.startsWith("if")) {
-                opcodeName = "if<cond&gt;";
+            if(opcodeName.startsWith("if")) { //$NON-NLS-1$
+                opcodeName = "if<cond&gt;"; //$NON-NLS-1$
             }
         return opcodeName;
     }
@@ -102,14 +102,14 @@ public class HelpUtils {
     private static String readFullSpec() {
         URL helpResource = toUrl(SPECS_HTML);
         StringBuilder sb = new StringBuilder();
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(helpResource.openStream(), "UTF-8"))){
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(helpResource.openStream(), "UTF-8"))){ //$NON-NLS-1$
             String line;
             while ((line = in.readLine()) != null) {
                     sb.append(line).append('\n');
             }
         } catch (IOException e) {
-            sb.append("Error trying access JVM specification at ").append(SPECS_HTML);
-            sb.append(":");
+            sb.append("Error trying access JVM specification at ").append(SPECS_HTML); //$NON-NLS-1$
+            sb.append(":"); //$NON-NLS-1$
             sb.append(e);
         }
         return sb.toString();
@@ -140,8 +140,8 @@ public class HelpUtils {
         sb.append(htmlHead);
 
         // Extract only important part related to the given opcode
-        String patternStart = "<div class=\"section-execution\" title=\"" + opcodeName + "\"";
-        String patternEnd = "<div class=\"section-execution\" title=\"";
+        String patternStart = "<div class=\"section-execution\" title=\"" + opcodeName + "\""; //$NON-NLS-1$ //$NON-NLS-2$
+        String patternEnd = "<div class=\"section-execution\" title=\""; //$NON-NLS-1$
         try (Scanner in = new Scanner(fullSpec)){
             String line;
             boolean foundStart = false;
@@ -164,9 +164,9 @@ public class HelpUtils {
         // Allow navigation relative to the document
         int endHeadIdx= sb.indexOf("</head>"); //$NON-NLS-1$
         if(endHeadIdx > 0) {
-            sb.insert(endHeadIdx, "\n<base href='" + SPECS_HTML + "'>\n");
+            sb.insert(endHeadIdx, "\n<base href='" + SPECS_HTML + "'>\n"); //$NON-NLS-1$ //$NON-NLS-2$
         }
-        sb.append("</body></html>");
+        sb.append("</body></html>"); //$NON-NLS-1$
         return sb;
     }
 
@@ -179,8 +179,8 @@ public class HelpUtils {
             String line;
             while (in.hasNextLine()) {
                 line = in.nextLine();
-                if(line.contains("<body")) {
-                    sb.append(line.substring(0, line.indexOf("<body")));
+                if(line.contains("<body")) { //$NON-NLS-1$
+                    sb.append(line.substring(0, line.indexOf("<body"))); //$NON-NLS-1$
                     break;
                 }
                 sb.append(line);

@@ -30,7 +30,7 @@ public class CompareMemberBytecodeAction extends BytecodeAction {
         try {
             exec(resources[0], resources[1]);
         } catch (Exception e) {
-            BytecodeOutlinePlugin.error("Failed to run Compare: "
+            BytecodeOutlinePlugin.error("Failed to run Compare: " //$NON-NLS-1$
                 + e.getMessage(), e);
         }
     }

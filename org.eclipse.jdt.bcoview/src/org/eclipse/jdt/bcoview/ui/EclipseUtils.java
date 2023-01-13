@@ -102,11 +102,11 @@ public class EclipseUtils {
     public static String getJavaPackageName(IJavaElement resource) {
         String name;
         if (resource == null) {
-            return "";
+            return ""; //$NON-NLS-1$
         }
         name = resource.getElementName();
         if (name == null) {
-            return "";
+            return ""; //$NON-NLS-1$
         }
         int type = resource.getElementType();
         if (type == IJavaElement.PACKAGE_FRAGMENT

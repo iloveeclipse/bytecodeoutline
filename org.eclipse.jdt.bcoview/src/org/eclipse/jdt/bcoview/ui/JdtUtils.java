@@ -125,9 +125,9 @@ public class JdtUtils {
             IInitializer ini = (IInitializer) childEl;
             try {
                 if (Flags.isStatic(ini.getFlags())) {
-                    methodName = "<clinit>()V";
+                    methodName = "<clinit>()V"; //$NON-NLS-1$
                 } else {
-                    methodName = "<init>()";
+                    methodName = "<init>()"; //$NON-NLS-1$
                 }
             } catch (JavaModelException e) {
                 // this is compilation problem - don't show the message
@@ -248,7 +248,7 @@ public class JdtUtils {
 
         String[] bounds = typeParameter.getBounds();
         if(bounds.length == 0){
-            sb.append("Ljava/lang/Object;");
+            sb.append("Ljava/lang/Object;"); //$NON-NLS-1$
         } else {
             for (int i = 0; i < bounds.length; i++) {
                 String simplyName = bounds[i];
@@ -392,9 +392,9 @@ public class JdtUtils {
      */
     public static IOrdinaryClassFile getInnerType(IOrdinaryClassFile cf, DecompiledClass dc,
         String typeSignature) {
-        if(typeSignature.endsWith(";")){
+        if(typeSignature.endsWith(";")){ //$NON-NLS-1$
             typeSignature = typeSignature.substring(0, typeSignature.length()-1);
-            if(typeSignature.startsWith("L")){
+            if(typeSignature.startsWith("L")){ //$NON-NLS-1$
                 typeSignature = typeSignature.substring(1, typeSignature.length());
             }
         }
@@ -422,7 +422,7 @@ public class JdtUtils {
                 if (idx > 0) {
                     className = typeSignature.substring(idx + 1, typeSignature.length());
                 }
-                className += ".class";
+                className += ".class"; //$NON-NLS-1$
                 return (IOrdinaryClassFile) cf.getType().getPackageFragment().getClassFile(className);
             }
         }
@@ -558,9 +558,9 @@ public class JdtUtils {
              * is not compiled with comiler settings from project, but with different
              */
             if(is50OrHigher(javaElement)){
-                name = "1" + name; // compiler output changed for > 1.5 code
+                name = "1" + name; // compiler output changed for > 1.5 code //$NON-NLS-1$
             } else {
-                name = "1$" + name; // see method comment, this was the case for older code
+                name = "1$" + name; // see method comment, this was the case for older code //$NON-NLS-1$
             }
         }
 
@@ -834,7 +834,7 @@ public class JdtUtils {
             packagePath = getPackageOutputPath(javaElement);
         } catch (JavaModelException e) {
             BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-            return "";
+            return ""; //$NON-NLS-1$
         }
         IJavaElement ancestor = getLastAncestor(javaElement, IJavaElement.TYPE);
         StringBuffer sb = new StringBuffer(packagePath);
@@ -1067,7 +1067,7 @@ public class JdtUtils {
         Collections.sort(keys, prioComp);
         for (Iterator<IType> iterator = keys.iterator(); iterator.hasNext();) {
             Object key = iterator.next();
-            System.out.println(map.get(key) + " : " + key);
+            System.out.println(map.get(key) + " : " + key); //$NON-NLS-1$
         }
     }
 
@@ -1424,14 +1424,14 @@ public class JdtUtils {
             if ((prio = map.get(anonType)) != null) {
                 compilePrio = prio.intValue();
                 if (BytecodeOutlinePlugin.DEBUG) {
-                    System.out.println("Using cache");
+                    System.out.println("Using cache"); //$NON-NLS-1$
                 }
             } else {
                 compilePrio = getAnonCompilePriority(
                     anonType, firstAncestor, topAncestorType, is50OrHigher);
                 map.put(anonType, Integer.valueOf(compilePrio));
                 if (BytecodeOutlinePlugin.DEBUG) {
-                    System.out.println("Calculating value!");
+                    System.out.println("Calculating value!"); //$NON-NLS-1$
                 }
             }
             return compilePrio;

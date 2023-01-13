@@ -48,7 +48,7 @@ public class DecompilerHelper  {
     private static DecompiledClass getResult(ICommentedClassVisitor printer,  DecompilerOptions options, ClassNode classNode) {
         List<Object> classText = new ArrayList<>();
         formatText(printer.getText(), new StringBuffer(), classText, options.cl);
-        while (classText.size() > 0 && classText.get(0).equals("\n")) {
+        while (classText.size() > 0 && classText.get(0).equals("\n")) { //$NON-NLS-1$
             classText.remove(0);
         }
 

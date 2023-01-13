@@ -47,10 +47,10 @@ public class TypedElement extends BufferedContent
     private final IJavaElement element;
 
     /** used by Eclipse to recognize appropriated viewer */
-    public static final String TYPE_BYTECODE = "bytecode";
+    public static final String TYPE_BYTECODE = "bytecode"; //$NON-NLS-1$
 
     /** used by Eclipse to recognize appropriated viewer */
-    public static final String TYPE_ASM_IFIER = "java";
+    public static final String TYPE_ASM_IFIER = "java"; //$NON-NLS-1$
 
     private final BitSet modes;
 
@@ -104,7 +104,7 @@ public class TypedElement extends BufferedContent
     @Override
     public Image getImage() {
         // default image for .class files
-        return CompareUI.getImage("class");
+        return CompareUI.getImage("class"); //$NON-NLS-1$
     }
 
     @Override
@@ -117,8 +117,8 @@ public class TypedElement extends BufferedContent
         byte[] classBytes = JdtUtils.readClassBytes(element);
         if (classBytes == null) {
             throw new CoreException(new Status(
-                IStatus.ERROR, "org.eclipse.jdt.bcoview", -1,
-                "Can't read bytecode for: " + element, null));
+                IStatus.ERROR, "org.eclipse.jdt.bcoview", -1, //$NON-NLS-1$
+                "Can't read bytecode for: " + element, null)); //$NON-NLS-1$
         }
         DecompiledClass decompiledClass = null;
         try {
@@ -126,11 +126,11 @@ public class TypedElement extends BufferedContent
                 classBytes, new DecompilerOptions(null, methodName, modes, null));
         } catch (UnsupportedClassVersionError e){
             throw new CoreException(new Status(
-                IStatus.ERROR, "org.eclipse.jdt.bcoview", -1,
-                "Error caused by attempt to load class compiled with Java version which"
-                + " is not supported by current JVM", e));
+                IStatus.ERROR, "org.eclipse.jdt.bcoview", -1, //$NON-NLS-1$
+                "Error caused by attempt to load class compiled with Java version which" //$NON-NLS-1$
+                + " is not supported by current JVM", e)); //$NON-NLS-1$
         }
-        final byte[] bytes = decompiledClass.getText().getBytes(Charset.forName("UTF-8"));
+        final byte[] bytes = decompiledClass.getText().getBytes(Charset.forName("UTF-8")); //$NON-NLS-1$
         // use internal buffering to prevent multiple calls to this method
         Display.getDefault().syncExec(new Runnable(){
             @Override

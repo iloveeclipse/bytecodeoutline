@@ -177,7 +177,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
         if (raw1) {
             if (type == CLASS_SIGNATURE || type == FIELD_SIGNATURE
                 || type == METHOD_SIGNATURE) {
-                buf1.append("// signature ").append(desc).append('\n');
+                buf1.append("// signature ").append(desc).append('\n'); //$NON-NLS-1$
             } else {
                 buf1.append(desc);
             }
@@ -188,25 +188,25 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
                     break;
                 case METHOD_DESCRIPTOR :
                 case HANDLE_DESCRIPTOR :
-                    buf1.append("(");
+                    buf1.append("("); //$NON-NLS-1$
                     Type[] types = Type.getArgumentTypes(desc);
                     for (int i = 0; i < types.length; ++i) {
                         if (i > 0) {
-                            buf1.append(", ");
+                            buf1.append(", "); //$NON-NLS-1$
                         }
                         buf1.append(getSimpleName(types[i]));
                     }
-                    buf1.append(") : ");
+                    buf1.append(") : "); //$NON-NLS-1$
                     Type returnType = Type.getReturnType(desc);
                     buf1.append(getSimpleName(returnType));
                     break;
                 case FIELD_DESCRIPTOR :
-                    if ("T".equals(desc)) {
-                        buf1.append("top");
-                    } else if ("N".equals(desc)) {
-                        buf1.append("null");
-                    } else if ("U".equals(desc)) {
-                        buf1.append("uninitialized_this");
+                    if ("T".equals(desc)) { //$NON-NLS-1$
+                        buf1.append("top"); //$NON-NLS-1$
+                    } else if ("N".equals(desc)) { //$NON-NLS-1$
+                        buf1.append("null"); //$NON-NLS-1$
+                    } else if ("U".equals(desc)) { //$NON-NLS-1$
+                        buf1.append("uninitialized_this"); //$NON-NLS-1$
                     } else {
                         buf1.append(getSimpleName(Type.getType(desc)));
                     }
@@ -282,10 +282,10 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
     /**
      * control chars names
      */
-    private static final String[] CHAR_NAMES = {"NUL", "SOH", "STX", "ETX",
-        "EOT", "ENQ", "ACK", "BEL", "BS", "HT", "LF", "VT", "FF", "CR", "SO",
-        "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN",
-        "EM", "SUB", "ESC", "FS", "GS", "RS", "US", // "Sp"
+    private static final String[] CHAR_NAMES = {"NUL", "SOH", "STX", "ETX", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+        "EOT", "ENQ", "ACK", "BEL", "BS", "HT", "LF", "VT", "FF", "CR", "SO", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$
+        "SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$
+        "EM", "SUB", "ESC", "FS", "GS", "RS", "US", // "Sp" //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$
     };
 
     private Index getIndex(Label label) {
@@ -328,11 +328,11 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
     @Override
     public void visitVarInsn(final int opcode, final int var) {
         addIndex(opcode);
-        text.add(tab2 + OPCODES[opcode] + " " + var);
+        text.add(tab2 + OPCODES[opcode] + " " + var); //$NON-NLS-1$
         if (!raw) {
             text.add(Integer.valueOf(var));
         }
-        text.add("\n");
+        text.add("\n"); //$NON-NLS-1$
     }
 
     @Override
@@ -343,7 +343,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
         appendLabel(label);
         Index index = getIndex(label);
         if (index != null) {
-            stringBuilder.append(" (").append(index.insn).append(")");
+            stringBuilder.append(" (").append(index.insn).append(")"); //$NON-NLS-1$ //$NON-NLS-2$
         }
         stringBuilder.append('\n');
         text.add(stringBuilder.toString());
@@ -371,11 +371,11 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
     @Override
     public void visitIincInsn(final int var, final int increment) {
         addIndex(Opcodes.IINC);
-        text.add(tab2 + "IINC " + var);
+        text.add(tab2 + "IINC " + var); //$NON-NLS-1$
         if (!raw) {
             text.add(Integer.valueOf(var));
         }
-        text.add(" " + increment + "\n");
+        text.add(" " + increment + "\n"); //$NON-NLS-1$ //$NON-NLS-2$
     }
 
     @Override
@@ -404,21 +404,21 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
      */
     private static String getAsCharComment(int value) {
         if (Character.MAX_VALUE < value || Character.MIN_VALUE > value) {
-            return "";
+            return ""; //$NON-NLS-1$
         }
-        StringBuffer sb = new StringBuffer("    // '");
+        StringBuffer sb = new StringBuffer("    // '"); //$NON-NLS-1$
         switch (value) {
             case '\t' :
-                sb.append("\\t");
+                sb.append("\\t"); //$NON-NLS-1$
                 break;
             case '\r' :
-                sb.append("\\r");
+                sb.append("\\r"); //$NON-NLS-1$
                 break;
             case '\n' :
-                sb.append("\\n");
+                sb.append("\\n"); //$NON-NLS-1$
                 break;
             case '\f' :
-                sb.append("\\f");
+                sb.append("\\f"); //$NON-NLS-1$
                 break;
             default :
                 sb.append((char) value);
@@ -427,17 +427,17 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 
         if (value >= CHAR_NAMES.length) {
             if (value == 127) {
-                return sb.append("' (DEL)").toString();
+                return sb.append("' (DEL)").toString(); //$NON-NLS-1$
             }
-            return sb.append("'").toString();
+            return sb.append("'").toString(); //$NON-NLS-1$
         }
-        return sb.append("' (").append(CHAR_NAMES[value]).append(")")
+        return sb.append("' (").append(CHAR_NAMES[value]).append(")") //$NON-NLS-1$ //$NON-NLS-2$
             .toString();
     }
 
     private String formatValue(Object operand) {
         if (operand == null) {
-            return "null";
+            return "null"; //$NON-NLS-1$
         }
         if (showHex) {
             if (operand instanceof Integer) {
@@ -471,7 +471,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
     public void visitLdcInsn(final Object cst) {
         addIndex(Opcodes.LDC);
         stringBuilder.setLength(0);
-        stringBuilder.append(tab2).append("LDC ");
+        stringBuilder.append(tab2).append("LDC "); //$NON-NLS-1$
         if (cst instanceof String) {
             Printer.appendString(stringBuilder, (String) cst);
         } else if (cst instanceof Type) {
@@ -481,7 +481,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
                 appendDescriptor(METHOD_DESCRIPTOR, descriptor);
             } else {
                 String descr = raw? descriptor : descriptor.substring(0, descriptor.length() - 1);
-                appendDescriptor(INTERNAL_NAME, descr + ".class");
+                appendDescriptor(INTERNAL_NAME, descr + ".class"); //$NON-NLS-1$
             }
         } else {
             stringBuilder.append(formatValue(cst));
