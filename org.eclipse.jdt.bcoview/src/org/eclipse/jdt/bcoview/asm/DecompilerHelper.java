@@ -17,11 +17,12 @@ package org.eclipse.jdt.bcoview.asm;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.jdt.bcoview.preferences.BCOConstants;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.util.Printer;
 import org.objectweb.asm.util.TraceClassVisitor;
+
+import org.eclipse.jdt.bcoview.preferences.BCOConstants;
 
 public class DecompilerHelper  {
 
@@ -42,12 +43,12 @@ public class DecompilerHelper  {
         }
         TraceClassVisitor dcv = new TraceClassVisitor(null, (Printer) printer, null);
         cn.accept(dcv);
-        return getResult(printer, options, cn);
+        return getResult(printer, cn);
     }
 
-    private static DecompiledClass getResult(ICommentedClassVisitor printer,  DecompilerOptions options, ClassNode classNode) {
+    private static DecompiledClass getResult(ICommentedClassVisitor printer,  ClassNode classNode) {
         List<Object> classText = new ArrayList<>();
-        formatText(printer.getText(), new StringBuffer(), classText, options.cl);
+        formatText(printer.getText(), new StringBuffer(), classText);
         while (classText.size() > 0 && classText.get(0).equals("\n")) { //$NON-NLS-1$
             classText.remove(0);
         }
@@ -56,12 +57,11 @@ public class DecompilerHelper  {
         return new DecompiledClass(classText, classInfo, classNode);
     }
 
-    private static void formatText(final List<?> input, final StringBuffer line, final List<Object> result,
-        final ClassLoader cl) {
+    private static void formatText(final List<?> input, final StringBuffer line, final List<Object> result) {
         for (int i = 0; i < input.size(); ++i) {
             Object o = input.get(i);
             if (o instanceof List) {
-                formatText((List<?>) o, line, result, cl);
+                formatText((List<?>) o, line, result);
             } else if (o instanceof DecompiledMethod) {
                 result.add(o);
             } else {

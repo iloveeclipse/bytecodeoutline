@@ -21,9 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
-import org.eclipse.jdt.bcoview.preferences.BCOConstants;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -37,6 +34,11 @@ import org.objectweb.asm.tree.analysis.Frame;
 import org.objectweb.asm.tree.analysis.Interpreter;
 import org.objectweb.asm.tree.analysis.SimpleVerifier;
 import org.objectweb.asm.tree.analysis.Value;
+
+import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
+import org.eclipse.jdt.bcoview.preferences.BCOConstants;
+
+import org.eclipse.core.runtime.IStatus;
 
 public class DecompiledMethod {
 
@@ -121,7 +123,7 @@ public class DecompiledMethod {
 
         if (options.modes.get(BCOConstants.F_SHOW_ANALYZER)
             && (access & Opcodes.ACC_ABSTRACT) == 0) {
-            analyzeMethod(options.cl);
+            analyzeMethod();
         }
     }
 
@@ -134,14 +136,6 @@ public class DecompiledMethod {
             || "<clinit>".equals(meth.name); //$NON-NLS-1$
     }
 
-    public boolean hasSourceLinesInfo(){
-        return ! sourceLines.isEmpty();
-    }
-
-    public boolean hasLocalVariablesInfo(){
-        return ! localVariables.isEmpty();
-    }
-
     public String getSignature(){
         return meth.name + meth.desc;
     }
@@ -151,7 +145,7 @@ public class DecompiledMethod {
     }
 
     /**
-     * @param sourceLine
+     * @param sourceLine line in sources
      * @return nearest match above given source line or the given line for perfect match
      * or -1 for no match. The return value is method-relative, and need to be transformed
      * to class absolute
@@ -183,7 +177,7 @@ public class DecompiledMethod {
         return decompiledLines.get(Integer.valueOf(bestMatch)).intValue();
     }
 
-    private void analyzeMethod(final ClassLoader cl) {
+    private void analyzeMethod() {
         Interpreter<BasicValue> interpreter;
         try {
             Type type = Type.getType(owner);
@@ -385,10 +379,6 @@ public class DecompiledMethod {
         return lineCount;
     }
 
-    public String getError() {
-        return error;
-    }
-
     public int getErrorLine() {
         if (error == null) {
             return -1;
@@ -434,54 +424,6 @@ public class DecompiledMethod {
         return i == null
             ? -1
             : i.intValue();
-    }
-
-    /**
-     *
-     * @param decompiledLine
-     * @return array with two elements, first is the local variables table,
-     * second is the operands stack content. "null" value could be returned too.
-     */
-    public String[] getFrame(final int decompiledLine, final boolean useQualifiedNames) {
-        Integer insn = getBytecodeOffset(decompiledLine);
-        if (error != null && insn != null && insn.intValue() == errorInsn) {
-            return new String [] {error,error};
-        }
-        if (frames != null && insn != null) {
-            Frame<?> f = frames[insn.intValue()];
-            if (f == null) {
-                return null;
-            }
-
-            try {
-                StringBuffer localsBuf = new StringBuffer();
-
-                for (int i = 0; i < f.getLocals(); ++i) {
-                    String s = f.getLocal(i).toString();
-                    appendTypeName(i, useQualifiedNames, localsBuf, s);
-
-                    for (Iterator<LocalVariableNode> it = localVariables.iterator(); it.hasNext();) {
-                        LocalVariableNode lvnode = it.next();
-                        int n = lvnode.index;
-                        if( n==i) {
-                          localsBuf.append( " : ").append( lvnode.name); //$NON-NLS-1$
-                        }
-                    }
-
-                    localsBuf.append('\n');
-                }
-                StringBuffer stackBuf = new StringBuffer();
-                for (int i = 0; i < f.getStackSize(); ++i) {
-                    String s = f.getStack(i).toString();
-                    appendTypeName(i, useQualifiedNames, stackBuf, s);
-                    stackBuf.append('\n');
-                }
-                return new String[] {localsBuf.toString(), stackBuf.toString()};
-            } catch (IndexOutOfBoundsException e) {
-                BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-            }
-        }
-        return null;
     }
 
     public Integer getBytecodeOffset(final int decompiledLine) {
@@ -546,32 +488,6 @@ public class DecompiledMethod {
             }
         }
         return null;
-    }
-
-
-    /**
-     * Appends full type name or only simply name, depends on boolean flag.
-     *
-     * @param useQualifiedNames if false, then e.g. "Object" will be appended to
-     * buffer instead of "Ljava/lang/Object;" etc
-     * @param buf buffer to append
-     * @param s string with bytecode type name, like "Ljava/lang/Object;"
-     */
-    private static void appendTypeName(int n, final boolean useQualifiedNames, StringBuffer buf, String s) {
-        buf.append(n).append( " "); //$NON-NLS-1$
-        if(!useQualifiedNames) {
-            int idx = s.lastIndexOf('/');
-            if(idx > 0){
-                // from "Ljava/lang/Object;" to "Object"
-                buf.append(s.substring(idx + 1, s.length() - 1));
-                return;
-            }
-        }
-        if("Lnull;".equals(s)){ //$NON-NLS-1$
-            buf.append("null"); //$NON-NLS-1$
-        } else {
-            buf.append(s);
-        }
     }
 
     private static String getTypeName(final boolean useQualifiedNames, String s) {

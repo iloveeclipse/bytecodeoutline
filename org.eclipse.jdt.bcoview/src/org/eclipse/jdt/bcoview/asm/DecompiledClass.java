@@ -19,12 +19,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.jdt.bcoview.ui.JdtUtils;
-import org.eclipse.jdt.core.IClassFile;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jface.text.ITextSelection;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
+
+import org.eclipse.jdt.bcoview.ui.JdtUtils;
+
+import org.eclipse.jface.text.ITextSelection;
+
+import org.eclipse.jdt.core.IClassFile;
+import org.eclipse.jdt.core.IJavaElement;
 
 public class DecompiledClass {
 
@@ -42,14 +45,6 @@ public class DecompiledClass {
         this.classInfo = classInfo;
         this.classNode = classNode;
         methodToJavaElt = new HashMap<>();
-    }
-
-    /**
-     * @return the class's access flags (see {@link Opcodes}). This parameter also
-     * indicates if the class is deprecated.
-     */
-    public int getAccessFlags() {
-        return classInfo.accessFlags;
     }
 
     /**
@@ -171,19 +166,6 @@ public class DecompiledClass {
         return null;
     }
 
-    public DecompiledMethod getMethod(final String signature) {
-        for (int i = 0; i < text.size(); ++i) {
-            Object o = text.get(i);
-            if (o instanceof DecompiledMethod) {
-                DecompiledMethod m = (DecompiledMethod) o;
-                if (signature.equals(m.getSignature())) {
-                    return m;
-                }
-            }
-        }
-        return null;
-    }
-
     public IJavaElement getJavaElement(int decompiledLine, IClassFile clazz) {
         DecompiledMethod method = getMethod(decompiledLine);
         if (method != null) {
@@ -217,31 +199,6 @@ public class DecompiledClass {
             }
         }
         return 0;
-    }
-
-    /**
-     * @param decompiledLine
-     * @return array with two elements, first is the local variables table, second is the
-     * operands stack content. "null" value could be returned too.
-     */
-    public String[] getFrame(final int decompiledLine,
-        final boolean showQualifiedNames) {
-        int currentDecompiledLine = 0;
-        for (int i = 0; i < text.size(); ++i) {
-            Object o = text.get(i);
-            if (o instanceof DecompiledMethod) {
-                DecompiledMethod m = (DecompiledMethod) o;
-                String[] frame = m.getFrame(decompiledLine
-                    - currentDecompiledLine, showQualifiedNames);
-                if (frame != null) {
-                    return frame;
-                }
-                currentDecompiledLine += m.getLineCount();
-            } else {
-                currentDecompiledLine++;
-            }
-        }
-        return null;
     }
 
     public String[][][] getFrameTablesForInsn(final int insn,
@@ -300,7 +257,7 @@ public class DecompiledClass {
      * Converts method relative decompiled line to class absolute decompiled position
      * @param m1 method for which we need absolute line position
      * @param decompiledLine decompiled line, relative to given method (non global coord)
-     * @return
+     * @return class absolute decompiled line
      */
     public int getDecompiledLine(final DecompiledMethod m1, final int decompiledLine) {
         int currentDecompiledLine = 0;
@@ -415,12 +372,6 @@ public class DecompiledClass {
             }
         }
         return new LineRange(startDecompiledLine, endDecompiledLine);
-    }
-
-    public LineRange getSourceRange(LineRange decompiledRange) {
-        int startSourceLine = getSourceLine(decompiledRange.startLine);
-        int endSourceLine = getSourceLine(decompiledRange.endLine);
-        return new LineRange(startSourceLine, endSourceLine);
     }
 
     public ClassNode getClassNode() {
