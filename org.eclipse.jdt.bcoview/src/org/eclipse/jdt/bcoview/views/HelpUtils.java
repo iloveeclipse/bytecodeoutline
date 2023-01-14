@@ -22,9 +22,13 @@ import java.util.Scanner;
 
 import org.objectweb.asm.util.Printer;
 
+import org.eclipse.jdt.core.dom.AST;
+
+/**
+ * Fetches latest supported JLS spec and provides help for bytecode opcodes.
+ */
 public class HelpUtils {
-	// TODO: configure it via preference
-	private static final String SPECS_HTML = "https://docs.oracle.com/javase/specs/jvms/se11/html/jvms-6.html"; //$NON-NLS-1$
+	private static final String SPECS_HTML = "https://docs.oracle.com/javase/specs/jvms/se" + AST.getJLSLatest() + "/html/jvms-6.html"; //$NON-NLS-1$ //$NON-NLS-2$
 
 	private static String fullSpec;
 
@@ -42,33 +46,33 @@ public class HelpUtils {
 				opcodeName = opcodeName.substring(0, sepIndex);
 				switch (opcodeName.charAt(0)) {
 					case 'd':
-						opcodeName += "_<d&gt;"; //$NON-NLS-1$
+						opcodeName += "_d"; //$NON-NLS-1$
 						break;
 					case 'f':
-						opcodeName += "_<f&gt;"; //$NON-NLS-1$
+						opcodeName += "_f"; //$NON-NLS-1$
 						break;
 					case 'l':
-						opcodeName += "_<l&gt;"; //$NON-NLS-1$
+						opcodeName += "_l"; //$NON-NLS-1$
 						break;
 					default:
 						// ICONST uses "n"
-						opcodeName += "_<n&gt;"; //$NON-NLS-1$
+						opcodeName += "_n"; //$NON-NLS-1$
 						break;
 				}
 			}
 			if (opcodeName.startsWith("if_acmp")) { //$NON-NLS-1$
-				opcodeName = "if_acmp<cond&gt;"; //$NON-NLS-1$
+				opcodeName = "if_acmp_cond"; //$NON-NLS-1$
 			} else if (opcodeName.startsWith("if_icmp")) { //$NON-NLS-1$
-				opcodeName = "if_icmp<cond&gt;"; //$NON-NLS-1$
+				opcodeName = "if_icmp_cond"; //$NON-NLS-1$
 			} else if (opcodeName.startsWith("if_")) { //$NON-NLS-1$
-				opcodeName = "if<cond&gt;"; //$NON-NLS-1$
+				opcodeName = "if_cond"; //$NON-NLS-1$
 			} else if (opcodeName.startsWith("aload_")) { //$NON-NLS-1$
-				opcodeName = "aload_<n&gt;"; //$NON-NLS-1$
+				opcodeName = "aload_n"; //$NON-NLS-1$
 			} else if (opcodeName.startsWith("iconst_")) { //$NON-NLS-1$
-				opcodeName = "iconst_<i&gt;"; //$NON-NLS-1$
+				opcodeName = "iconst_i"; //$NON-NLS-1$
 			}
 		} else if (opcodeName.startsWith("if")) { //$NON-NLS-1$
-			opcodeName = "if<cond&gt;"; //$NON-NLS-1$
+			opcodeName = "if_cond"; //$NON-NLS-1$
 		}
 		return opcodeName;
 	}
@@ -97,11 +101,25 @@ public class HelpUtils {
 	}
 
 	private static String readFullSpec() {
+
+		// The anchor where the real content starts. We have to ignore content before
+		// that contains TOC with same anchors we want search later in content
+		String firstInterestingLine = "<a name=\"jvms-6-100\">"; //$NON-NLS-1$
 		URL helpResource = toUrl(SPECS_HTML);
 		StringBuilder sb = new StringBuilder();
+		boolean foundContentStart = false;
 		try (BufferedReader in = new BufferedReader(new InputStreamReader(helpResource.openStream(), "UTF-8"))) { //$NON-NLS-1$
 			String line;
 			while ((line = in.readLine()) != null) {
+				if (!foundContentStart) {
+					if (line.contains(firstInterestingLine)) {
+						foundContentStart = true;
+						// that was enough from head
+						htmlHead = readHtmlHead(sb.toString());
+						// from here on we read opcodes
+						sb = new StringBuilder();
+					}
+				}
 				sb.append(line).append('\n');
 			}
 		} catch (IOException e) {
@@ -115,7 +133,6 @@ public class HelpUtils {
 	public static StringBuilder getOpcodeHelpFor(int opcode) {
 		if (fullSpec == null) {
 			fullSpec = readFullSpec();
-			htmlHead = readHtmlHead();
 		}
 		StringBuilder sb = new StringBuilder();
 		String opcodeName = getOpcodeName(opcode);
@@ -128,7 +145,6 @@ public class HelpUtils {
 	public static StringBuilder getOpcodeHelpFor(String opcodeName) {
 		if (fullSpec == null) {
 			fullSpec = readFullSpec();
-			htmlHead = readHtmlHead();
 		}
 		StringBuilder sb = new StringBuilder();
 		if (opcodeName != null) {
@@ -137,8 +153,9 @@ public class HelpUtils {
 		sb.append(htmlHead);
 
 		// Extract only important part related to the given opcode
-		String patternStart = "<div class=\"section-execution\" title=\"" + opcodeName + "\""; //$NON-NLS-1$ //$NON-NLS-2$
-		String patternEnd = "<div class=\"section-execution\" title=\""; //$NON-NLS-1$
+		String patternStart = "jvms-6.5." + opcodeName + "\""; //$NON-NLS-1$ //$NON-NLS-2$
+		String patternEnd = "<div class=\"section-execution\""; //$NON-NLS-1$
+		String startSection = "<div class=\"section-execution\"><div class=\"titlepage\"><div><div>"; //$NON-NLS-1$
 		try (Scanner in = new Scanner(fullSpec)) {
 			String line;
 			boolean foundStart = false;
@@ -151,6 +168,7 @@ public class HelpUtils {
 				if (!foundStart && line.contains(patternStart)) {
 					foundStart = true;
 					checkEnd = true;
+					sb.append(startSection);
 				}
 				if (foundStart) {
 					sb.append(line);
@@ -167,12 +185,9 @@ public class HelpUtils {
 		return sb;
 	}
 
-	private static String readHtmlHead() {
+	private static String readHtmlHead(String head) {
 		StringBuilder sb = new StringBuilder();
-		if (fullSpec == null) {
-			return sb.toString();
-		}
-		try (Scanner in = new Scanner(fullSpec)) {
+		try (Scanner in = new Scanner(head)) {
 			String line;
 			while (in.hasNextLine()) {
 				line = in.nextLine();
