@@ -17,25 +17,32 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
 
-import org.eclipse.compare.CompareUI;
-import org.eclipse.core.resources.IFile;
-import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
 import org.eclipse.jdt.bcoview.compare.BytecodeCompare;
 import org.eclipse.jdt.bcoview.compare.TypedElement;
 import org.eclipse.jdt.bcoview.preferences.BCOConstants;
 import org.eclipse.jdt.bcoview.ui.JdtUtils;
-import org.eclipse.jdt.core.IClassFile;
-import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.JavaCore;
+
+import org.eclipse.swt.widgets.Shell;
+
+import org.eclipse.core.runtime.IAdaptable;
+
+import org.eclipse.core.resources.IFile;
+
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.swt.widgets.Shell;
+
 import org.eclipse.ui.IObjectActionDelegate;
 import org.eclipse.ui.IWorkbenchPart;
+
+import org.eclipse.compare.CompareUI;
+
+import org.eclipse.jdt.core.IClassFile;
+import org.eclipse.jdt.core.ICompilationUnit;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.JavaCore;
 
 public abstract class BytecodeAction implements IObjectActionDelegate {
     protected IStructuredSelection selection;

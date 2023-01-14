@@ -13,8 +13,10 @@
  *******************************************************************************/
 package org.eclipse.jdt.bcoview.preferences;
 
-import org.eclipse.core.runtime.preferences.AbstractPreferenceInitializer;
 import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
+
+import org.eclipse.core.runtime.preferences.AbstractPreferenceInitializer;
+
 import org.eclipse.jface.preference.IPreferenceStore;
 
 /**

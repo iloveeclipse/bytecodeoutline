@@ -16,8 +16,10 @@ package org.eclipse.jdt.bcoview.views;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
+
+import org.eclipse.core.runtime.IStatus;
+
 import org.eclipse.jface.viewers.IPostSelectionProvider;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;

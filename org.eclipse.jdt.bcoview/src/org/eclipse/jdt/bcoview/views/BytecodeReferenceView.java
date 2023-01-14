@@ -14,17 +14,22 @@
  *******************************************************************************/
 package org.eclipse.jdt.bcoview.views;
 
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
 import org.eclipse.jdt.bcoview.preferences.BCOConstants;
 import org.eclipse.jdt.bcoview.ui.actions.DefaultToggleAction;
-import org.eclipse.jface.action.IToolBarManager;
-import org.eclipse.jface.text.ITextSelection;
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.IStructuredSelection;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.widgets.Composite;
+
+import org.eclipse.core.runtime.IStatus;
+
+import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
+
+import org.eclipse.jface.text.ITextSelection;
+
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IPartListener2;
 import org.eclipse.ui.ISelectionListener;

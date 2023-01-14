@@ -16,11 +16,14 @@ package org.eclipse.jdt.bcoview.ui.actions;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.eclipse.core.runtime.IAdaptable;
 import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
+
+import org.eclipse.core.runtime.IAdaptable;
+
+import org.eclipse.jface.action.IAction;
+
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMember;
-import org.eclipse.jface.action.IAction;
 
 public class CompareMemberBytecodeAction extends BytecodeAction {
 

@@ -14,10 +14,12 @@
 package org.eclipse.jdt.bcoview.ui.actions;
 
 import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
+
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
+
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 
 

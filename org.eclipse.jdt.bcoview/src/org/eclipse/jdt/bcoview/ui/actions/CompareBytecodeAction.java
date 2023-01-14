@@ -14,8 +14,10 @@
 package org.eclipse.jdt.bcoview.ui.actions;
 
 import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
-import org.eclipse.jdt.core.IJavaElement;
+
 import org.eclipse.jface.action.IAction;
+
+import org.eclipse.jdt.core.IJavaElement;
 
 public class CompareBytecodeAction extends BytecodeAction {
 

@@ -14,8 +14,10 @@
 package org.eclipse.jdt.bcoview.ui.actions;
 
 import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
+
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
+
 import org.eclipse.ui.IViewActionDelegate;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.PartInitException;

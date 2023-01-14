@@ -17,7 +17,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.eclipse.jdt.bcoview.preferences.BCOConstants;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
@@ -29,6 +28,8 @@ import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.ASMifier;
 import org.objectweb.asm.util.TraceMethodVisitor;
+
+import org.eclipse.jdt.bcoview.preferences.BCOConstants;
 
 public class CommentedASMifierClassVisitor extends ASMifier implements ICommentedClassVisitor {
 

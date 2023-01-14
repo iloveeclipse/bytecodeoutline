@@ -15,25 +15,30 @@ package org.eclipse.jdt.bcoview.compare;
 
 import java.lang.reflect.Field;
 
+import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
+import org.eclipse.jdt.bcoview.preferences.BCOConstants;
+import org.eclipse.jdt.bcoview.ui.actions.DefaultToggleAction;
+
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.core.runtime.SubMonitor;
+
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.action.ToolBarManager;
+
+import org.eclipse.ui.IReusableEditor;
+
 import org.eclipse.compare.CompareConfiguration;
 import org.eclipse.compare.CompareEditorInput;
 import org.eclipse.compare.CompareUI;
 import org.eclipse.compare.CompareViewerPane;
 import org.eclipse.compare.CompareViewerSwitchingPane;
 import org.eclipse.compare.structuremergeviewer.Differencer;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.OperationCanceledException;
-import org.eclipse.core.runtime.SubMonitor;
-import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
-import org.eclipse.jdt.bcoview.preferences.BCOConstants;
-import org.eclipse.jdt.bcoview.ui.actions.DefaultToggleAction;
-import org.eclipse.jface.action.Action;
-import org.eclipse.jface.action.Separator;
-import org.eclipse.jface.action.ToolBarManager;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.ui.IReusableEditor;
 
 public class BytecodeCompare extends CompareEditorInput {
 
