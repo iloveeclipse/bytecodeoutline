@@ -16,7 +16,9 @@ package org.eclipse.jdt.bcoview.asm;
 public class JavaVersion {
 
 	private final int version;
+
 	public final int major;
+
 	public final int minor;
 
 	public JavaVersion(int version) {
@@ -30,7 +32,7 @@ public class JavaVersion {
 		int javaV = major % 44;
 		String javaVersion;
 		if (javaV > 0) {
-			if(javaV > 8) {
+			if (javaV > 8) {
 				javaVersion = javaV + "." + minor; //$NON-NLS-1$
 			} else {
 				javaVersion = "1." + javaV; //$NON-NLS-1$

@@ -35,26 +35,26 @@ import org.eclipse.jdt.core.IJavaElement;
 public class EditorListener implements ISelectionListener, IFileBufferListener, IPartListener2 {
 	volatile protected BytecodeOutlineView view;
 
-	EditorListener(BytecodeOutlineView view){
+	EditorListener(BytecodeOutlineView view) {
 		this.view = view;
 	}
 
 	/**
 	 * clean view reference
 	 */
-	public void dispose(){
+	public void dispose() {
 		this.view = null;
 	}
 
 	@Override
 	public void selectionChanged(IWorkbenchPart part, ISelection selection) {
-		if(!(selection instanceof ITextSelection)){
-			if(selection instanceof IStructuredSelection){
+		if (!(selection instanceof ITextSelection)) {
+			if (selection instanceof IStructuredSelection) {
 				IStructuredSelection ssel = (IStructuredSelection) selection;
-				if(ssel.isEmpty()){
+				if (ssel.isEmpty()) {
 					return;
 				}
-				if(ssel.getFirstElement() instanceof IJavaElement){
+				if (ssel.getFirstElement() instanceof IJavaElement) {
 					/*
 					 * this may be selection in outline view. If so, the editor selection
 					 * would be changed but no event would be sent :(
@@ -63,7 +63,7 @@ public class EditorListener implements ISelectionListener, IFileBufferListener, 
 					Display display = Display.getDefault();
 					// fork
 					display.asyncExec(() -> {
-						if(view != null) {
+						if (view != null) {
 							view.checkOpenEditors(true);
 						}
 					});
@@ -76,15 +76,15 @@ public class EditorListener implements ISelectionListener, IFileBufferListener, 
 
 	@Override
 	public void dirtyStateChanged(IFileBuffer buffer, final boolean isDirty) {
-		if(!view.isLinkedWithEditor()){
+		if (!view.isLinkedWithEditor()) {
 			return;
 		}
-		if(isSupportedBuffer(buffer)){
+		if (isSupportedBuffer(buffer)) {
 			// first call set only view flag - cause
 			view.handleBufferIsDirty(isDirty);
 
 			// second call will really refresh view
-			if(!isDirty){
+			if (!isDirty) {
 				// this one will be called in UI thread after some delay, because we need
 				// to wait until the bytecode will be written on disk
 				final Runnable runnable2 = () -> view.handleBufferIsDirty(isDirty);
@@ -95,7 +95,6 @@ public class EditorListener implements ISelectionListener, IFileBufferListener, 
 					display.timerExec(1000, runnable2);
 				};
 				Display display = Display.getDefault();
-				// fork
 				display.asyncExec(runnable1);
 			}
 		}

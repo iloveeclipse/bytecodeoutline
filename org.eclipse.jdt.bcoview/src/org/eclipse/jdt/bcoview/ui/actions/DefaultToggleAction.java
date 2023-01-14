@@ -24,15 +24,16 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
 
 
 /**
- * Default action which could be used as template for "toggle" action.
- * Action image, text and tooltip will be initialized by default.
- * To use it, register IPropertyChangeListener and check for IAction.CHECKED
- * event name.
+ * Default action which could be used as template for "toggle" action. Action image, text and
+ * tooltip will be initialized by default. To use it, register IPropertyChangeListener and check for
+ * IAction.CHECKED event name.
  */
 public abstract class DefaultToggleAction extends Action implements IPropertyChangeListener {
 
 	private static final String ACTION = "action"; //$NON-NLS-1$
+
 	boolean avoidUpdate;
+
 	private final IPreferenceStore store;
 
 	public DefaultToggleAction(final String id) {
@@ -48,7 +49,7 @@ public abstract class DefaultToggleAction extends Action implements IPropertyCha
 
 		boolean isChecked = prefStore.getBoolean(id);
 		setChecked(isChecked);
-		if(addPreferenceListener) {
+		if (addPreferenceListener) {
 			this.store = prefStore;
 			prefStore.addPropertyChangeListener(this);
 		} else {
@@ -57,12 +58,12 @@ public abstract class DefaultToggleAction extends Action implements IPropertyCha
 	}
 
 	@Override
-	public void propertyChange(final PropertyChangeEvent event){
-		if(store == null){
+	public void propertyChange(final PropertyChangeEvent event) {
+		if (store == null) {
 			return;
 		}
 		String id = getId();
-		if(!id.equals(event.getProperty())){
+		if (!id.equals(event.getProperty())) {
 			return;
 		}
 		boolean isChecked = store.getBoolean(id);
@@ -70,38 +71,31 @@ public abstract class DefaultToggleAction extends Action implements IPropertyCha
 		// The action state can be changed from preference page (therefore run()), but...
 		// see http://forge.objectweb.org/tracker/?func=detail&atid=100023&aid=311888&group_id=23
 		// this causes multiple unneeded re-syncs of the compare editor
-		if(!avoidUpdate) {
+		if (!avoidUpdate) {
 			run(isChecked);
 		}
 	}
 
-	public void dispose(){
-		if(store != null) {
+	public void dispose() {
+		if (store != null) {
 			store.removePropertyChangeListener(this);
 		}
 	}
 
-	private void init(){
+	private void init() {
 		String myId = getId();
-		if(myId != null && myId.startsWith("diff_")) { //$NON-NLS-1$
+		if (myId != null && myId.startsWith("diff_")) { //$NON-NLS-1$
 			myId = myId.substring("diff_".length()); //$NON-NLS-1$
 		}
 		setImageDescriptor(AbstractUIPlugin
 				.imageDescriptorFromPlugin(
-						BytecodeOutlinePlugin.getDefault().getBundle()
-						.getSymbolicName(),
-						BytecodeOutlinePlugin
-						.getResourceString(ACTION + "." + myId + "." + IMAGE))); //$NON-NLS-1$ //$NON-NLS-2$
+						BytecodeOutlinePlugin.getDefault().getBundle().getSymbolicName(),
+						BytecodeOutlinePlugin.getResourceString(ACTION + "." + myId + "." + IMAGE))); //$NON-NLS-1$ //$NON-NLS-2$
 
-		setText(BytecodeOutlinePlugin
-				.getResourceString(ACTION + "." + myId + "." + TEXT)); //$NON-NLS-1$ //$NON-NLS-2$
-		setToolTipText(BytecodeOutlinePlugin
-				.getResourceString(ACTION + "." + myId + "." + TOOL_TIP_TEXT)); //$NON-NLS-1$ //$NON-NLS-2$
+		setText(BytecodeOutlinePlugin.getResourceString(ACTION + "." + myId + "." + TEXT)); //$NON-NLS-1$ //$NON-NLS-2$
+		setToolTipText(BytecodeOutlinePlugin.getResourceString(ACTION + "." + myId + "." + TOOL_TIP_TEXT)); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
-	/**
-	 * @see org.eclipse.jface.action.IAction#run()
-	 */
 	@Override
 	public final void run() {
 		boolean isChecked = isChecked();

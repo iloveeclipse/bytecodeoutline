@@ -20,6 +20,7 @@ import org.eclipse.jface.viewers.ISelection;
 
 import org.eclipse.ui.IViewActionDelegate;
 import org.eclipse.ui.IViewPart;
+import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 
@@ -32,28 +33,17 @@ public class OpenBytecodeReferenceAction implements IViewActionDelegate {
 		super();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-	 */
 	@Override
 	public void run(IAction action) {
 		try {
-			PlatformUI.getWorkbench().getActiveWorkbenchWindow()
-			.getActivePage().showView(
-					"org.eclipse.jdt.bcoview.views.BytecodeReferenceView"); //$NON-NLS-1$
+			IWorkbenchPage activePage = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+			activePage.showView("org.eclipse.jdt.bcoview.views.BytecodeReferenceView"); //$NON-NLS-1$
 		} catch (PartInitException e) {
-			BytecodeOutlinePlugin.error(
-					"Could not open Bytecode Reference View: " + e.getMessage(), e); //$NON-NLS-1$
+			BytecodeOutlinePlugin.error("Could not open Bytecode Reference View: " + e.getMessage(), e); //$NON-NLS-1$
 		}
 
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action.IAction,
-	 * org.eclipse.jface.viewers.ISelection)
-	 */
 	@Override
 	public void selectionChanged(IAction action, ISelection selection) {
 		// no op

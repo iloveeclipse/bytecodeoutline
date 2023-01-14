@@ -22,7 +22,9 @@ public class DecompilerOptions {
 	public static final int LATEST_ASM_VERSION = Opcodes.ASM9;
 
 	public final String fieldFilter;
+
 	public final String methodFilter;
+
 	public final BitSet modes;
 
 	public DecompilerOptions(final String fieldFilter, final String methodFilter, final BitSet modes) {

@@ -32,8 +32,7 @@ public class CompareMemberBytecodeAction extends BytecodeAction {
 		try {
 			exec(resources[0], resources[1]);
 		} catch (Exception e) {
-			BytecodeOutlinePlugin.error("Failed to run Compare: " //$NON-NLS-1$
-					+ e.getMessage(), e);
+			BytecodeOutlinePlugin.error("Failed to run Compare: " + e.getMessage(), e); //$NON-NLS-1$
 		}
 	}
 
@@ -58,8 +57,7 @@ public class CompareMemberBytecodeAction extends BytecodeAction {
 		}
 
 		if (resources != null && !resources.isEmpty()) {
-			return resources.toArray(new IJavaElement[resources
-			                                          .size()]);
+			return resources.toArray(new IJavaElement[resources.size()]);
 		}
 
 		return new IJavaElement[0];

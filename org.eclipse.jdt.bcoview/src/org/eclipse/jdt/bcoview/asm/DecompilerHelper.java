@@ -24,14 +24,13 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import org.eclipse.jdt.bcoview.preferences.BCOConstants;
 
-public class DecompilerHelper  {
+public class DecompilerHelper {
 
-	public static DecompiledClass getDecompiledClass(final byte[] bytes,
-			DecompilerOptions options) throws UnsupportedClassVersionError {
+	public static DecompiledClass getDecompiledClass(byte[] bytes, DecompilerOptions options) throws UnsupportedClassVersionError {
 		ClassReader cr = new ClassReader(bytes);
 		ClassNode cn = new ClassNode(DecompilerOptions.LATEST_ASM_VERSION);
 		int crFlags = 0;
-		if(options.modes.get(BCOConstants.F_EXPAND_STACKMAP)) {
+		if (options.modes.get(BCOConstants.F_EXPAND_STACKMAP)) {
 			crFlags |= ClassReader.EXPAND_FRAMES;
 		}
 		cr.accept(cn, crFlags);
@@ -46,10 +45,10 @@ public class DecompilerHelper  {
 		return getResult(printer, cn);
 	}
 
-	private static DecompiledClass getResult(ICommentedClassVisitor printer,  ClassNode classNode) {
+	private static DecompiledClass getResult(ICommentedClassVisitor printer, ClassNode classNode) {
 		List<Object> classText = new ArrayList<>();
 		formatText(printer.getText(), new StringBuffer(), classText);
-		while (classText.size() > 0 && classText.get(0).equals("\n")) { //$NON-NLS-1$
+		while (classText.size() > 0 && "\n".equals(classText.get(0))) { //$NON-NLS-1$
 			classText.remove(0);
 		}
 

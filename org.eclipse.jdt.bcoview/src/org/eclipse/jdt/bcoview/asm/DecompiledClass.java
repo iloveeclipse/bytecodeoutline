@@ -33,11 +33,15 @@ public class DecompiledClass {
 
 	/** key is DecompiledMethod, value is IJavaElement (Member) */
 	private final Map<DecompiledMethod, IJavaElement> methodToJavaElt;
+
 	private final List<Object> text;
 
 	private String value;
+
 	private final ClassNode classNode;
+
 	private int classSize;
+
 	private final DecompiledClassInfo classInfo;
 
 	public DecompiledClass(final List<Object> text, DecompiledClassInfo classInfo, ClassNode classNode) {
@@ -52,11 +56,10 @@ public class DecompiledClass {
 	 */
 	public boolean isAbstractOrInterface() {
 		int accessFlags = classInfo.accessFlags;
-		return (accessFlags & Opcodes.ACC_ABSTRACT) != 0
-				|| (accessFlags & Opcodes.ACC_INTERFACE) != 0;
+		return (accessFlags & Opcodes.ACC_ABSTRACT) != 0 || (accessFlags & Opcodes.ACC_INTERFACE) != 0;
 	}
 
-	public boolean isDefaultMethodPossible(){
+	public boolean isDefaultMethodPossible() {
 		return classInfo.major >= 8;
 	}
 
@@ -85,7 +88,7 @@ public class DecompiledClass {
 					lines.add(mline);
 				}
 			} else {
-				lines.add(new String[]{"", "", "", o.toString(), ""}); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+				lines.add(new String[] { "", "", "", o.toString(), "" }); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 			}
 		}
 		return lines.toArray(new String[lines.size()][]);
@@ -96,8 +99,7 @@ public class DecompiledClass {
 		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
 				DecompiledMethod m = (DecompiledMethod) o;
-				Integer offset = m.getBytecodeOffset(decompiledLine
-						- currentDecompiledLine);
+				Integer offset = m.getBytecodeOffset(decompiledLine - currentDecompiledLine);
 				if (offset != null) {
 					return offset.intValue();
 				}
@@ -114,8 +116,7 @@ public class DecompiledClass {
 		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
 				DecompiledMethod m = (DecompiledMethod) o;
-				Integer opcode = m.getBytecodeInsn(decompiledLine
-						- currentDecompiledLine);
+				Integer opcode = m.getBytecodeInsn(decompiledLine - currentDecompiledLine);
 				if (opcode != null) {
 					return opcode.intValue();
 				}
@@ -164,8 +165,7 @@ public class DecompiledClass {
 	public IJavaElement getJavaElement(int decompiledLine, IClassFile clazz) {
 		DecompiledMethod method = getMethod(decompiledLine);
 		if (method != null) {
-			IJavaElement javaElement = methodToJavaElt
-					.get(method);
+			IJavaElement javaElement = methodToJavaElt.get(method);
 			if (javaElement == null) {
 				javaElement = JdtUtils.getMethod(clazz, method.getSignature());
 				if (javaElement != null) {
@@ -195,8 +195,7 @@ public class DecompiledClass {
 		return 0;
 	}
 
-	public String[][][] getFrameTablesForInsn(final int insn,
-			boolean useQualifiedNames) {
+	public String[][][] getFrameTablesForInsn(final int insn, boolean useQualifiedNames) {
 		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
 				DecompiledMethod m = (DecompiledMethod) o;
@@ -208,14 +207,13 @@ public class DecompiledClass {
 		}
 		return null;
 	}
-	public String[][][] getFrameTables(final int decompiledLine,
-			boolean useQualifiedNames) {
+
+	public String[][][] getFrameTables(final int decompiledLine, boolean useQualifiedNames) {
 		int currentDecompiledLine = 0;
 		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
 				DecompiledMethod m = (DecompiledMethod) o;
-				String[][][] frame = m.getFrameTables(decompiledLine
-						- currentDecompiledLine, useQualifiedNames);
+				String[][][] frame = m.getFrameTables(decompiledLine - currentDecompiledLine, useQualifiedNames);
 				if (frame != null) {
 					return frame;
 				}
@@ -246,6 +244,7 @@ public class DecompiledClass {
 
 	/**
 	 * Converts method relative decompiled line to class absolute decompiled position
+	 *
 	 * @param m1 method for which we need absolute line position
 	 * @param decompiledLine decompiled line, relative to given method (non global coord)
 	 * @return class absolute decompiled line
@@ -254,7 +253,7 @@ public class DecompiledClass {
 		int currentDecompiledLine = 0;
 		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
-				if (o == m1){
+				if (o == m1) {
 					return currentDecompiledLine + decompiledLine;
 				}
 				DecompiledMethod m = (DecompiledMethod) o;
@@ -295,11 +294,11 @@ public class DecompiledClass {
 				if (line > 0) {
 					// doesn't work if it is a <init> or <cinit> which spawns over
 					// multiple locations in code
-					if(m.isInit()){
-						if(bestM != null){
+					if (m.isInit()) {
+						if (bestM != null) {
 							int d1 = sourceLine - bestM.getFirstSourceLine();
 							int d2 = sourceLine - m.getFirstSourceLine();
-							if(d2 < d1){
+							if (d2 < d1) {
 								bestM = m;
 							}
 						} else {
@@ -310,9 +309,9 @@ public class DecompiledClass {
 					}
 				} else {
 					// check for init blocks which composed from different code lines
-					if(bestM != null && bestM.isInit()){
-						if(bestM.getFirstSourceLine() < m.getFirstSourceLine()
-								&& bestM.getLastSourceLine() > m.getLastSourceLine()){
+					if (bestM != null && bestM.isInit()) {
+						if (bestM.getFirstSourceLine() < m.getFirstSourceLine()
+								&& bestM.getLastSourceLine() > m.getLastSourceLine()) {
 							bestM = null;
 						}
 					}
@@ -343,7 +342,7 @@ public class DecompiledClass {
 		}
 		int endDecompiledLine = getDecompiledLine(endLine);
 		if (endDecompiledLine < 0) {
-			if(m2 == null) {
+			if (m2 == null) {
 				m2 = getBestDecompiledMatch(endLine);
 			}
 			if (m2 != null && m2.equals(m1)) {
@@ -355,7 +354,7 @@ public class DecompiledClass {
 					endDecompiledLine = methodStartLine + m2.getLineCount();
 				}
 				// TODO dirty workaround
-				if(endDecompiledLine < startDecompiledLine){
+				if (endDecompiledLine < startDecompiledLine) {
 					endDecompiledLine = startDecompiledLine + 1;
 				}
 			}

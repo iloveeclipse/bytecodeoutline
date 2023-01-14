@@ -44,87 +44,67 @@ public class BytecodeCompare extends CompareEditorInput {
 
 	/** Stores reference to the element displayed on the left side of the viewer. */
 	protected TypedElement left;
+
 	/** Stores reference to the element displayed on the right side of the viewer. */
 	protected TypedElement right;
+
 	/** Action used in compare view/bytecode view to toggle asmifier mode on/off */
 	protected Action toggleAsmifierModeAction;
-	/** Action used in compare view/bytecode view to hide/show line info.  */
+
+	/** Action used in compare view/bytecode view to hide/show line info. */
 	protected Action hideLineInfoAction;
+
 	/** Action used in compare view/bytecode view to hide/show local variables. */
 	protected Action hideLocalsAction;
+
 	protected Action hideStackMapAction;
+
 	protected Action expandStackMapAction;
 
 	protected IReusableEditor myEditor;
 
-	/**
-	 * Constructor for PerforceCompareEditorInput.
-	 * @param left element displayed on the left.
-	 * @param right element displayed on the right.
-	 */
 	public BytecodeCompare(final TypedElement left, final TypedElement right) {
 		super(new CompareConfiguration());
 		this.left = left;
 		this.right = right;
-		toggleAsmifierModeAction = new DefaultToggleAction(
-				BCOConstants.DIFF_SHOW_ASMIFIER_CODE, false) {
-
+		toggleAsmifierModeAction = new DefaultToggleAction(BCOConstants.DIFF_SHOW_ASMIFIER_CODE, false) {
 			@Override
 			public void run(final boolean newState) {
-				toggleMode(
-						BCOConstants.F_SHOW_ASMIFIER_CODE, newState, newState);
+				toggleMode(BCOConstants.F_SHOW_ASMIFIER_CODE, newState, newState);
 			}
 		};
 
-		hideLineInfoAction = new DefaultToggleAction(
-				BCOConstants.DIFF_SHOW_LINE_INFO, false) {
-
+		hideLineInfoAction = new DefaultToggleAction(BCOConstants.DIFF_SHOW_LINE_INFO, false) {
 			@Override
 			public void run(final boolean newState) {
-				toggleMode(
-						BCOConstants.F_SHOW_LINE_INFO, newState,
-						toggleAsmifierModeAction.isChecked());
+				toggleMode(BCOConstants.F_SHOW_LINE_INFO, newState, toggleAsmifierModeAction.isChecked());
 			}
 		};
 
-		hideLocalsAction = new DefaultToggleAction(
-				BCOConstants.DIFF_SHOW_VARIABLES, false) {
-
+		hideLocalsAction = new DefaultToggleAction(BCOConstants.DIFF_SHOW_VARIABLES, false) {
 			@Override
 			public void run(final boolean newState) {
-				toggleMode(
-						BCOConstants.F_SHOW_VARIABLES, newState,
-						toggleAsmifierModeAction.isChecked());
+				toggleMode(BCOConstants.F_SHOW_VARIABLES, newState, toggleAsmifierModeAction.isChecked());
 			}
 		};
 
-		hideStackMapAction = new DefaultToggleAction(
-				BCOConstants.DIFF_SHOW_STACKMAP, false) {
-
+		hideStackMapAction = new DefaultToggleAction(BCOConstants.DIFF_SHOW_STACKMAP, false) {
 			@Override
 			public void run(final boolean newState) {
-				toggleMode(
-						BCOConstants.F_SHOW_STACKMAP, newState,
-						toggleAsmifierModeAction.isChecked());
+				toggleMode(BCOConstants.F_SHOW_STACKMAP, newState, toggleAsmifierModeAction.isChecked());
 			}
 		};
 
-		expandStackMapAction = new DefaultToggleAction(
-				BCOConstants.DIFF_EXPAND_STACKMAP, false) {
-
+		expandStackMapAction = new DefaultToggleAction(BCOConstants.DIFF_EXPAND_STACKMAP, false) {
 			@Override
 			public void run(final boolean newState) {
-				toggleMode(
-						BCOConstants.F_EXPAND_STACKMAP, newState,
-						toggleAsmifierModeAction.isChecked());
+				toggleMode(BCOConstants.F_EXPAND_STACKMAP, newState, toggleAsmifierModeAction.isChecked());
 			}
 		};
 	}
 
-	/** @see CompareEditorInput#prepareInput(IProgressMonitor) */
 	@Override
-	protected Object prepareInput(final IProgressMonitor monitor)
-			throws InterruptedException {
+	protected Object prepareInput(IProgressMonitor monitor) throws InterruptedException {
 		if (right == null || left == null) {
 			return null;
 		}
@@ -136,9 +116,7 @@ public class BytecodeCompare extends CompareEditorInput {
 			IProgressMonitor sub = SubMonitor.convert(monitor, 10);
 			try {
 				sub.beginTask("Bytecode Outline: comparing...", 100); //$NON-NLS-1$
-
-				return differencer.findDifferences(
-						false, sub, null, null, left, right);
+				return differencer.findDifferences(false, sub, null, null, left, right);
 			} finally {
 				sub.done();
 			}
@@ -161,8 +139,7 @@ public class BytecodeCompare extends CompareEditorInput {
 		cc.setRightLabel(right.getName());
 		cc.setRightImage(right.getImage());
 
-		setTitle("Bytecode compare: "  //$NON-NLS-1$
-				+ left.getElementName() + " - " + right.getElementName()); //$NON-NLS-1$
+		setTitle("Bytecode compare: " + left.getElementName() + " - " + right.getElementName()); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
 	public CompareViewerSwitchingPane getInputPane() {
@@ -170,7 +147,7 @@ public class BytecodeCompare extends CompareEditorInput {
 			Field field = CompareEditorInput.class.getDeclaredField("fContentInputPane"); //$NON-NLS-1$
 			field.setAccessible(true);
 			Object object = field.get(this);
-			if(object instanceof CompareViewerSwitchingPane) {
+			if (object instanceof CompareViewerSwitchingPane) {
 				return (CompareViewerSwitchingPane) object;
 			}
 		} catch (Exception e) {
@@ -203,73 +180,67 @@ public class BytecodeCompare extends CompareEditorInput {
 		return null;
 	}
 
-	/**
-	 * @see org.eclipse.compare.CompareEditorInput#createContents(org.eclipse.swt.widgets.Composite)
-	 */
 	@Override
 	public Control createContents(final Composite parent) {
 		Object obj = parent.getData();
-		if(obj == null) {
+		if (obj == null) {
 			obj = parent.getParent().getData();
 		}
 		// dirty hook on this place to get reference to editor
 		// CompareEditor extends EditorPart implements IReusableEditor
-		if(obj instanceof IReusableEditor){
-			myEditor = (IReusableEditor)obj;
+		if (obj instanceof IReusableEditor) {
+			myEditor = (IReusableEditor) obj;
 		}
 
 		Control control = super.createContents(parent);
 
 		CompareViewerSwitchingPane inputPane = getInputPane();
 		if (inputPane != null) {
-			ToolBarManager toolBarManager2 = CompareViewerPane
-					.getToolBarManager(inputPane);
-			if(toolBarManager2 == null) {
+			ToolBarManager toolBarManager2 = CompareViewerPane.getToolBarManager(inputPane);
+			if (toolBarManager2 == null) {
 				return control;
 			}
 			boolean separatorExist = false;
 			if (toolBarManager2.find(hideLineInfoAction.getId()) == null) {
-				if(!separatorExist) {
+				if (!separatorExist) {
 					separatorExist = true;
 					toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
 				}
 				toolBarManager2.insertBefore("bco", hideLineInfoAction); //$NON-NLS-1$
-//                toolBarManager2.update(true);
 			}
+
 			if (toolBarManager2.find(hideLocalsAction.getId()) == null) {
-				if(!separatorExist) {
+				if (!separatorExist) {
 					separatorExist = true;
 					toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
 				}
 				toolBarManager2.insertBefore("bco", hideLocalsAction); //$NON-NLS-1$
-//                toolBarManager2.update(true);
 			}
 
 			if (toolBarManager2.find(hideStackMapAction.getId()) == null) {
-				if(!separatorExist) {
+				if (!separatorExist) {
 					separatorExist = true;
 					toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
 				}
 				toolBarManager2.insertBefore("bco", hideStackMapAction); //$NON-NLS-1$
-//                toolBarManager2.update(true);
 			}
+
 			if (toolBarManager2.find(expandStackMapAction.getId()) == null) {
-				if(!separatorExist) {
+				if (!separatorExist) {
 					separatorExist = true;
 					toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
 				}
 				toolBarManager2.insertBefore("bco", expandStackMapAction); //$NON-NLS-1$
-//                toolBarManager2.update(true);
 			}
 
 			if (toolBarManager2.find(toggleAsmifierModeAction.getId()) == null) {
-				if(!separatorExist) {
+				if (!separatorExist) {
 					toolBarManager2.insert(0, new Separator("bco")); //$NON-NLS-1$
 					separatorExist = true;
 				}
 				toolBarManager2.insertBefore("bco", toggleAsmifierModeAction); //$NON-NLS-1$
-//                toolBarManager2.update(true);
 			}
+
 			try {
 				toolBarManager2.update(true);
 				toolBarManager2.getControl().getParent().layout(true);
@@ -283,9 +254,7 @@ public class BytecodeCompare extends CompareEditorInput {
 	}
 
 	protected void toggleMode(final int mode, final boolean value, final boolean isASMifierMode) {
-		String contentType = isASMifierMode
-				? TypedElement.TYPE_ASM_IFIER
-						: TypedElement.TYPE_BYTECODE;
+		String contentType = isASMifierMode ? TypedElement.TYPE_ASM_IFIER : TypedElement.TYPE_BYTECODE;
 
 		left.setMode(mode, value);
 		left.setMode(BCOConstants.F_SHOW_ASMIFIER_CODE, isASMifierMode);
@@ -295,9 +264,6 @@ public class BytecodeCompare extends CompareEditorInput {
 		right.setMode(BCOConstants.F_SHOW_ASMIFIER_CODE, isASMifierMode);
 		right.setType(contentType);
 
-//        createDiffViewer.refresh();
-//        myEditor.setInput(this);
 		CompareUI.reuseCompareEditor(new BytecodeCompare(left, right), myEditor);
-//        CompareUI.reuseCompareEditor(this, myEditor);
 	}
 }

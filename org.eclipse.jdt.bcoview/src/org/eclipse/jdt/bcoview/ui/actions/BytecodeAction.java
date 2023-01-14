@@ -45,6 +45,7 @@ import org.eclipse.jdt.core.JavaCore;
 
 public abstract class BytecodeAction implements IObjectActionDelegate {
 	protected IStructuredSelection selection;
+
 	protected Shell shell;
 
 	@Override
@@ -61,15 +62,12 @@ public abstract class BytecodeAction implements IObjectActionDelegate {
 
 	protected void exec(IJavaElement element1, IJavaElement element2) throws Exception {
 		final BitSet modes = getModes();
-		CompareUI.openCompareEditor(new BytecodeCompare(
-				createTypedElement(element1, modes),
-				createTypedElement(element2, modes)));
+		CompareUI.openCompareEditor(new BytecodeCompare(createTypedElement(element1, modes), createTypedElement(element2, modes)));
 	}
 
 	protected TypedElement createTypedElement(IJavaElement javaElement, BitSet modes) {
 		String name;
-		IClassFile classFile = (IClassFile) javaElement
-				.getAncestor(IJavaElement.CLASS_FILE);
+		IClassFile classFile = (IClassFile) javaElement.getAncestor(IJavaElement.CLASS_FILE);
 		// existing read-only class files
 		if (classFile != null) {
 			name = classFile.getPath().toOSString();
@@ -81,10 +79,10 @@ public abstract class BytecodeAction implements IObjectActionDelegate {
 			name = JdtUtils.getByteCodePath(javaElement);
 		}
 		String methodName = null;
-		if(javaElement.getElementType() == IJavaElement.METHOD ||
-				javaElement.getElementType() == IJavaElement.INITIALIZER){
+		int elementType = javaElement.getElementType();
+		if (elementType == IJavaElement.METHOD || elementType == IJavaElement.INITIALIZER) {
 			methodName = JdtUtils.getMethodSignature(javaElement);
-			if(methodName != null){
+			if (methodName != null) {
 				name += ":" + methodName; //$NON-NLS-1$
 			}
 		}
@@ -112,16 +110,17 @@ public abstract class BytecodeAction implements IObjectActionDelegate {
 			resources = new ArrayList<>();
 			for (Object next : selection) {
 				if (next instanceof IFile) {
-					resources.add(JavaCore.create((IFile)next));
+					resources.add(JavaCore.create((IFile) next));
 					continue;
-				} if (next instanceof IJavaElement) {
+				}
+				if (next instanceof IJavaElement) {
 					resources.add(next);
 					continue;
 				} else if (next instanceof IAdaptable) {
 					IAdaptable a = (IAdaptable) next;
 					Object adapter = a.getAdapter(IFile.class);
 					if (adapter instanceof IFile) {
-						resources.add(JavaCore.create((IFile)adapter));
+						resources.add(JavaCore.create((IFile) adapter));
 						continue;
 					}
 					adapter = a.getAdapter(ICompilationUnit.class);
@@ -140,8 +139,7 @@ public abstract class BytecodeAction implements IObjectActionDelegate {
 		}
 
 		if (resources != null && !resources.isEmpty()) {
-			return resources.toArray(new IJavaElement[resources
-			                                          .size()]);
+			return resources.toArray(new IJavaElement[resources.size()]);
 		}
 
 		return new IJavaElement[0];

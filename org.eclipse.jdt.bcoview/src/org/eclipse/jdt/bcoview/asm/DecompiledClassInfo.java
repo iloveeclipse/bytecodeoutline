@@ -16,7 +16,9 @@ package org.eclipse.jdt.bcoview.asm;
 
 public class DecompiledClassInfo {
 	public final JavaVersion javaVersion;
+
 	public final int accessFlags;
+
 	public final int major;
 
 	public DecompiledClassInfo(JavaVersion javaVersion, int accessFlags) {

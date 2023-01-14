@@ -44,8 +44,12 @@ import org.eclipse.ui.part.ViewPart;
 
 public class BytecodeReferenceView extends ViewPart implements IPartListener2, ISelectionListener {
 
+	private static final String VIEW_ID = "org.eclipse.jdt.bcoview.views.BytecodeOutlineView"; //$NON-NLS-1$
+
 	private Browser browser;
+
 	private DefaultToggleAction linkWithViewAction;
+
 	private boolean linkWithView;
 
 	public BytecodeReferenceView() {
@@ -56,21 +60,16 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
 	public void createPartControl(Composite parent) {
 		browser = new Browser(parent, SWT.BORDER);
 		final IWorkbenchWindow workbenchWindow = getSite().getWorkbenchWindow();
-		linkWithView = BytecodeOutlinePlugin.getDefault().getPreferenceStore()
-				.getBoolean(BCOConstants.LINK_REF_VIEW_TO_EDITOR);
-		linkWithViewAction = new DefaultToggleAction(BCOConstants.LINK_REF_VIEW_TO_EDITOR){
+		linkWithView = BytecodeOutlinePlugin.getDefault().getPreferenceStore().getBoolean(BCOConstants.LINK_REF_VIEW_TO_EDITOR);
+		linkWithViewAction = new DefaultToggleAction(BCOConstants.LINK_REF_VIEW_TO_EDITOR) {
 			@Override
 			public void run(boolean newState) {
 				linkWithView = newState;
-				if(linkWithView){
-					ISelectionService selectionService = workbenchWindow
-							.getSelectionService();
+				if (linkWithView) {
+					ISelectionService selectionService = workbenchWindow.getSelectionService();
 					try {
-						IViewPart part = workbenchWindow.getActivePage()
-								.showView(
-										"org.eclipse.jdt.bcoview.views.BytecodeOutlineView"); //$NON-NLS-1$
-						ISelection selection = selectionService
-								.getSelection("org.eclipse.jdt.bcoview.views.BytecodeOutlineView"); //$NON-NLS-1$
+						IViewPart part = workbenchWindow.getActivePage().showView(VIEW_ID);
+						ISelection selection = selectionService.getSelection(VIEW_ID);
 						selectionChanged(part, selection);
 					} catch (PartInitException e) {
 						BytecodeOutlinePlugin.log(e, IStatus.ERROR);
@@ -129,8 +128,7 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
 	@Override
 	public void partHidden(IWorkbenchPartReference partRef) {
 		if (partRef.getId().equals(getSite().getId())) {
-			getSite().getWorkbenchWindow().getSelectionService()
-			.removePostSelectionListener(this);
+			getSite().getWorkbenchWindow().getSelectionService().removePostSelectionListener(this);
 		}
 	}
 
@@ -138,18 +136,14 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
 	public void partVisible(IWorkbenchPartReference partRef) {
 		if (partRef.getId().equals(getSite().getId())) {
 			IWorkbenchWindow workbenchWindow = getSite().getWorkbenchWindow();
-			ISelectionService selectionService = workbenchWindow
-					.getSelectionService();
-			String partId = BytecodeOutlineView.class.getName();
+			ISelectionService selectionService = workbenchWindow.getSelectionService();
 			selectionService.addPostSelectionListener(this);
 
-
 			// perform initialization with already existing selection (if any)
-			ISelection selection = selectionService.getSelection(partId);
-			if(selection != null) {
-				IViewReference viewReference = workbenchWindow.getActivePage()
-						.findViewReference(partId);
-				if(viewReference != null) {
+			ISelection selection = selectionService.getSelection(VIEW_ID);
+			if (selection != null) {
+				IViewReference viewReference = workbenchWindow.getActivePage().findViewReference(VIEW_ID);
+				if (viewReference != null) {
 					selectionChanged(viewReference.getView(false), selection);
 				}
 			}
@@ -169,20 +163,20 @@ public class BytecodeReferenceView extends ViewPart implements IPartListener2, I
 		}
 		int line = -1;
 		if (selection instanceof ITextSelection) {
-			line = ((ITextSelection)selection).getStartLine();
-		} else if(selection instanceof IStructuredSelection){
+			line = ((ITextSelection) selection).getStartLine();
+		} else if (selection instanceof IStructuredSelection) {
 			IStructuredSelection sselection = (IStructuredSelection) selection;
 			int size = sselection.size();
-			if(size == 1 && sselection.getFirstElement() instanceof Integer){
-				line = ((Integer)sselection.getFirstElement()).intValue();
+			if (size == 1 && sselection.getFirstElement() instanceof Integer) {
+				line = ((Integer) sselection.getFirstElement()).intValue();
 			}
 		}
 
-		if(line < 0) {
+		if (line < 0) {
 			shouDefaultEmptyPage();
 			return;
 		}
-		int opcode = ((IBytecodePart)part).getBytecodeInstructionAtLine(line);
+		int opcode = ((IBytecodePart) part).getBytecodeInstructionAtLine(line);
 		StringBuilder helpFor = HelpUtils.getOpcodeHelpFor(opcode);
 		if (helpFor.length() > 0) {
 			browser.setText(helpFor.toString());

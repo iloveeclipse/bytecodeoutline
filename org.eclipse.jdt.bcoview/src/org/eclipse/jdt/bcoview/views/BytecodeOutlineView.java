@@ -13,12 +13,13 @@
  *******************************************************************************/
 package org.eclipse.jdt.bcoview.views;
 
+import static org.eclipse.jdt.bcoview.BytecodeOutlinePlugin.getResourceString;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -103,6 +104,7 @@ import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchCommandConstants;
 import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.console.actions.TextViewerAction;
@@ -142,15 +144,17 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
 	// orientations
 	static final int VIEW_ORIENTATION_VERTICAL = 0;
+
 	static final int VIEW_ORIENTATION_HORIZONTAL = 1;
+
 	static final int VIEW_ORIENTATION_AUTOMATIC = 2;
 
 	/**
 	 * The current orientation; either <code>VIEW_ORIENTATION_HORIZONTAL</code>
-	 * <code>VIEW_ORIENTATION_VERTICAL</code>,
-	 * or <code>VIEW_ORIENTATION_AUTOMATIC</code>.
+	 * <code>VIEW_ORIENTATION_VERTICAL</code>, or <code>VIEW_ORIENTATION_AUTOMATIC</code>.
 	 */
 	int orientation = VIEW_ORIENTATION_AUTOMATIC;
+
 	/**
 	 * The current orientation; either <code>VIEW_ORIENTATION_HORIZONTAL</code>
 	 * <code>VIEW_ORIENTATION_VERTICAL</code>.
@@ -162,40 +166,69 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 	protected BitSet modes;
 
 	protected boolean inputChanged;
+
 	protected boolean bufferIsDirty;
 
 	private boolean isEnabled;
+
 	private boolean isActive;
+
 	private boolean isVisible;
 
 	protected Composite stackComposite;
+
 	protected StyledText textControl;
+
 	protected JavaSourceViewer textViewer;
+
 	protected SashForm verifyControl;
+
 	protected SashForm stackAndLvt;
+
 	protected Table tableControl;
+
 	protected TableViewer tableControlViewer;
+
 	protected Table stackTable;
+
 	protected Table lvtTable;
 
 	protected ITextEditor javaEditor;
+
 	private IJavaElement javaInput;
+
 	protected IJavaElement lastChildElement;
+
 	protected ITextSelection currentSelection;
+
 	protected EditorListener editorListener;
+
 	protected Action selectionChangedAction;
+
 	protected Action refreshVarsAndStackAction;
+
 	protected DefaultToggleAction linkWithEditorAction;
+
 	protected DefaultToggleAction showSelectedOnlyAction;
+
 	protected DefaultToggleAction setRawModeAction;
+
 	protected DefaultToggleAction toggleASMifierModeAction;
+
 	protected DefaultToggleAction hideLineInfoAction;
+
 	protected DefaultToggleAction hideLocalsAction;
+
 	protected DefaultToggleAction hideStackMapAction;
+
 	protected DefaultToggleAction showHexValuesAction;
+
 	protected DefaultToggleAction expandStackMapAction;
+
 	protected DefaultToggleAction toggleVerifierAction;
+
 	protected StatusLineManager statusLineManager;
+
 	protected BCOViewSelectionProvider viewSelectionProvider;
 
 	protected Color errorColor;
@@ -203,11 +236,16 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 	private DecompiledClass lastDecompiledResult;
 
 	protected Map<String, IAction> globalActions;
+
 	protected List<String> selectionActions;
+
 	private MenuManager contextMenuManager;
+
 	/** global class info, without current selection status */
 	protected String currentStatusMessage;
+
 	protected boolean hasAnalyzerError;
+
 	/*
 	 * I don't know how to update the state of toolbar and menu managers because it seems
 	 * that if we toggle the action state internally (not by user click) then either the
@@ -215,6 +253,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 	 * This flag is a workaround and allows us restore the state after internal toggling.
 	 */
 	private boolean restoreVerify;
+
 	private static final String NLS_PREFIX = "BytecodeOutlineView."; //$NON-NLS-1$
 
 	// updates the find replace action if the document length is > 0
@@ -222,18 +261,14 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
 	// see org.eclipse.ui.console.TextConsolePage for the reason to do this ;)
 	private ISelectionChangedListener textSelectionListener;
-	private Control statusControl;
 
-	// ------------------------------------------------------------------------
+	private Control statusControl;
 
 	protected void setJavaInput(IJavaElement javaInput) {
 		this.javaInput = javaInput;
 		inputChanged = true;
 	}
 
-	/**
-	 * The constructor.
-	 */
 	public BytecodeOutlineView() {
 		super();
 		modes = new BitSet();
@@ -241,10 +276,9 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		selectionActions = new ArrayList<>();
 	}
 
-	// ------------------------------------------------------------------------
-
 	/**
 	 * Is this view state changes depending on editor changes?
+	 *
 	 * @return true if linked with editor
 	 */
 	protected boolean isLinkedWithEditor() {
@@ -253,6 +287,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
 	/**
 	 * Are actions on toolbar active?
+	 *
 	 * @return Returns the isEnabled.
 	 */
 	private boolean isEnabled() {
@@ -280,8 +315,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		showHexValuesAction.setEnabled(on);
 		toggleASMifierModeAction.setEnabled(on);
 		expandStackMapAction.setEnabled(on);
-		setRawModeAction
-		.setEnabled(on && !toggleASMifierModeAction.isChecked());
+		setRawModeAction.setEnabled(on && !toggleASMifierModeAction.isChecked());
 		boolean showAnalyzer = on && toggleVerifierAction.isChecked();
 		for (ToggleOrientationAction toggleOrientationAction : toggleOrientationActions) {
 			toggleOrientationAction.setEnabled(showAnalyzer);
@@ -290,15 +324,13 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
 	/**
 	 * Is this view monitoring workspace changes?
+	 *
 	 * @return Returns the isActive.
 	 */
 	private boolean isActive() {
 		return isActive;
 	}
 
-	/**
-	 * @param bufferIsDirty The bufferIsDirty to set.
-	 */
 	private void setBufferIsDirty(boolean bufferIsDirty) {
 		this.bufferIsDirty = bufferIsDirty;
 	}
@@ -317,14 +349,13 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
 			checkVerifyMode();
 
-			updateSelection(EclipseUtils.getSelection(javaEditor
-					.getSelectionProvider()));
+			updateSelection(EclipseUtils.getSelection(javaEditor.getSelectionProvider()));
 			setBufferIsDirty(editor.isDirty());
 		}
 	}
 
 	private void checkVerifyMode() {
-		if(toggleVerifierAction == null){
+		if (toggleVerifierAction == null) {
 			return;
 		}
 		boolean aoi = JdtUtils.isAbstractOrInterface(javaInput);
@@ -337,16 +368,14 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			if (aoi) {
 				// swith verify mode off, because it is not applicable to selected element
 				inputChanged = true;
-				toggleVerifyMode(
-						getViewSite().getActionBars().getMenuManager(), false);
+				toggleVerifyMode(getViewSite().getActionBars().getMenuManager(), false);
 				// remember last state, to match the state of the toolbars and menus
 				restoreVerify = true;
 			} else {
 				if (restoreVerify) {
 					inputChanged = true;
 					toggleVerifierAction.setEnabled(true);
-					toggleVerifyMode(getViewSite().getActionBars()
-							.getMenuManager(), true);
+					toggleVerifyMode(getViewSite().getActionBars().getMenuManager(), true);
 				}
 				restoreVerify = false;
 			}
@@ -371,18 +400,12 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		return true;
 	}
 
-	// ------------------------------------------------------------------------
-
-	/**
-	 * @see org.eclipse.ui.IViewPart#init(org.eclipse.ui.IViewSite)
-	 */
 	@Override
 	public void init(IViewSite site) {
 		super.setSite(site);
 		if (editorListener == null) {
 			editorListener = new EditorListener(this);
-			getSite().getWorkbenchWindow().getPartService().addPartListener(
-					editorListener);
+			getSite().getWorkbenchWindow().getPartService().addPartListener(editorListener);
 		}
 	}
 
@@ -419,15 +442,12 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		statusControl = statusLineManager.createControl(parent, SWT.NONE);
 		statusControl.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		IEditorPart activeEditor = EclipseUtils.getActiveEditor();
-		if(activeEditor instanceof ITextEditor) {
+		if (activeEditor instanceof ITextEditor) {
 			setInput((ITextEditor) activeEditor);
 		}
 		createTextControl();
-
 		createTextContextMenu();
-
 		createVerifyControl();
-
 		initModes();
 
 		if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
@@ -437,37 +457,22 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		}
 
 		createSelectionProvider();
-
 		createToolbarActions();
-
 		setEnabled(false);
-
-//        activateView();
 	}
 
 	private void initModes() {
-		IPreferenceStore store = BytecodeOutlinePlugin.getDefault()
-				.getPreferenceStore();
-		modes.set(BCOConstants.F_LINK_VIEW_TO_EDITOR, store
-				.getBoolean(BCOConstants.LINK_VIEW_TO_EDITOR));
-		modes.set(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT, store
-				.getBoolean(BCOConstants.SHOW_ONLY_SELECTED_ELEMENT));
-		modes.set(BCOConstants.F_SHOW_RAW_BYTECODE, store
-				.getBoolean(BCOConstants.SHOW_RAW_BYTECODE));
-		modes.set(BCOConstants.F_SHOW_LINE_INFO, store
-				.getBoolean(BCOConstants.SHOW_LINE_INFO));
-		modes.set(BCOConstants.F_SHOW_VARIABLES, store
-				.getBoolean(BCOConstants.SHOW_VARIABLES));
-		modes.set(BCOConstants.F_SHOW_STACKMAP, store
-				.getBoolean(BCOConstants.SHOW_STACKMAP));
-		modes.set(BCOConstants.F_EXPAND_STACKMAP, store
-				.getBoolean(BCOConstants.EXPAND_STACKMAP));
-		modes.set(BCOConstants.F_SHOW_ASMIFIER_CODE, store
-				.getBoolean(BCOConstants.SHOW_ASMIFIER_CODE));
-		modes.set(BCOConstants.F_SHOW_ANALYZER, store
-				.getBoolean(BCOConstants.SHOW_ANALYZER));
-		modes.set(BCOConstants.F_SHOW_HEX_VALUES, store
-				.getBoolean(BCOConstants.SHOW_HEX_VALUES));
+		IPreferenceStore store = BytecodeOutlinePlugin.getDefault().getPreferenceStore();
+		modes.set(BCOConstants.F_LINK_VIEW_TO_EDITOR, store.getBoolean(BCOConstants.LINK_VIEW_TO_EDITOR));
+		modes.set(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT, store.getBoolean(BCOConstants.SHOW_ONLY_SELECTED_ELEMENT));
+		modes.set(BCOConstants.F_SHOW_RAW_BYTECODE, store.getBoolean(BCOConstants.SHOW_RAW_BYTECODE));
+		modes.set(BCOConstants.F_SHOW_LINE_INFO, store.getBoolean(BCOConstants.SHOW_LINE_INFO));
+		modes.set(BCOConstants.F_SHOW_VARIABLES, store.getBoolean(BCOConstants.SHOW_VARIABLES));
+		modes.set(BCOConstants.F_SHOW_STACKMAP, store.getBoolean(BCOConstants.SHOW_STACKMAP));
+		modes.set(BCOConstants.F_EXPAND_STACKMAP, store.getBoolean(BCOConstants.EXPAND_STACKMAP));
+		modes.set(BCOConstants.F_SHOW_ASMIFIER_CODE, store.getBoolean(BCOConstants.SHOW_ASMIFIER_CODE));
+		modes.set(BCOConstants.F_SHOW_ANALYZER, store.getBoolean(BCOConstants.SHOW_ANALYZER));
+		modes.set(BCOConstants.F_SHOW_HEX_VALUES, store.getBoolean(BCOConstants.SHOW_HEX_VALUES));
 	}
 
 	private void createToolbarActions() {
@@ -478,7 +483,6 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		final IMenuManager mmanager = bars.getMenuManager();
 
 		selectionChangedAction = new Action() {
-
 			@Override
 			public void run() {
 				Point selection = textControl.getSelection();
@@ -487,29 +491,26 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		};
 
 		refreshVarsAndStackAction = new Action() {
-
 			@Override
 			public void run() {
 				int selectionIndex = tableControl.getSelectionIndex();
 				TableItem[] items = tableControl.getSelection();
-				if(items == null || items.length < 1){
+				if (items == null || items.length < 1) {
 					return;
 				}
 				String line = items[0].getText(0);
-				if(line == null || "".equals(line)){ //$NON-NLS-1$
+				if (line == null || "".equals(line)) { //$NON-NLS-1$
 					return;
 				}
 				Integer valueOf = Integer.valueOf(line);
-				if(valueOf != null){
+				if (valueOf != null) {
 					updateVerifierControl4insn(valueOf.intValue());
 					tableControl.setSelection(selectionIndex);
 				}
 			}
 		};
 
-		linkWithEditorAction = new DefaultToggleAction(
-				BCOConstants.LINK_VIEW_TO_EDITOR) {
-
+		linkWithEditorAction = new DefaultToggleAction(BCOConstants.LINK_VIEW_TO_EDITOR) {
 			@Override
 			public void run(boolean newState) {
 				setMode(BCOConstants.F_LINK_VIEW_TO_EDITOR, newState);
@@ -530,9 +531,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			}
 		};
 
-		showSelectedOnlyAction = new DefaultToggleAction(
-				BCOConstants.SHOW_ONLY_SELECTED_ELEMENT) {
-
+		showSelectedOnlyAction = new DefaultToggleAction(BCOConstants.SHOW_ONLY_SELECTED_ELEMENT) {
 			@Override
 			public void run(boolean newState) {
 				setMode(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT, newState);
@@ -541,9 +540,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			}
 		};
 
-		setRawModeAction = new DefaultToggleAction(
-				BCOConstants.SHOW_RAW_BYTECODE) {
-
+		setRawModeAction = new DefaultToggleAction(BCOConstants.SHOW_RAW_BYTECODE) {
 			@Override
 			public void run(boolean newState) {
 				setMode(BCOConstants.F_SHOW_RAW_BYTECODE, newState);
@@ -552,9 +549,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			}
 		};
 
-		hideLineInfoAction = new DefaultToggleAction(
-				BCOConstants.SHOW_LINE_INFO) {
-
+		hideLineInfoAction = new DefaultToggleAction(BCOConstants.SHOW_LINE_INFO) {
 			@Override
 			public void run(boolean newState) {
 				setMode(BCOConstants.F_SHOW_LINE_INFO, newState);
@@ -564,7 +559,6 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		};
 
 		hideLocalsAction = new DefaultToggleAction(BCOConstants.SHOW_VARIABLES) {
-
 			@Override
 			public void run(boolean newState) {
 				setMode(BCOConstants.F_SHOW_VARIABLES, newState);
@@ -574,7 +568,6 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		};
 
 		hideStackMapAction = new DefaultToggleAction(BCOConstants.SHOW_STACKMAP) {
-
 			@Override
 			public void run(boolean newState) {
 				setMode(BCOConstants.F_SHOW_STACKMAP, newState);
@@ -583,9 +576,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			}
 		};
 
-		expandStackMapAction = new DefaultToggleAction(
-				BCOConstants.EXPAND_STACKMAP) {
-
+		expandStackMapAction = new DefaultToggleAction(BCOConstants.EXPAND_STACKMAP) {
 			@Override
 			public void run(boolean newState) {
 				setMode(BCOConstants.F_EXPAND_STACKMAP, newState);
@@ -594,9 +585,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			}
 		};
 
-		showHexValuesAction = new DefaultToggleAction(
-				BCOConstants.SHOW_HEX_VALUES) {
-
+		showHexValuesAction = new DefaultToggleAction(BCOConstants.SHOW_HEX_VALUES) {
 			@Override
 			public void run(boolean newState) {
 				setMode(BCOConstants.F_SHOW_HEX_VALUES, newState);
@@ -605,9 +594,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			}
 		};
 
-		toggleASMifierModeAction = new DefaultToggleAction(
-				BCOConstants.SHOW_ASMIFIER_CODE) {
-
+		toggleASMifierModeAction = new DefaultToggleAction(BCOConstants.SHOW_ASMIFIER_CODE) {
 			@Override
 			public void run(boolean newState) {
 				setMode(BCOConstants.F_SHOW_ASMIFIER_CODE, newState);
@@ -622,9 +609,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			}
 		};
 
-		toggleVerifierAction = new DefaultToggleAction(
-				BCOConstants.SHOW_ANALYZER) {
-
+		toggleVerifierAction = new DefaultToggleAction(BCOConstants.SHOW_ANALYZER) {
 			@Override
 			public void run(boolean newState) {
 				toggleVerifyMode(mmanager, newState);
@@ -646,10 +631,10 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
 		mmanager.add(new Separator());
 
-		toggleOrientationActions = new ToggleOrientationAction[]{
+		toggleOrientationActions = new ToggleOrientationAction[] {
 				new ToggleOrientationAction(VIEW_ORIENTATION_VERTICAL),
 				new ToggleOrientationAction(VIEW_ORIENTATION_HORIZONTAL),
-				new ToggleOrientationAction(VIEW_ORIENTATION_AUTOMATIC)};
+				new ToggleOrientationAction(VIEW_ORIENTATION_AUTOMATIC) };
 		for (ToggleOrientationAction toggleOrientationAction : toggleOrientationActions) {
 			mmanager.add(toggleOrientationAction);
 		}
@@ -666,7 +651,6 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 	@SuppressWarnings("unused")
 	private void createVerifyControl() {
 		verifyControl = new SashForm(stackComposite, SWT.VERTICAL);
-
 		tableControl = new Table(verifyControl, SWT.SINGLE | SWT.FULL_SELECTION);
 		tableControlViewer = new TableViewer(tableControl);
 
@@ -675,11 +659,11 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		tc.setToolTipText("ASM instruction offset"); //$NON-NLS-1$
 
 		tc = new TableColumn(tableControl, SWT.LEFT);
-		tc.setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "lvt.header")); //$NON-NLS-1$
+		tc.setText(getResourceString(NLS_PREFIX + "lvt.header")); //$NON-NLS-1$
 		tc.setToolTipText("Local variables"); //$NON-NLS-1$
 
 		tc = new TableColumn(tableControl, SWT.LEFT);
-		tc.setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "stack.header")); //$NON-NLS-1$
+		tc.setText(getResourceString(NLS_PREFIX + "stack.header")); //$NON-NLS-1$
 		tc.setToolTipText("Stack content *before* current instruction is executed"); //$NON-NLS-1$
 		new TableColumn(tableControl, SWT.LEFT);
 		new TableColumn(tableControl, SWT.LEFT);
@@ -703,11 +687,9 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		new TableColumn(stackTable, SWT.LEFT).setText("Stack Type"); //$NON-NLS-1$
 
 		stackAndLvt.setWeights(50, 50);
-
 		verifyControl.setWeights(75, 25);
 
 		tableControl.addSelectionListener(new SelectionAdapter() {
-
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				if (modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR)) {
@@ -747,14 +729,11 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 	}
 
 	private void createTextControl() {
-
 		IPreferenceStore store = JavaPlugin.getDefault().getCombinedPreferenceStore();
-		final JavaSourceViewer viewer = new JavaSourceViewer(
-				stackComposite, null, null, true, SWT.V_SCROLL | SWT.H_SCROLL,
-				store);
+		final JavaSourceViewer viewer = new JavaSourceViewer(stackComposite, null, null, true, SWT.V_SCROLL | SWT.H_SCROLL, store);
 
-		JavaSourceViewerConfiguration configuration = new JavaConfiguration(
-				JavaPlugin.getDefault().getJavaTextTools().getColorManager(), store, null, IJavaPartitions.JAVA_PARTITIONING);
+		IColorManager colorManager = JavaPlugin.getDefault().getJavaTextTools().getColorManager();
+		JavaSourceViewerConfiguration configuration = new JavaConfiguration(colorManager, store, null, IJavaPartitions.JAVA_PARTITIONING);
 		viewer.configure(configuration);
 		viewer.setEditable(false);
 		textViewer = viewer;
@@ -764,33 +743,29 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		textViewer.setDocument(document);
 
 		textSelectionListener = event -> {
-			// Updates selection dependent actions like find/copy.
-			Iterator<String> iterator = selectionActions.iterator();
-			while (iterator.hasNext()) {
-				updateAction(iterator.next());
+			for (String selectionAction : selectionActions) {
+				updateAction(selectionAction);
 			}
 		};
 
 		textListener = event -> {
-			IUpdate findReplace = (IUpdate) globalActions
-					.get(ActionFactory.FIND.getId());
+			IUpdate findReplace = (IUpdate) globalActions.get(ActionFactory.FIND.getId());
 			if (findReplace != null) {
 				findReplace.update();
 			}
 		};
 
-		textViewer.getSelectionProvider().addSelectionChangedListener(
-				textSelectionListener);
+		textViewer.getSelectionProvider().addSelectionChangedListener(textSelectionListener);
 		textViewer.addTextListener(textListener);
 
 		textControl.addMouseListener(new MouseAdapter() {
-
 			@Override
 			public void mouseDown(MouseEvent e) {
 				if (modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR)) {
 					selectionChangedAction.run();
 				}
 			}
+
 			@Override
 			public void mouseUp(MouseEvent e) {
 				if (modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR)) {
@@ -800,7 +775,6 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		});
 
 		textControl.addKeyListener(new KeyListener() {
-
 			@Override
 			public void keyPressed(KeyEvent e) {
 				// ignored
@@ -815,19 +789,14 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		});
 	}
 
-	/**
-	 * @see org.eclipse.ui.IWorkbenchPart#dispose()
-	 */
 	@Override
 	public void dispose() {
 		deActivateView();
 		if (editorListener != null) {
-			getSite().getWorkbenchWindow().getPartService().removePartListener(
-					editorListener);
-			getSite().getWorkbenchWindow()
-			.getSelectionService().removePostSelectionListener(editorListener);
-			FileBuffers.getTextFileBufferManager().removeFileBufferListener(
-					editorListener);
+			IWorkbenchWindow workbenchWindow = getSite().getWorkbenchWindow();
+			workbenchWindow.getPartService().removePartListener(editorListener);
+			workbenchWindow.getSelectionService().removePostSelectionListener(editorListener);
+			FileBuffers.getTextFileBufferManager().removeFileBufferListener(editorListener);
 			editorListener.dispose();
 			editorListener = null;
 		}
@@ -839,8 +808,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		selectionActions.clear();
 		globalActions.clear();
 
-		textViewer.getSelectionProvider().removeSelectionChangedListener(
-				textSelectionListener);
+		textViewer.getSelectionProvider().removeSelectionChangedListener(textSelectionListener);
 		textViewer.removeTextListener(textListener);
 		textViewer = null;
 		viewSelectionProvider = null;
@@ -889,33 +857,21 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		super.dispose();
 	}
 
-	/**
-	 * Fill the context menu
-	 * @param menuManager menu
-	 */
 	protected void contextMenuAboutToShow(IMenuManager menuManager) {
 		IDocument doc = textViewer.getDocument();
 		if (doc == null) {
 			return;
 		}
 
-		menuManager
-		.add(globalActions.get(ActionFactory.COPY.getId()));
-		menuManager.add(globalActions.get(ActionFactory.SELECT_ALL
-				.getId()));
+		menuManager.add(globalActions.get(ActionFactory.COPY.getId()));
+		menuManager.add(globalActions.get(ActionFactory.SELECT_ALL.getId()));
 
 		menuManager.add(new Separator("FIND")); //$NON-NLS-1$
-		menuManager
-		.add(globalActions.get(ActionFactory.FIND.getId()));
+		menuManager.add(globalActions.get(ActionFactory.FIND.getId()));
 
 		menuManager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 	}
 
-	// -----------------------------------------------------------------------
-
-	/**
-	 * Passing the focus request to the viewer's control.
-	 */
 	@Override
 	public void setFocus() {
 		if (!modes.get(BCOConstants.F_SHOW_ANALYZER)) {
@@ -964,7 +920,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
 	protected void handlePartVisible(IWorkbenchPart part) {
 		if (!modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR)) {
-			if(this == part){
+			if (this == part) {
 				isVisible = true;
 			}
 			return;
@@ -1000,10 +956,8 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		}
 	}
 
-	protected void handleSelectionChanged(IWorkbenchPart part,
-			ISelection selection) {
-		if (!modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR) || !isActive()
-				|| !isVisible || !(part instanceof IEditorPart)) {
+	protected void handleSelectionChanged(IWorkbenchPart part, ISelection selection) {
+		if (!modes.get(BCOConstants.F_LINK_VIEW_TO_EDITOR) || !isActive() || !isVisible || !(part instanceof IEditorPart)) {
 			return;
 		}
 		if (!(part instanceof ITextEditor)) {
@@ -1031,10 +985,8 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			return;
 		}
 		isActive = true;
-		getSite().getWorkbenchWindow().getSelectionService()
-		.addPostSelectionListener(editorListener);
-		FileBuffers.getTextFileBufferManager().addFileBufferListener(
-				editorListener);
+		getSite().getWorkbenchWindow().getSelectionService().addPostSelectionListener(editorListener);
+		FileBuffers.getTextFileBufferManager().addFileBufferListener(editorListener);
 	}
 
 	/**
@@ -1046,28 +998,20 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		}
 		setEnabled(false);
 		if (editorListener != null) {
-			ISelectionService service = getSite().getWorkbenchWindow()
-					.getSelectionService();
+			ISelectionService service = getSite().getWorkbenchWindow().getSelectionService();
 			if (service != null) {
 				service.removePostSelectionListener(editorListener);
 			}
-			FileBuffers.getTextFileBufferManager().removeFileBufferListener(
-					editorListener);
+			FileBuffers.getTextFileBufferManager().removeFileBufferListener(editorListener);
 
 		}
-		if (textViewer != null && textViewer.getTextWidget() != null
-				&& !textViewer.getTextWidget().isDisposed()) {
+		if (textViewer != null && textViewer.getTextWidget() != null && !textViewer.getTextWidget().isDisposed()) {
 			IDocument document = new Document(""); //$NON-NLS-1$
 			textViewer.setDocument(document);
 		}
 		if (tableControl != null && !tableControl.isDisposed()) {
 			setVerifyTableItems(null);
 		}
-		/*
-		 * if(stackControl != null && !stackControl.isDisposed()){
-		 * stackControl.setText(""); } if(lvtControl != null && !lvtControl.isDisposed()){
-		 * lvtControl.setText(""); }
-		 */
 		if (stackTable != null && !stackTable.isDisposed()) {
 			stackTable.removeAll();
 		}
@@ -1107,7 +1051,6 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		boolean clearOutput = false;
 
 		if (inputChanged || isSelectedElementChanged(childEl)) {
-
 			DecompiledClass result = decompileBytecode(childEl);
 			if (result == null) {
 				clearOutput = true;
@@ -1121,8 +1064,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 				}
 			}
 			lastDecompiledResult = result;
-		} else if (childEl == null
-				&& modes.get(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT)) {
+		} else if (childEl == null && modes.get(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT)) {
 			clearOutput = true;
 		}
 
@@ -1141,14 +1083,8 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
 	private void refreshTextView(DecompiledClass result) {
 		IDocument document = new Document(result.getText());
-		JavaTextTools tools= JavaPlugin.getDefault().getJavaTextTools();
+		JavaTextTools tools = JavaPlugin.getDefault().getJavaTextTools();
 		tools.setupJavaDocumentPartitioner(document, IJavaPartitions.JAVA_PARTITIONING);
-//        JavaSourceViewerConfiguration configuration = new JavaSourceViewerConfiguration(
-//            JavaPlugin.getDefault().getJavaTextTools().getColorManager(),
-//            JavaPlugin.getDefault().getCombinedPreferenceStore(), javaEditor,
-//            IJavaPartitions.JAVA_PARTITIONING);
-//        textViewer.unconfigure();
-//        textViewer.configure(configuration);
 		textViewer.setDocument(document);
 		// we are in verify mode but we can't show content because
 		// current element is abstract, so we clean table content
@@ -1174,8 +1110,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		toggleVerifierAction.setEnabled(true);
 	}
 
-	private void updateStatus(DecompiledClass result, int bytecodeOffsetStart,
-			int bytecodeOffsetEnd) {
+	private void updateStatus(DecompiledClass result, int bytecodeOffsetStart, int bytecodeOffsetEnd) {
 		// clear error messages, if any
 		statusLineManager.setErrorMessage(null);
 		if (result != null) {
@@ -1183,7 +1118,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 					+ result.getJavaVersion() + " | class size:" //$NON-NLS-1$
 					+ result.getClassSize();
 			ClassNode classNode = result.getClassNode();
-			if(classNode != null && classNode.name != null) {
+			if (classNode != null && classNode.name != null) {
 				setContentDescription(classNode.name);
 			}
 		} else {
@@ -1198,8 +1133,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			}
 		}
 		if (hasAnalyzerError) {
-			statusLineManager.setErrorMessage(currentStatusMessage
-					+ selectionInfo);
+			statusLineManager.setErrorMessage(currentStatusMessage + selectionInfo);
 		} else {
 			statusLineManager.setMessage(currentStatusMessage + selectionInfo);
 		}
@@ -1223,15 +1157,15 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			childEl = JdtUtils.getElementAtOffset(javaInput, currentSelection);
 			if (childEl != null) {
 				switch (childEl.getElementType()) {
-					case IJavaElement.METHOD :
-					case IJavaElement.FIELD :
-					case IJavaElement.INITIALIZER :
-					case IJavaElement.TYPE :
+					case IJavaElement.METHOD:
+					case IJavaElement.FIELD:
+					case IJavaElement.INITIALIZER:
+					case IJavaElement.TYPE:
 						break;
-					case IJavaElement.LOCAL_VARIABLE :
+					case IJavaElement.LOCAL_VARIABLE:
 						childEl = childEl.getAncestor(IJavaElement.METHOD);
 						break;
-					default :
+					default:
 						childEl = null;
 						break;
 				}
@@ -1270,19 +1204,18 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			 * to find and select first method line. See cr 306011
 			 */
 			DecompiledMethod match = lastDecompiledResult.getBestDecompiledMatch(sourceLine);
-			if(match != null){
+			if (match != null) {
 				// this is relative to method start
 				decompiledLine = match.getBestDecompiledLine(sourceLine);
-				if(decompiledLine > 0){
+				if (decompiledLine > 0) {
 					// convert to class file relative
 					decompiledLine = lastDecompiledResult.getDecompiledLine(match, decompiledLine);
 				}
 			}
-			if(decompiledLine < 0){
+			if (decompiledLine < 0) {
 				String methodName = JdtUtils.getMethodSignature(lastChildElement);
 				if (methodName != null) {
-					decompiledLine = lastDecompiledResult
-							.getDecompiledLine(methodName) - 1;
+					decompiledLine = lastDecompiledResult.getDecompiledLine(methodName) - 1;
 				}
 			}
 		}
@@ -1295,10 +1228,8 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 				} else {
 					int lineCount = textControl.getLineCount();
 					if (decompiledLine < lineCount) {
-						int offsetAtLine = textControl
-								.getOffsetAtLine(decompiledLine);
-						int offsetEnd = textControl.getText().indexOf(
-								'\n', offsetAtLine);
+						int offsetAtLine = textControl.getOffsetAtLine(decompiledLine);
+						int offsetEnd = textControl.getText().indexOf('\n', offsetAtLine);
 						textControl.setSelection(offsetAtLine, offsetEnd);
 					}
 				}
@@ -1309,15 +1240,12 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			lvtTable.removeAll();
 			stackTable.removeAll();
 		}
-		int bytecodeOffset = lastDecompiledResult
-				.getBytecodeOffset(decompiledLine);
+		int bytecodeOffset = lastDecompiledResult.getBytecodeOffset(decompiledLine);
 		updateStatus(lastDecompiledResult, bytecodeOffset, -1);
 	}
 
-	private void setMultiLineSelectionInBytecodeView(
-			ITextSelection multiLineSelection) {
-		LineRange range = lastDecompiledResult
-				.getDecompiledRange(multiLineSelection);
+	private void setMultiLineSelectionInBytecodeView(ITextSelection multiLineSelection) {
+		LineRange range = lastDecompiledResult.getDecompiledRange(multiLineSelection);
 		int firstDecompiledLine = range.startLine;
 		if (firstDecompiledLine > 0) {
 			try {
@@ -1327,15 +1255,12 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 				} else {
 					int lineCount = textControl.getLineCount();
 					if (firstDecompiledLine < lineCount) {
-						int offsetAtLine = textControl
-								.getOffsetAtLine(firstDecompiledLine);
+						int offsetAtLine = textControl.getOffsetAtLine(firstDecompiledLine);
 						int offsetEnd;
 						String text = textControl.getText();
 						if (range.endLine > 0 && range.endLine < lineCount) {
-							offsetEnd = textControl
-									.getOffsetAtLine(range.endLine);
-							offsetEnd = text.indexOf("LINENUMBER", text //$NON-NLS-1$
-									.indexOf('\n', offsetEnd));
+							offsetEnd = textControl.getOffsetAtLine(range.endLine);
+							offsetEnd = text.indexOf("LINENUMBER", text.indexOf('\n', offsetEnd)); //$NON-NLS-1$
 							if (offsetEnd < 0) {
 								offsetEnd = text.indexOf('\n', offsetEnd);
 							}
@@ -1352,23 +1277,18 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			lvtTable.removeAll();
 			stackTable.removeAll();
 		}
-		int bytecodeOffsetStart = lastDecompiledResult
-				.getBytecodeOffset(firstDecompiledLine);
-		int bytecodeOffsetEnd = lastDecompiledResult
-				.getBytecodeOffset(range.endLine);
-		updateStatus(
-				lastDecompiledResult, bytecodeOffsetStart, bytecodeOffsetEnd);
+		int bytecodeOffsetStart = lastDecompiledResult.getBytecodeOffset(firstDecompiledLine);
+		int bytecodeOffsetEnd = lastDecompiledResult.getBytecodeOffset(range.endLine);
+		updateStatus(lastDecompiledResult, bytecodeOffsetStart, bytecodeOffsetEnd);
 	}
 
 	protected void updateVerifierControl4line(int decompiledLine) {
-		String[][][] frame = lastDecompiledResult.getFrameTables(
-				decompiledLine, !modes.get(BCOConstants.F_SHOW_RAW_BYTECODE));
+		String[][][] frame = lastDecompiledResult.getFrameTables(decompiledLine, !modes.get(BCOConstants.F_SHOW_RAW_BYTECODE));
 		updateVerifierControl(frame);
 	}
 
 	protected void updateVerifierControl4insn(int insn) {
-		String[][][] frame = lastDecompiledResult.getFrameTablesForInsn(
-				insn, !modes.get(BCOConstants.F_SHOW_RAW_BYTECODE));
+		String[][][] frame = lastDecompiledResult.getFrameTablesForInsn(insn, !modes.get(BCOConstants.F_SHOW_RAW_BYTECODE));
 		updateVerifierControl(frame);
 	}
 
@@ -1418,11 +1338,11 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		}
 		int startSourceLine = lastDecompiledResult.getSourceLine(startDecLine);
 		int endSourceLine = -1;
-		if(endDecLine > 0){
+		if (endDecLine > 0) {
 			endSourceLine = lastDecompiledResult.getSourceLine(endDecLine);
 		}
 
-		if(endSourceLine < startSourceLine){
+		if (endSourceLine < startSourceLine) {
 			int tmp = startSourceLine;
 			startSourceLine = endSourceLine;
 			endSourceLine = tmp;
@@ -1430,15 +1350,13 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
 		try {
 			if (startSourceLine > 0) {
-				IDocument document = javaEditor.getDocumentProvider()
-						.getDocument(javaEditor.getEditorInput());
+				IDocument document = javaEditor.getDocumentProvider().getDocument(javaEditor.getEditorInput());
 				try {
-					IRegion lineInfo = document
-							.getLineInformation(startSourceLine - 1);
+					IRegion lineInfo = document.getLineInformation(startSourceLine - 1);
 
 					int startOffset = lineInfo.getOffset();
 					int length = lineInfo.getLength();
-					if(endSourceLine > 0){
+					if (endSourceLine > 0) {
 						IRegion region = document.getLineInformation(endSourceLine - 1);
 						length = region.getLength() + (region.getOffset() - startOffset);
 					}
@@ -1452,28 +1370,23 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			BytecodeOutlinePlugin.log(e, IStatus.ERROR);
 		}
 
-		int bytecodeOffset = lastDecompiledResult
-				.getBytecodeOffset(startDecLine);
+		int bytecodeOffset = lastDecompiledResult.getBytecodeOffset(startDecLine);
 		updateStatus(lastDecompiledResult, bytecodeOffset, -1);
 	}
 
-	// ------------------------------------------------------------------------
-
 	/**
 	 * check if at least one java editor is open - if not, deactivate me
+	 *
 	 * @param checkNewSelection check selection in active editor
 	 */
 	protected void checkOpenEditors(boolean checkNewSelection) {
-		IEditorReference[] editorReferences = getSite().getPage()
-				.getEditorReferences();
+		IEditorReference[] editorReferences = getSite().getPage().getEditorReferences();
 		if (editorReferences == null || editorReferences.length == 0) {
 			deActivateView();
 		} else if (checkNewSelection) {
 			IEditorPart activeEditor = EclipseUtils.getActiveEditor();
 			if (activeEditor instanceof ITextEditor) {
-				ITextSelection selection = EclipseUtils
-						.getSelection(((ITextEditor) activeEditor)
-								.getSelectionProvider());
+				ITextSelection selection = EclipseUtils.getSelection(((ITextEditor) activeEditor).getSelectionProvider());
 				handleSelectionChanged(activeEditor, selection);
 			} else {
 				deActivateView();
@@ -1483,8 +1396,8 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
 	/**
 	 * @param childEl can be null
-	 * @return true if java element selection was changed (means, that previous selection
-	 * do not match to the given element)
+	 * @return true if java element selection was changed (means, that previous selection do not
+	 *         match to the given element)
 	 */
 	private boolean isSelectedElementChanged(IJavaElement childEl) {
 
@@ -1504,18 +1417,15 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		 */
 		if (lastChildElement != null && childEl != null) {
 			IType newEnclosingType = JdtUtils.getEnclosingType(childEl);
-			IType oldEnclosingType = JdtUtils
-					.getEnclosingType(lastChildElement);
-			return newEnclosingType == null
-					|| !newEnclosingType.equals(oldEnclosingType);
+			IType oldEnclosingType = JdtUtils.getEnclosingType(lastChildElement);
+			return newEnclosingType == null || !newEnclosingType.equals(oldEnclosingType);
 		}
 		return false;
 	}
 
 	/**
 	 * @param childEl can be null
-	 * @return return null if type is not known or bytecode is not written or cannot be
-	 * found
+	 * @return return null if type is not known or bytecode is not written or cannot be found
 	 */
 	private DecompiledClass decompileBytecode(IJavaElement childEl) {
 		// check here for inner classes too
@@ -1538,16 +1448,14 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			/*
 			 * find out, which name we should use for selected element
 			 */
-			if (modes.get(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT)
-					&& childEl != null) {
+			if (modes.get(BCOConstants.F_SHOW_ONLY_SELECTED_ELEMENT) && childEl != null) {
 				if (childEl.getElementType() == IJavaElement.FIELD) {
 					fieldName = childEl.getElementName();
 				} else {
 					methodName = JdtUtils.getMethodSignature(childEl);
 				}
 			}
-			decompiledClass = DecompilerHelper.getDecompiledClass(
-					bytes, new DecompilerOptions(fieldName, methodName, modes));
+			decompiledClass = DecompilerHelper.getDecompiledClass(bytes, new DecompilerOptions(fieldName, methodName, modes));
 		} catch (Exception e) {
 			try {
 				// check if compilation unit is ok - then this is the user problem
@@ -1614,18 +1522,19 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
 	/**
 	 * Configures an action for key bindings.
+	 *
 	 * @param actionBars action bars for this page
 	 * @param actionID action definition id
 	 * @param action associated action
 	 */
-	protected void setGlobalAction(IActionBars actionBars, String actionID,
-			IAction action) {
+	protected void setGlobalAction(IActionBars actionBars, String actionID, IAction action) {
 		globalActions.put(actionID, action);
 		actionBars.setGlobalActionHandler(actionID, action);
 	}
 
 	/**
 	 * Updates the global action with the given id
+	 *
 	 * @param actionId action definition id
 	 */
 	protected void updateAction(String actionId) {
@@ -1637,35 +1546,25 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
 	protected void createTextActions() {
 		IActionBars actionBars = getViewSite().getActionBars();
-		TextViewerAction action = new TextViewerAction(
-				textViewer, ITextOperationTarget.SELECT_ALL);
+		TextViewerAction action = new TextViewerAction(textViewer, ITextOperationTarget.SELECT_ALL);
 
 		action.configureAction(
-				BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
-						+ "select_all.label"), BytecodeOutlinePlugin //$NON-NLS-1$
-				.getResourceString(NLS_PREFIX + "select_all.tooltip"), //$NON-NLS-1$
-				BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
-						+ "select_all.description")); //$NON-NLS-1$
+				getResourceString(NLS_PREFIX + "select_all.label"), //$NON-NLS-1$
+				getResourceString(NLS_PREFIX + "select_all.tooltip"), //$NON-NLS-1$
+				getResourceString(NLS_PREFIX + "select_all.description")); //$NON-NLS-1$
 		setGlobalAction(actionBars, ActionFactory.SELECT_ALL.getId(), action);
 
 		action = new TextViewerAction(textViewer, ITextOperationTarget.COPY);
 		action.configureAction(
-				BytecodeOutlinePlugin.getResourceString(NLS_PREFIX + "copy.label"), //$NON-NLS-1$
-				BytecodeOutlinePlugin
-				.getResourceString(NLS_PREFIX + "copy.tooltip"), //$NON-NLS-1$
-				BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
-						+ "copy.description")); //$NON-NLS-1$
-		action.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages()
-				.getImageDescriptor(ISharedImages.IMG_TOOL_COPY));
+				getResourceString(NLS_PREFIX + "copy.label"), //$NON-NLS-1$
+				getResourceString(NLS_PREFIX + "copy.tooltip"), //$NON-NLS-1$
+				getResourceString(NLS_PREFIX + "copy.description")); //$NON-NLS-1$
+		action.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(ISharedImages.IMG_TOOL_COPY));
 		action.setActionDefinitionId(IWorkbenchCommandConstants.EDIT_COPY);
 		setGlobalAction(actionBars, ActionFactory.COPY.getId(), action);
 
-		ResourceBundle bundle = BytecodeOutlinePlugin.getDefault()
-				.getResourceBundle();
-
-		setGlobalAction(
-				actionBars, ActionFactory.FIND.getId(), new FindReplaceAction(
-						bundle, NLS_PREFIX + "find_replace.", this)); //$NON-NLS-1$
+		ResourceBundle bundle = BytecodeOutlinePlugin.getDefault().getResourceBundle();
+		setGlobalAction(actionBars, ActionFactory.FIND.getId(), new FindReplaceAction(bundle, NLS_PREFIX + "find_replace.", this)); //$NON-NLS-1$
 
 		selectionActions.add(ActionFactory.COPY.getId());
 		selectionActions.add(ActionFactory.FIND.getId());
@@ -1673,27 +1572,19 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		actionBars.updateActionBars();
 	}
 
-	// orientation
-
 	private void setOrientation(int orientation) {
 		if (verifyControl == null || verifyControl.isDisposed()) {
 			return;
 		}
 
 		boolean horizontal = orientation == VIEW_ORIENTATION_HORIZONTAL;
-		verifyControl.setOrientation(horizontal
-				? SWT.HORIZONTAL
-						: SWT.VERTICAL);
+		verifyControl.setOrientation(horizontal ? SWT.HORIZONTAL : SWT.VERTICAL);
 
 		for (ToggleOrientationAction toggleOrientationAction : toggleOrientationActions) {
-			toggleOrientationAction
-			.setChecked(orientation == toggleOrientationAction
-			.getOrientation());
+			toggleOrientationAction.setChecked(orientation == toggleOrientationAction.getOrientation());
 		}
 
 		currentOrientation = orientation;
-		// GridLayout layout= (GridLayout) fCounterComposite.getLayout();
-		// setCounterColumns(layout);
 		stackComposite.getParent().layout();
 	}
 
@@ -1704,15 +1595,14 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		} else {
 			Point size = stackComposite.getParent().getSize();
 			if (size.x != 0 && size.y != 0) {
-				setOrientation(size.x > size.y
-						? VIEW_ORIENTATION_HORIZONTAL
-								: VIEW_ORIENTATION_VERTICAL);
+				setOrientation(size.x > size.y ? VIEW_ORIENTATION_HORIZONTAL : VIEW_ORIENTATION_VERTICAL);
 			}
 		}
 	}
 
 	/**
 	 * Set the bit with given index to given value and remembers it in the preferences
+	 *
 	 * @param bitIndex one of BCOConstants.F_* constants
 	 * @param value flag
 	 */
@@ -1720,13 +1610,11 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		modes.set(bitIndex, value);
 	}
 
-	protected void toggleVerifyMode(final IMenuManager mmanager,
-			boolean showAnalyzer) {
+	protected void toggleVerifyMode(final IMenuManager mmanager, boolean showAnalyzer) {
 		setMode(BCOConstants.F_SHOW_ANALYZER, showAnalyzer);
 		if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
 			((StackLayout) stackComposite.getLayout()).topControl = verifyControl;
-			viewSelectionProvider
-			.setCurrentSelectionProvider(tableControlViewer);
+			viewSelectionProvider.setCurrentSelectionProvider(tableControlViewer);
 		} else {
 			((StackLayout) stackComposite.getLayout()).topControl = textControl;
 			viewSelectionProvider.setCurrentSelectionProvider(textViewer);
@@ -1748,27 +1636,18 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		public ToggleOrientationAction(int orientation) {
 			super("", AS_RADIO_BUTTON); //$NON-NLS-1$
 
-			String symbolicName = BytecodeOutlinePlugin.getDefault()
-					.getBundle().getSymbolicName();
+			String symbolicName = BytecodeOutlinePlugin.getDefault().getBundle().getSymbolicName();
 			if (orientation == VIEW_ORIENTATION_HORIZONTAL) {
-				setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
-						+ "toggle.horizontal.label")); //$NON-NLS-1$
-				setImageDescriptor(AbstractUIPlugin.imageDescriptorFromPlugin(
-						symbolicName, "icons/th_horizontal.gif")); //$NON-NLS-1$
+				setText(getResourceString(NLS_PREFIX + "toggle.horizontal.label")); //$NON-NLS-1$
+				setImageDescriptor(AbstractUIPlugin.imageDescriptorFromPlugin(symbolicName, "icons/th_horizontal.gif")); //$NON-NLS-1$
 			} else if (orientation == VIEW_ORIENTATION_VERTICAL) {
-				setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
-						+ "toggle.vertical.label")); //$NON-NLS-1$
-				setImageDescriptor(AbstractUIPlugin.imageDescriptorFromPlugin(
-						symbolicName, "icons/th_vertical.gif")); //$NON-NLS-1$
+				setText(getResourceString(NLS_PREFIX + "toggle.vertical.label")); //$NON-NLS-1$
+				setImageDescriptor(AbstractUIPlugin.imageDescriptorFromPlugin(symbolicName, "icons/th_vertical.gif")); //$NON-NLS-1$
 			} else if (orientation == VIEW_ORIENTATION_AUTOMATIC) {
-				setText(BytecodeOutlinePlugin.getResourceString(NLS_PREFIX
-						+ "toggle.automatic.label")); //$NON-NLS-1$
-				setImageDescriptor(AbstractUIPlugin.imageDescriptorFromPlugin(
-						symbolicName, "icons/th_automatic.gif")); //$NON-NLS-1$
+				setText(getResourceString(NLS_PREFIX + "toggle.automatic.label")); //$NON-NLS-1$
+				setImageDescriptor(AbstractUIPlugin.imageDescriptorFromPlugin(symbolicName, "icons/th_automatic.gif")); //$NON-NLS-1$
 			}
 			actionOrientation = orientation;
-			// WorkbenchHelp.setHelp(this,
-			// IJUnitHelpContextIds.RESULTS_VIEW_TOGGLE_ORIENTATION_ACTION);
 		}
 
 		public int getOrientation() {
@@ -1784,8 +1663,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		}
 	}
 
-	protected IJavaElement[] guessTypesFromSelectionInView(IRegion wordRegion)
-			throws JavaModelException {
+	protected IJavaElement[] guessTypesFromSelectionInView(IRegion wordRegion) throws JavaModelException {
 		if (wordRegion == null || wordRegion.getLength() == 0 || javaInput == null) {
 			return null;
 		}
@@ -1795,21 +1673,20 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		} catch (BadLocationException e) {
 			return null;
 		}
-		if(typeName.isEmpty()) {
+		if (typeName.isEmpty()) {
 			return null;
 		}
-		if(typeName.contains("$")) { //$NON-NLS-1$
+		if (typeName.contains("$")) { //$NON-NLS-1$
 			typeName = typeName.substring(typeName.lastIndexOf('$') + 1);
 		}
-		IJavaSearchScope scope = SearchEngine.createJavaSearchScope(new IJavaElement[] {javaInput.getJavaProject()});
+		IJavaSearchScope scope = SearchEngine.createJavaSearchScope(new IJavaElement[] { javaInput.getJavaProject() });
 		return JdtUtils.getTypeForName(typeName, scope, null);
 	}
 
 	private class JavaElementHyperlinkDetectorInView extends JavaElementHyperlinkDetector {
 
 		@Override
-		public IHyperlink[] detectHyperlinks(ITextViewer textViewer1,
-				IRegion region, boolean canShowMultipleHyperlinks) {
+		public IHyperlink[] detectHyperlinks(ITextViewer textViewer1, IRegion region, boolean canShowMultipleHyperlinks) {
 			if (region == null || javaInput == null) {
 				return null;
 			}
@@ -1840,9 +1717,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 				if (element == null) {
 					continue;
 				}
-				addHyperlinks2(
-						links, wordRegion, (SelectionDispatchAction) openAction,
-						element, elements.length > 1);
+				addHyperlinks2(links, wordRegion, (SelectionDispatchAction) openAction, element, elements.length > 1);
 			}
 			if (links.size() == 0) {
 				return null;
@@ -1870,32 +1745,26 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
 	private final class JavaConfiguration extends JavaSourceViewerConfiguration {
 
-		private JavaConfiguration(
-				IColorManager colorManager, IPreferenceStore preferenceStore,
-				ITextEditor editor, String partitioning) {
+		private JavaConfiguration(IColorManager colorManager, IPreferenceStore preferenceStore, ITextEditor editor, String partitioning) {
 			super(colorManager, preferenceStore, editor, partitioning);
 		}
 
 		@Override
-		public IHyperlinkDetector[] getHyperlinkDetectors(
-				ISourceViewer sourceViewer) {
+		public IHyperlinkDetector[] getHyperlinkDetectors(ISourceViewer sourceViewer) {
 			// does not work, as they work on *text editor*, not on the *view*...
 			// HyperlinkDetectorRegistry registry = EditorsUI.getHyperlinkDetectorRegistry();
 			// IHyperlinkDetector[] detectors = registry.createHyperlinkDetectors("org.eclipse.jdt.ui.javaCode", dummyEditorForHyperlinks);
 			JavaElementHyperlinkDetectorInView det = new JavaElementHyperlinkDetectorInView();
-			return new IHyperlinkDetector[] {det} ;
+			return new IHyperlinkDetector[] { det };
 		}
 
 		@Override
-		public ITextHover getTextHover(ISourceViewer sourceViewer,
-				String contentType, int stateMask) {
-			JavadocHover javadocHover = new JavadocHoverExtension();
-			return javadocHover;
+		public ITextHover getTextHover(ISourceViewer sourceViewer, String contentType, int stateMask) {
+			return new JavadocHoverExtension();
 		}
 
 		@Override
-		public IQuickAssistAssistant getQuickAssistAssistant(
-				ISourceViewer sourceViewer) {
+		public IQuickAssistAssistant getQuickAssistAssistant(ISourceViewer sourceViewer) {
 			return null;
 		}
 	}
@@ -1906,8 +1775,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
 
 		@Override
-		protected IJavaElement[] getJavaElementsAt(
-				ITextViewer textViewer1, IRegion hoverRegion) {
+		protected IJavaElement[] getJavaElementsAt(ITextViewer textViewer1, IRegion hoverRegion) {
 			try {
 				return guessTypesFromSelectionInView(hoverRegion);
 			} catch (JavaModelException e) {
@@ -1925,7 +1793,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 				return null;
 			}
 
-			if(!OPCODES.contains(typeName)) {
+			if (!OPCODES.contains(typeName)) {
 				return super.getHoverInfo2(viewer, region);
 			}
 			int line;
@@ -1935,10 +1803,8 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 				return null;
 			}
 			StringBuilder sb = HelpUtils.getOpcodeHelpFor(getBytecodeInstructionAtLine(line));
-			if(sb.length() > 0) {
-				JavadocBrowserInformationControlInput input = new JavadocBrowserInformationControlInput(
-						null, null, sb.toString(), 0);
-				return input;
+			if (sb.length() > 0) {
+				return new JavadocBrowserInformationControlInput(null, null, sb.toString(), 0);
 			}
 			return null;
 		}

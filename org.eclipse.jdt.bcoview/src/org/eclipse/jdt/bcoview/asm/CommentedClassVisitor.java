@@ -37,17 +37,27 @@ import org.eclipse.jdt.bcoview.preferences.BCOConstants;
 public class CommentedClassVisitor extends Textifier implements ICommentedClassVisitor {
 
 	protected final boolean raw;
+
 	protected final boolean showLines;
+
 	protected final boolean showLocals;
+
 	protected final boolean showStackMap;
+
 	protected final boolean showHex;
+
 	private final DecompilerOptions options;
 
 	private DecompiledMethod currMethod;
+
 	private String className;
+
 	private JavaVersion javaVersion;
+
 	private int accessFlags;
+
 	private Textifier dummyAnnVisitor;
+
 	private final ClassNode classNode;
 
 	private LabelNode currentLabel;
@@ -71,9 +81,8 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 	}
 
 	@Override
-	public void visit(int version, int access, String name, String signature,
-			String superName, String[] interfaces) {
-		if(decompilingEntireClass()) {
+	public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
+		if (decompilingEntireClass()) {
 			super.visit(version, access, name, signature, superName, interfaces);
 		}
 		this.className = name;
@@ -104,8 +113,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 	}
 
 	@Override
-	public Textifier visitField(int access, String name, String desc,
-			String signature, Object value) {
+	public Textifier visitField(int access, String name, String desc, String signature, Object value) {
 		if (options.methodFilter != null) {
 			return getDummyVisitor();
 		}
@@ -116,8 +124,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 	}
 
 	@Override
-	public void visitInnerClass(String name, String outerName,
-			String innerName, int access) {
+	public void visitInnerClass(String name, String outerName, String innerName, int access) {
 		if (decompilingEntireClass()) {
 			super.visitInnerClass(name, outerName, innerName, access);
 		}
@@ -138,16 +145,15 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 	}
 
 	@Override
-	public Textifier visitMethod(int access, String name, String desc,
-			String signature, String[] exceptions) {
-		if(options.fieldFilter != null || options.methodFilter != null && !options.methodFilter.equals(name + desc)) {
+	public Textifier visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
+		if (options.fieldFilter != null || options.methodFilter != null && !(name + desc).equals(options.methodFilter)) {
 			return getDummyVisitor();
 		}
 
 		MethodNode meth = null;
 		List<String> exList = Arrays.asList(exceptions);
 		for (MethodNode mn : classNode.methods) {
-			if(mn.name.equals(name) && mn.desc.equals(desc) && mn.exceptions.equals(exList)) {
+			if (mn.name.equals(name) && mn.desc.equals(desc) && mn.exceptions.equals(exList)) {
 				meth = mn;
 				break;
 			}
@@ -166,29 +172,27 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 	}
 
 	@Override
-	protected void appendDescriptor(final int type, final String desc) {
+	protected void appendDescriptor(int type, String desc) {
 		appendDescriptor(stringBuilder, type, desc, raw);
 	}
 
-	protected void appendDescriptor(final StringBuilder buf1, final int type,
-			final String desc, final boolean raw1) {
+	protected void appendDescriptor(StringBuilder buf1, int type, String desc, boolean raw1) {
 		if (desc == null) {
 			return;
 		}
 		if (raw1) {
-			if (type == CLASS_SIGNATURE || type == FIELD_SIGNATURE
-					|| type == METHOD_SIGNATURE) {
+			if (type == CLASS_SIGNATURE || type == FIELD_SIGNATURE || type == METHOD_SIGNATURE) {
 				buf1.append("// signature ").append(desc).append('\n'); //$NON-NLS-1$
 			} else {
 				buf1.append(desc);
 			}
 		} else {
 			switch (type) {
-				case INTERNAL_NAME :
+				case INTERNAL_NAME:
 					buf1.append(eatPackageNames(desc, '/'));
 					break;
-				case METHOD_DESCRIPTOR :
-				case HANDLE_DESCRIPTOR :
+				case METHOD_DESCRIPTOR:
+				case HANDLE_DESCRIPTOR:
 					buf1.append("("); //$NON-NLS-1$
 					Type[] types = Type.getArgumentTypes(desc);
 					for (int i = 0; i < types.length; ++i) {
@@ -201,7 +205,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 					Type returnType = Type.getReturnType(desc);
 					buf1.append(getSimpleName(returnType));
 					break;
-				case FIELD_DESCRIPTOR :
+				case FIELD_DESCRIPTOR:
 					if ("T".equals(desc)) { //$NON-NLS-1$
 						buf1.append("top"); //$NON-NLS-1$
 					} else if ("N".equals(desc)) { //$NON-NLS-1$
@@ -213,18 +217,18 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 					}
 					break;
 
-				case METHOD_SIGNATURE :
-				case FIELD_SIGNATURE :
+				case METHOD_SIGNATURE:
+				case FIELD_SIGNATURE:
 					// fine tuning of identation - we have two tabs in this case
 					if (stringBuilder.lastIndexOf(tab) == stringBuilder.length() - tab.length()) {
 						stringBuilder.delete(stringBuilder.lastIndexOf(tab), stringBuilder.length());
 					}
 					break;
 
-				case CLASS_SIGNATURE :
+				case CLASS_SIGNATURE:
 					// ignore - show only in "raw" mode
 					break;
-				default :
+				default:
 					buf1.append(desc);
 			}
 		}
@@ -242,8 +246,8 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 	/**
 	 * @param name Java type name(s).
 	 * @param separator package name separator
-	 * @return simply class name(s) without any package/outer class information, but with
-	 * "generics" information from given name parameter.
+	 * @return simply class name(s) without any package/outer class information, but with "generics"
+	 *         information from given name parameter.
 	 */
 	private static String eatPackageNames(String name, char separator) {
 		int lastPoint = name.lastIndexOf(separator);
@@ -269,8 +273,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 		return -1;
 	}
 
-	private static int getPackageStartIndex(StringBuffer chars, char c,
-			int firstPoint) {
+	private static int getPackageStartIndex(StringBuffer chars, char c, int firstPoint) {
 		for (int i = firstPoint - 1; i >= 0; i--) {
 			char curr = chars.charAt(i);
 			if (curr != c && !Character.isJavaIdentifierPart(curr)) {
@@ -284,7 +287,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 	/**
 	 * control chars names
 	 */
-	private static final String[] CHAR_NAMES = {"NUL", "SOH", "STX", "ETX", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+	private static final String[] CHAR_NAMES = { "NUL", "SOH", "STX", "ETX", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 			"EOT", "ENQ", "ACK", "BEL", "BS", "HT", "LF", "VT", "FF", "CR", "SO", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$ //$NON-NLS-11$
 			"SI", "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB", "CAN", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$
 			"EM", "SUB", "ESC", "FS", "GS", "RS", "US", // "Sp" //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$
@@ -295,8 +298,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 		for (Object o : text) {
 			if (o instanceof Index) {
 				index = (Index) o;
-				if (index.labelNode != null
-						&& index.labelNode.getLabel() == label) {
+				if (index.labelNode != null && index.labelNode.getLabel() == label) {
 					return index;
 				}
 			}
@@ -305,8 +307,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 	}
 
 	@Override
-	public void visitFrame(int type, int nLocal, Object[] local,
-			int nStack, Object[] stack) {
+	public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
 		if (showStackMap) {
 			addIndex(-1);
 			super.visitFrame(type, nLocal, local, nStack, stack);
@@ -314,8 +315,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 	}
 
 	@Override
-	public void visitMethodInsn(final int opcode, final String owner,
-			final String name, final String desc, boolean itf) {
+	public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
 		addIndex(opcode);
 		stringBuilder.setLength(0);
 		stringBuilder.append(tab2).append(OPCODES[opcode]).append(' ');
@@ -327,7 +327,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 	}
 
 	@Override
-	public void visitVarInsn(final int opcode, final int var) {
+	public void visitVarInsn(int opcode, int var) {
 		addIndex(opcode);
 		text.add(tab2 + OPCODES[opcode] + " " + var); //$NON-NLS-1$
 		if (!raw) {
@@ -352,9 +352,9 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 		LabelNode currLabel = null;
 		for (int i = 0; i < instructions.size(); i++) {
 			AbstractInsnNode insnNode = instructions.get(i);
-			if(insnNode instanceof LabelNode) {
+			if (insnNode instanceof LabelNode) {
 				LabelNode labelNode = (LabelNode) insnNode;
-				if(labelNode.getLabel() == label) {
+				if (labelNode.getLabel() == label) {
 					currLabel = labelNode;
 				}
 			}
@@ -363,14 +363,13 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 	}
 
 	@Override
-	public void visitInvokeDynamicInsn(String name, String desc, Handle bsm,
-			Object... bsmArgs) {
+	public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object... bsmArgs) {
 		addIndex(Opcodes.INVOKEDYNAMIC);
 		super.visitInvokeDynamicInsn(name, desc, bsm, bsmArgs);
 	}
 
 	@Override
-	public void visitIincInsn(final int var, final int increment) {
+	public void visitIincInsn(int var, int increment) {
 		addIndex(Opcodes.IINC);
 		text.add(tab2 + "IINC " + var); //$NON-NLS-1$
 		if (!raw) {
@@ -386,7 +385,8 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 		stringBuilder.append(tab2).append(OPCODES[opcode]).append(' ').append(
 				opcode == Opcodes.NEWARRAY
 				? TYPES[operand]
-						: formatValue(operand)).append('\n');
+						: formatValue(operand))
+		.append('\n');
 		text.add(stringBuilder.toString());
 	}
 
@@ -400,8 +400,8 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 
 	/**
 	 * @param value some int
-	 * @return char value from int, together with char name if it is a control char,
-	 * or an empty string
+	 * @return char value from int, together with char name if it is a control char, or an empty
+	 *         string
 	 */
 	private static String getAsCharComment(int value) {
 		if (Character.MAX_VALUE < value || Character.MIN_VALUE > value) {
@@ -409,19 +409,19 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 		}
 		StringBuffer sb = new StringBuffer("    // '"); //$NON-NLS-1$
 		switch (value) {
-			case '\t' :
+			case '\t':
 				sb.append("\\t"); //$NON-NLS-1$
 				break;
-			case '\r' :
+			case '\r':
 				sb.append("\\r"); //$NON-NLS-1$
 				break;
-			case '\n' :
+			case '\n':
 				sb.append("\\n"); //$NON-NLS-1$
 				break;
-			case '\f' :
+			case '\f':
 				sb.append("\\f"); //$NON-NLS-1$
 				break;
-			default :
+			default:
 				sb.append((char) value);
 				break;
 		}
@@ -432,8 +432,8 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 			}
 			return sb.append("'").toString(); //$NON-NLS-1$
 		}
-		return sb.append("' (").append(CHAR_NAMES[value]).append(")") //$NON-NLS-1$ //$NON-NLS-2$
-				.toString();
+		return sb.append("' (").append(CHAR_NAMES[value]).append(")").toString(); //$NON-NLS-1$ //$NON-NLS-2$
+
 	}
 
 	private String formatValue(Object operand) {
@@ -442,13 +442,10 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 		}
 		if (showHex) {
 			if (operand instanceof Integer) {
-				String intStr = Integer.toHexString(
-						((Integer) operand).intValue()).toUpperCase();
-				return intStr
-						+ getAsCharComment(((Integer) operand).intValue());
+				String intStr = Integer.toHexString(((Integer) operand).intValue()).toUpperCase();
+				return intStr + getAsCharComment(((Integer) operand).intValue());
 			} else if (operand instanceof Long) {
-				return Long.toHexString(((Long) operand).longValue())
-						.toUpperCase();
+				return Long.toHexString(((Long) operand).longValue()).toUpperCase();
 			} else if (operand instanceof Double) {
 				return Double.toHexString(((Double) operand).doubleValue());
 			} else if (operand instanceof Float) {
@@ -459,17 +456,14 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 	}
 
 	@Override
-	public void visitLocalVariable(final String name, final String desc,
-			final String signature, final Label start, final Label end,
-			final int index) {
+	public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
 		if (showLocals) {
-			super.visitLocalVariable(
-					name, desc, signature, start, end, index);
+			super.visitLocalVariable(name, desc, signature, start, end, index);
 		}
 	}
 
 	@Override
-	public void visitLdcInsn(final Object cst) {
+	public void visitLdcInsn(Object cst) {
 		addIndex(Opcodes.LDC);
 		stringBuilder.setLength(0);
 		stringBuilder.append(tab2).append("LDC "); //$NON-NLS-1$
@@ -478,10 +472,10 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 		} else if (cst instanceof Type) {
 			Type type = (Type) cst;
 			String descriptor = type.getDescriptor();
-			if(type.getSort() == Type.METHOD){
+			if (type.getSort() == Type.METHOD) {
 				appendDescriptor(METHOD_DESCRIPTOR, descriptor);
 			} else {
-				String descr = raw? descriptor : descriptor.substring(0, descriptor.length() - 1);
+				String descr = raw ? descriptor : descriptor.substring(0, descriptor.length() - 1);
 				appendDescriptor(INTERNAL_NAME, descr + ".class"); //$NON-NLS-1$
 			}
 		} else {
@@ -492,60 +486,57 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 	}
 
 	@Override
-	public void visitMaxs(final int maxStack, final int maxLocals) {
+	public void visitMaxs(int maxStack, int maxLocals) {
 		if (showLocals) {
 			super.visitMaxs(maxStack, maxLocals);
 		}
 	}
 
 	@Override
-	public void visitInsn(final int opcode) {
+	public void visitInsn(int opcode) {
 		addIndex(opcode);
 		super.visitInsn(opcode);
 	}
 
 	@Override
-	public void visitTypeInsn(final int opcode, final String desc) {
+	public void visitTypeInsn(int opcode, String desc) {
 		addIndex(opcode);
 		super.visitTypeInsn(opcode, desc);
 	}
 
 	@Override
-	public void visitFieldInsn(final int opcode, final String owner1,
-			final String name, final String desc) {
+	public void visitFieldInsn(int opcode, String owner1, String name, String desc) {
 		addIndex(opcode);
 		super.visitFieldInsn(opcode, owner1, name, desc);
 	}
 
 	@Override
-	public void visitJumpInsn(final int opcode, final Label label) {
+	public void visitJumpInsn(int opcode, Label label) {
 		addIndex(opcode);
 		super.visitJumpInsn(opcode, label);
 	}
 
 	@Override
-	public void visitTableSwitchInsn(final int min, final int max,
-			final Label dflt, final Label... labels) {
+	public void visitTableSwitchInsn(int min, int max, Label dflt, Label... labels) {
 		addIndex(Opcodes.TABLESWITCH);
 		super.visitTableSwitchInsn(min, max, dflt, labels);
 	}
 
 	@Override
-	public void visitLookupSwitchInsn(final Label dflt, final int[] keys,
-			final Label[] labels) {
+	public void visitLookupSwitchInsn(Label dflt, int[] keys, Label[] labels) {
 		addIndex(Opcodes.LOOKUPSWITCH);
 		super.visitLookupSwitchInsn(dflt, keys, labels);
 	}
 
 	@Override
-	public void visitMultiANewArrayInsn(final String desc, final int dims) {
+	public void visitMultiANewArrayInsn(String desc, int dims) {
 		addIndex(Opcodes.MULTIANEWARRAY);
 		super.visitMultiANewArrayInsn(desc, dims);
 	}
 
 
 	@Override
-	public void visitLineNumber(final int line, final Label start) {
+	public void visitLineNumber(int line, Label start) {
 		if (showLines) {
 			addIndex(-1);
 			currMethod.addLineNumber(start, Integer.valueOf(line));
@@ -553,7 +544,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 		}
 	}
 
-	private void addIndex(final int opcode) {
+	private void addIndex(int opcode) {
 		text.add(new Index(currentLabel, currentInsn++, opcode));
 	}
 
@@ -573,7 +564,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 		return new DecompiledClassInfo(javaVersion, accessFlags);
 	}
 
-	private Textifier getDummyVisitor(){
+	private Textifier getDummyVisitor() {
 		if (dummyAnnVisitor == null) {
 			dummyAnnVisitor = new Textifier(DecompilerOptions.LATEST_ASM_VERSION) {
 				@Override

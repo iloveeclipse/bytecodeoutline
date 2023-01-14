@@ -38,8 +38,8 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.search.IJavaSearchScope;
 
 /**
- * Replacement for TypeInfoFactory which is internal in 3.2 and removed or partly not
- * more accessible in 3.3. The class contains a limited features subset from original one
+ * Replacement for TypeInfoFactory which is internal in 3.2 and removed or partly not more
+ * accessible in 3.3. The class contains a limited features subset from original one
  */
 public class TypeFactory {
 	static final char SEPARATOR = '/';
@@ -62,8 +62,7 @@ public class TypeFactory {
 	private IType getType(IJavaElement container) {
 		try {
 			if (container instanceof ICompilationUnit) {
-				return findTypeInCompilationUnit((ICompilationUnit) container,
-						getTypeQualifiedName());
+				return findTypeInCompilationUnit((ICompilationUnit) container, getTypeQualifiedName());
 			} else if (container instanceof IOrdinaryClassFile) {
 				return ((IOrdinaryClassFile) container).getType();
 			}
@@ -89,6 +88,7 @@ public class TypeFactory {
 
 	/**
 	 * Will be called at most two times if the return value was not null.
+	 *
 	 * @param packageName non null
 	 * @param simpleTypeName1 non null
 	 * @param enclosingName non null
@@ -96,9 +96,7 @@ public class TypeFactory {
 	 * @param searchScope non null
 	 * @return any non-null value.
 	 */
-	public IType create(char[] packageName, char[] simpleTypeName1,
-			char[][] enclosingName, String path,
-			IJavaSearchScope searchScope) {
+	public IType create(char[] packageName, char[] simpleTypeName1, char[][] enclosingName, String path, IJavaSearchScope searchScope) {
 		this.enclosingNames = enclosingName;
 		this.simpleTypeName = new String(simpleTypeName1);
 		String pn = new String(packageName);
@@ -106,8 +104,7 @@ public class TypeFactory {
 		int index = path.indexOf(IJavaSearchScope.JAR_FILE_ENTRY_SEPARATOR);
 		IType result = null;
 		if (index != -1) {
-			result = createJarFileEntryTypeInfo(pn, simpleTypeName,
-					path, index, searchScope);
+			result = createJarFileEntryTypeInfo(pn, simpleTypeName, path, index, searchScope);
 		} else {
 			String project = getProject(path);
 			if (project != null) {
@@ -117,8 +114,7 @@ public class TypeFactory {
 		return result;
 	}
 
-	private IType createIFileTypeInfo(String packageName, String typeName,
-			String path, String project) {
+	private IType createIFileTypeInfo(String packageName, String typeName, String path, String project) {
 		String rest = path.substring(project.length() + 1); // the first slashes.
 		int index = rest.lastIndexOf(SEPARATOR);
 		if (index == -1) {
@@ -153,9 +149,7 @@ public class TypeFactory {
 		return getType(container);
 	}
 
-	protected IType createJarFileEntryTypeInfo(String packageName, String typeName,
-			String path, int index,
-			IJavaSearchScope searchScope) {
+	protected IType createJarFileEntryTypeInfo(String packageName, String typeName, String path, int index, IJavaSearchScope searchScope) {
 		String jar = path.substring(0, index);
 		String rest = path.substring(index + 1);
 		index = rest.lastIndexOf(SEPARATOR);
@@ -225,10 +219,10 @@ public class TypeFactory {
 	}
 
 	/**
-	 * Returns the qualified type name of the given type using '.' as separators.
-	 * This is a replace for IType.getTypeQualifiedName()
-	 * which uses '$' as separators. As '$' is also a valid character in an id
-	 * this is ambiguous. JavaCore PR: 1GCFUNT
+	 * Returns the qualified type name of the given type using '.' as separators. This is a replace
+	 * for IType.getTypeQualifiedName() which uses '$' as separators. As '$' is also a valid
+	 * character in an id this is ambiguous. JavaCore PR: 1GCFUNT
+	 *
 	 * @param type non null
 	 * @return FQN
 	 */
@@ -237,8 +231,7 @@ public class TypeFactory {
 			if (type.isBinary() && !type.isAnonymous()) {
 				IType declaringType = type.getDeclaringType();
 				if (declaringType != null) {
-					return getTypeQualifiedName(declaringType) + '.'
-							+ type.getElementName();
+					return getTypeQualifiedName(declaringType) + '.' + type.getElementName();
 				}
 			}
 		} catch (JavaModelException e) {
@@ -248,15 +241,16 @@ public class TypeFactory {
 	}
 
 	/**
-	 * Finds a type in a compilation unit. Typical usage is to find the corresponding
-	 * type in a working copy.
+	 * Finds a type in a compilation unit. Typical usage is to find the corresponding type in a
+	 * working copy.
+	 *
 	 * @param cu the compilation unit to search in
-	 * @param typeQualifiedName the type qualified name (type name with enclosing type names (separated by dots))
+	 * @param typeQualifiedName the type qualified name (type name with enclosing type names
+	 *            (separated by dots))
 	 * @return the type found, or null if not existing
 	 * @throws JavaModelException on error
 	 */
-	private static IType findTypeInCompilationUnit(ICompilationUnit cu,
-			String typeQualifiedName) throws JavaModelException {
+	private static IType findTypeInCompilationUnit(ICompilationUnit cu, String typeQualifiedName) throws JavaModelException {
 		IType[] types = cu.getAllTypes();
 		for (IType type : types) {
 			String currName = getTypeQualifiedName(type);
@@ -278,15 +272,13 @@ public class TypeFactory {
 		private final String pkg;
 
 		public JarFileEntryTypeInfo(String pkg, String jar, String fileName, String extension) {
-
 			this.pkg = pkg;
 			fJar = jar;
 			fFileName = fileName;
 			fExtension = extension;
 		}
 
-		private IJavaElement getContainer(IJavaSearchScope scope)
-				throws JavaModelException {
+		private IJavaElement getContainer(IJavaSearchScope scope) throws JavaModelException {
 			IJavaModel jmodel = JavaCore.create(ResourcesPlugin.getWorkspace().getRoot());
 			IPath[] enclosedPaths = scope.enclosingProjectsAndJars();
 
@@ -344,8 +336,7 @@ public class TypeFactory {
 
 		private final String pkg;
 
-		public IFileTypeInfo(String pkg, String project, String sourceFolder, String file,
-				String extension) {
+		public IFileTypeInfo(String pkg, String project, String sourceFolder, String file, String extension) {
 			this.pkg = pkg;
 			fProject = project;
 			fFolder = sourceFolder;

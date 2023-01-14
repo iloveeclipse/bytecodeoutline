@@ -103,13 +103,13 @@ public class TypedElement extends BufferedContent implements ITypedElement, IStr
 		}
 		DecompiledClass decompiledClass = null;
 		try {
-			decompiledClass = DecompilerHelper.getDecompiledClass(
-					classBytes, new DecompilerOptions(null, methodName, modes));
-		} catch (UnsupportedClassVersionError e){
+			decompiledClass = DecompilerHelper.getDecompiledClass(classBytes, new DecompilerOptions(null, methodName, modes));
+		} catch (UnsupportedClassVersionError e) {
 			throw new CoreException(new Status(
 					IStatus.ERROR, "org.eclipse.jdt.bcoview", -1, //$NON-NLS-1$
 					"Error caused by attempt to load class compiled with Java version which" //$NON-NLS-1$
-					+ " is not supported by current JVM", e)); //$NON-NLS-1$
+					+ " is not supported by current JVM", //$NON-NLS-1$
+					e));
 		}
 		final byte[] bytes = decompiledClass.getText().getBytes(Charset.forName("UTF-8")); //$NON-NLS-1$
 		// use internal buffering to prevent multiple calls to this method
@@ -122,7 +122,7 @@ public class TypedElement extends BufferedContent implements ITypedElement, IStr
 	 * @param mode one of BCOConstants.F_* modes
 	 * @param value to set
 	 */
-	public void setMode(int mode, boolean value){
+	public void setMode(int mode, boolean value) {
 		modes.set(mode, value);
 		// force create new stream
 		discardBuffer();

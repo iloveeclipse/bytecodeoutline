@@ -16,7 +16,6 @@ package org.eclipse.jdt.bcoview.asm;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,7 +61,7 @@ public class DecompiledMethod {
 	private final Map<Integer, Integer> insns;
 
 	/**
-	 *  decompiled line -> opcode
+	 * decompiled line -> opcode
 	 */
 	private final Map<Integer, Integer> opcodes;
 
@@ -101,8 +100,7 @@ public class DecompiledMethod {
 	private final int access;
 
 
-	public DecompiledMethod(final String owner,
-			final Map<Label, Integer> lineNumbers, final MethodNode meth, DecompilerOptions options, int access) {
+	public DecompiledMethod(String owner, Map<Label, Integer> lineNumbers, MethodNode meth, DecompilerOptions options, int access) {
 		this.meth = meth;
 		this.owner = owner;
 		this.lineNumbers = lineNumbers;
@@ -117,12 +115,11 @@ public class DecompiledMethod {
 		this.insnLines = new HashMap<>();
 	}
 
-	void setText(final List<?> inputText) {
-		formatText(inputText, new HashMap<Integer, String>(), new StringBuffer(), this.text);
+	void setText(List<?> inputText) {
+		formatText(inputText, new HashMap<>(), new StringBuffer(), this.text);
 		computeMaps(lineNumbers);
 
-		if (options.modes.get(BCOConstants.F_SHOW_ANALYZER)
-				&& (access & Opcodes.ACC_ABSTRACT) == 0) {
+		if (options.modes.get(BCOConstants.F_SHOW_ANALYZER) && (access & Opcodes.ACC_ABSTRACT) == 0) {
 			analyzeMethod();
 		}
 	}
@@ -136,42 +133,42 @@ public class DecompiledMethod {
 				|| "<clinit>".equals(meth.name); //$NON-NLS-1$
 	}
 
-	public String getSignature(){
+	public String getSignature() {
 		return meth.name + meth.desc;
 	}
 
-	public boolean containsSource(int sourceLine){
+	public boolean containsSource(int sourceLine) {
 		return sourceLine >= getFirstSourceLine() && sourceLine <= getLastSourceLine();
 	}
 
 	/**
 	 * @param sourceLine line in sources
-	 * @return nearest match above given source line or the given line for perfect match
-	 * or -1 for no match. The return value is method-relative, and need to be transformed
-	 * to class absolute
+	 * @return nearest match above given source line or the given line for perfect match or -1 for
+	 *         no match. The return value is method-relative, and need to be transformed to class
+	 *         absolute
 	 */
-	public int getBestDecompiledLine(final int sourceLine){
-		if(!containsSource(sourceLine)){
+	public int getBestDecompiledLine(final int sourceLine) {
+		if (!containsSource(sourceLine)) {
 			return -1;
 		}
 		Set<Integer> set = decompiledLines.keySet();
-		if(set.size() == 0){
+		if (set.size() == 0) {
 			return -1;
 		}
 		int bestMatch = -1;
-		for (Iterator<Integer> iter = set.iterator(); iter.hasNext();) {
-			int line = iter.next().intValue();
+		for (Integer integer : set) {
+			int line = integer.intValue();
 			int delta = sourceLine - line;
-			if(delta < 0){
+			if (delta < 0) {
 				continue;
-			} else if(delta == 0){
+			} else if (delta == 0) {
 				return line;
 			}
-			if(bestMatch < 0 || delta < sourceLine - bestMatch){
+			if (bestMatch < 0 || delta < sourceLine - bestMatch) {
 				bestMatch = line;
 			}
 		}
-		if(bestMatch < 0){
+		if (bestMatch < 0) {
 			return -1;
 		}
 		return decompiledLines.get(Integer.valueOf(bestMatch)).intValue();
@@ -181,9 +178,7 @@ public class DecompiledMethod {
 		Interpreter<BasicValue> interpreter;
 		try {
 			Type type = Type.getType(owner);
-			interpreter = new SimpleVerifier(
-					DecompilerOptions.LATEST_ASM_VERSION, type, null,
-					null, false) {
+			interpreter = new SimpleVerifier(DecompilerOptions.LATEST_ASM_VERSION, type, null, null, false) {
 				//
 			};
 		} catch (Exception e) {
@@ -197,8 +192,7 @@ public class DecompiledMethod {
 			error = e.getMessage();
 			if (error.startsWith("Error at instruction ")) { //$NON-NLS-1$
 				error = error.substring("Error at instruction ".length()); //$NON-NLS-1$
-				errorInsn = Integer.parseInt(error.substring(0, error
-						.indexOf(':')));
+				errorInsn = Integer.parseInt(error.substring(0, error.indexOf(':')));
 				error = error.substring(error.indexOf(':') + 2);
 			} else {
 				BytecodeOutlinePlugin.log(e, IStatus.ERROR);
@@ -208,8 +202,7 @@ public class DecompiledMethod {
 		frames = a.getFrames();
 	}
 
-	private void formatText(final List<?> input, final Map<Integer, String> locals, StringBuffer line,
-			final List<Object> result) {
+	private void formatText(List<?> input, Map<Integer, String> locals, StringBuffer line, List<Object> result) {
 		for (int i = 0; i < input.size(); ++i) {
 			Object o = input.get(i);
 			if (o instanceof List) {
@@ -221,12 +214,12 @@ public class DecompiledMethod {
 				String localVariableName = locals.get(o);
 				if (localVariableName == null) {
 					Index index = getNextIndex(input, i);
-					if(index != null){
+					if (index != null) {
 						updateLocals(index, locals);
 						localVariableName = locals.get(o);
 					}
 				}
-				if(localVariableName != null) {
+				if (localVariableName != null) {
 					line.append(": ").append(localVariableName); //$NON-NLS-1$
 				}
 			} else {
@@ -249,14 +242,14 @@ public class DecompiledMethod {
 	private static Index getNextIndex(List<?> input, int startOffset) {
 		for (int i = startOffset + 1; i < input.size(); i++) {
 			Object object = input.get(i);
-			if(object instanceof Index){
-				return (Index)object;
+			if (object instanceof Index) {
+				return (Index) object;
 			}
 		}
 		return null;
 	}
 
-	private void updateLocals(final Index index, final Map<Integer, String> locals) {
+	private void updateLocals(Index index, Map<Integer, String> locals) {
 		for (LocalVariableNode lvNode : localVariables) {
 			if (lvNode.start == index.labelNode) {
 				locals.put(Integer.valueOf(lvNode.index), lvNode.name);
@@ -266,7 +259,7 @@ public class DecompiledMethod {
 		}
 	}
 
-	private void computeMaps(final Map<Label, Integer> lineNumbers1) {
+	private void computeMaps(Map<Label, Integer> lineNumbers1) {
 		int currentDecompiledLine = 0;
 		int firstLine = -1;
 		int lastLine = -1;
@@ -277,15 +270,15 @@ public class DecompiledMethod {
 			if (o instanceof Index) {
 				Index index = (Index) o;
 				Integer sourceLine = null;
-				if(index.labelNode != null) {
+				if (index.labelNode != null) {
 					sourceLine = lineNumbers1.get(index.labelNode.getLabel());
 				}
 				if (sourceLine != null) {
 					currentSourceLine = sourceLine.intValue();
-					if(firstLine == -1 || currentSourceLine < firstLine){
+					if (firstLine == -1 || currentSourceLine < firstLine) {
 						firstLine = currentSourceLine;
 					}
-					if(lastLine == -1 || currentSourceLine > lastLine){
+					if (lastLine == -1 || currentSourceLine > lastLine) {
 						lastLine = currentSourceLine;
 					}
 				}
@@ -297,7 +290,7 @@ public class DecompiledMethod {
 			Integer cdl = Integer.valueOf(currentDecompiledLine);
 			Integer ci = Integer.valueOf(currentInsn1);
 			Integer co = Integer.valueOf(currentOpcode);
-			if(currentSourceLine >= 0){
+			if (currentSourceLine >= 0) {
 				Integer csl = Integer.valueOf(currentSourceLine);
 				sourceLines.put(cdl, csl);
 				if (decompiledLines.get(csl) == null) {
@@ -344,7 +337,7 @@ public class DecompiledMethod {
 					}
 				}
 			} else {
-				if(offsStr == null){
+				if (offsStr == null) {
 					offsStr = ""; //$NON-NLS-1$
 				}
 				String locals = " "; //$NON-NLS-1$
@@ -354,16 +347,16 @@ public class DecompiledMethod {
 					appendFrame(buf, frame);
 					int p = buf.indexOf(" "); //$NON-NLS-1$
 					locals = buf.substring(0, p);
-					if("".equals(locals)){ //$NON-NLS-1$
+					if ("".equals(locals)) { //$NON-NLS-1$
 						locals = " "; //$NON-NLS-1$
 					}
 					stack = buf.substring(p + 1);
-					if("".equals(stack)){ //$NON-NLS-1$
+					if ("".equals(stack)) { //$NON-NLS-1$
 						stack = " "; //$NON-NLS-1$
 					}
 				}
 
-				lines.add(new String[]{offsStr, locals, stack, o.toString(), error1});
+				lines.add(new String[] { offsStr, locals, stack, o.toString(), error1 });
 				frame = null;
 				error1 = ""; //$NON-NLS-1$
 				offsStr = null;
@@ -381,12 +374,10 @@ public class DecompiledMethod {
 			return -1;
 		}
 		Integer i = insnLines.get(Integer.valueOf(errorInsn));
-		return i == null
-				? -1
-						: i.intValue();
+		return i == null ? -1 : i.intValue();
 	}
 
-	private static void appendFrame(final StringBuffer buf, final Frame<?> f) {
+	private static void appendFrame(StringBuffer buf, Frame<?> f) {
 		try {
 			for (int i = 0; i < f.getLocals(); ++i) {
 				appendValue(buf, f.getLocal(i));
@@ -400,7 +391,7 @@ public class DecompiledMethod {
 		}
 	}
 
-	private static void appendValue(final StringBuffer buf, final Value v) {
+	private static void appendValue(StringBuffer buf, Value v) {
 		if (((BasicValue) v).isReference()) {
 			buf.append("R"); //$NON-NLS-1$
 		} else {
@@ -408,40 +399,36 @@ public class DecompiledMethod {
 		}
 	}
 
-	public int getFirstSourceLine(){
+	public int getFirstSourceLine() {
 		return firstSourceLine;
 	}
 
-	public int getLastSourceLine(){
+	public int getLastSourceLine() {
 		return lastSourceLine;
 	}
 
-	public int getSourceLine(final int decompiledLine) {
+	public int getSourceLine(int decompiledLine) {
 		Integer i = sourceLines.get(Integer.valueOf(decompiledLine));
-		return i == null
-				? -1
-						: i.intValue();
+		return i == null ? -1 : i.intValue();
 	}
 
-	public Integer getBytecodeOffset(final int decompiledLine) {
-		Integer insn = insns.get(Integer.valueOf(decompiledLine));
-		return insn;
+	public Integer getBytecodeOffset(int decompiledLine) {
+		return insns.get(Integer.valueOf(decompiledLine));
 	}
 
-	public Integer getBytecodeInsn(final int decompiledLine) {
-		Integer insn = opcodes.get(Integer.valueOf(decompiledLine));
-		return insn;
+	public Integer getBytecodeInsn(int decompiledLine) {
+		return opcodes.get(Integer.valueOf(decompiledLine));
 	}
 
-	public String[][][] getFrameTables(final int decompiledLine, boolean useQualifiedNames) {
+	public String[][][] getFrameTables(int decompiledLine, boolean useQualifiedNames) {
 		Integer insn = getBytecodeOffset(decompiledLine);
-		if(insn == null){
+		if (insn == null) {
 			return null;
 		}
 		return getFrameTablesForInsn(insn.intValue(), useQualifiedNames);
 	}
 
-	public String[][][] getFrameTablesForInsn(final int insn, boolean useQualifiedNames) {
+	public String[][][] getFrameTablesForInsn(int insn, boolean useQualifiedNames) {
 		if (error != null && insn == errorInsn) {
 			return null;
 		}
@@ -457,28 +444,28 @@ public class DecompiledMethod {
 					String varName = ""; //$NON-NLS-1$
 					for (LocalVariableNode lvnode : localVariables) {
 						int n = lvnode.index;
-						if( n==i) {
+						if (n == i) {
 							varName = lvnode.name;
 							// TODO take into account variable scope!
 							break;
 						}
 					}
 
-					locals.add( new String[] {
-							""+i, //$NON-NLS-1$
-							getTypeName( useQualifiedNames, f.getLocal(i).toString()),
-							varName});
+					locals.add(new String[] {
+							"" + i, //$NON-NLS-1$
+							getTypeName(useQualifiedNames, f.getLocal(i).toString()),
+							varName });
 				}
 
 				ArrayList<String[]> stack = new ArrayList<>();
 				for (int i = 0; i < f.getStackSize(); ++i) {
-					stack.add( new String[] {
-							""+i, //$NON-NLS-1$
-							getTypeName( useQualifiedNames, f.getStack(i).toString())});
+					stack.add(new String[] {
+							"" + i, //$NON-NLS-1$
+							getTypeName(useQualifiedNames, f.getStack(i).toString()) });
 				}
 				return new String[][][] {
-					locals.toArray( new String[ 3][]),
-					stack.toArray( new String[ 2][])};
+					locals.toArray(new String[3][]),
+					stack.toArray(new String[2][]) };
 			} catch (IndexOutOfBoundsException e) {
 				BytecodeOutlinePlugin.log(e, IStatus.ERROR);
 			}
@@ -486,11 +473,11 @@ public class DecompiledMethod {
 		return null;
 	}
 
-	private static String getTypeName(final boolean useQualifiedNames, String s) {
+	private static String getTypeName(boolean useQualifiedNames, String s) {
 		if (!useQualifiedNames) {
 			// get leading array symbols
 			String arraySymbols = ""; //$NON-NLS-1$
-			while (s.startsWith("[")){ //$NON-NLS-1$
+			while (s.startsWith("[")) { //$NON-NLS-1$
 				arraySymbols += "["; //$NON-NLS-1$
 				s = s.substring(1);
 			}
@@ -498,35 +485,27 @@ public class DecompiledMethod {
 			int idx = s.lastIndexOf('/');
 			if (idx > 0) {
 				// from "Ljava/lang/Object;" to "Object"
-				return arraySymbols  + s.substring(idx + 1, s.length() - 1);
+				return arraySymbols + s.substring(idx + 1, s.length() - 1);
 			}
 			// this is the case on LVT view - ignore it
-			if("." == s){ //$NON-NLS-1$
-				return arraySymbols  + s;
+			if ("." == s) { //$NON-NLS-1$
+				return arraySymbols + s;
 			}
 			// XXX Unresolved type
-			if("R" == s){ //$NON-NLS-1$
-				return arraySymbols  + s;
+			if ("R" == s) { //$NON-NLS-1$
+				return arraySymbols + s;
 			}
 			// resolve primitive types
-			return arraySymbols +
-					CommentedClassVisitor.getSimpleName(Type.getType(s));
+			return arraySymbols + CommentedClassVisitor.getSimpleName(Type.getType(s));
 		}
 		return "Lnull;".equals(s) ? "null" : s; //$NON-NLS-1$ //$NON-NLS-2$
 	}
 
-	public int getDecompiledLine(final int sourceLine) {
+	public int getDecompiledLine(int sourceLine) {
 		Integer i = decompiledLines.get(Integer.valueOf(sourceLine));
-		return i == null
-				? -1
-						: i.intValue();
+		return i == null ? -1 : i.intValue();
 	}
 
-	/**
-	 * Returns <code>true</code> if this <code>DecompiledMethod</code> is the same as the o argument.
-	 *
-	 * @return <code>true</code> if this <code>DecompiledMethod</code> is the same as the o argument.
-	 */
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) {
@@ -536,12 +515,11 @@ public class DecompiledMethod {
 			return false;
 		}
 		DecompiledMethod another = (DecompiledMethod) o;
-		return getSignature().equals(another.getSignature())
-				&& (owner != null? owner.equals(another.owner) : true);
+		return getSignature().equals(another.getSignature()) && (owner != null ? owner.equals(another.owner) : true);
 	}
 
 	@Override
 	public int hashCode() {
-		return getSignature().hashCode() + (owner != null? owner.hashCode() : 0);
+		return getSignature().hashCode() + (owner != null ? owner.hashCode() : 0);
 	}
 }

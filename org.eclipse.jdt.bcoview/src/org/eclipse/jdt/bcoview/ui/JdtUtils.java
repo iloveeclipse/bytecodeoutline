@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -70,35 +69,33 @@ import org.eclipse.jdt.core.search.TypeNameRequestor;
 public class JdtUtils {
 	/** package separator in bytecode notation */
 	private static final char PACKAGE_SEPARATOR = '/';
+
 	/** type name separator (for inner types) in bytecode notation */
 	private static final char TYPE_SEPARATOR = '$';
 
-	/**
-	 *
-	 */
 	private JdtUtils() {
 		// don't call
 	}
 
-	public static IJavaElement getMethod(IParent parent, String signature){
+	public static IJavaElement getMethod(IParent parent, String signature) {
 		try {
 			IJavaElement[] children = parent.getChildren();
 			for (IJavaElement child : children) {
 				IJavaElement javaElement = child;
 				switch (javaElement.getElementType()) {
-					case IJavaElement.INITIALIZER :
+					case IJavaElement.INITIALIZER:
 						// fall through
-					case IJavaElement.METHOD :
-						if(signature.equals(getMethodSignature(javaElement))){
+					case IJavaElement.METHOD:
+						if (signature.equals(getMethodSignature(javaElement))) {
 							return javaElement;
 						}
 						break;
-					default :
+					default:
 						break;
 				}
-				if(javaElement instanceof IParent){
+				if (javaElement instanceof IParent) {
 					javaElement = getMethod((IParent) javaElement, signature);
-					if(javaElement != null){
+					if (javaElement != null) {
 						return javaElement;
 					}
 				}
@@ -112,8 +109,8 @@ public class JdtUtils {
 
 	/**
 	 * @param childEl non null
-	 * @return method signature, if given java element is either initializer or method,
-	 * otherwise returns null.
+	 * @return method signature, if given java element is either initializer or method, otherwise
+	 *         returns null.
 	 */
 	public static String getMethodSignature(IJavaElement childEl) {
 		String methodName = null;
@@ -141,8 +138,7 @@ public class JdtUtils {
 		return methodName;
 	}
 
-	public static String createMethodSignature(IMethod iMethod)
-			throws JavaModelException {
+	public static String createMethodSignature(IMethod iMethod) throws JavaModelException {
 		StringBuffer sb = new StringBuffer();
 
 		// Eclipse put class name as constructor name - we change it!
@@ -171,8 +167,8 @@ public class JdtUtils {
 		if (iMethod.isConstructor() && isNonStaticInner(declaringType)) {
 			// this is a very special case
 			String typeSignature = getTypeSignature(getFirstAncestor(declaringType));
-			if(typeSignature != null) {
-				String [] newParams = new String [parameterTypes.length + 1];
+			if (typeSignature != null) {
+				String[] newParams = new String[parameterTypes.length + 1];
 				newParams[0] = typeSignature;
 				System.arraycopy(parameterTypes, 0, newParams, 1, parameterTypes.length);
 				parameterTypes = newParams;
@@ -182,7 +178,7 @@ public class JdtUtils {
 		// doSomething(Lgenerics/DummyForAsmGenerics;)Lgenerics/DummyForAsmGenerics;
 		for (String parameterType : parameterTypes) {
 			String resolvedType = getResolvedType(parameterType, declaringType);
-			if(resolvedType != null && resolvedType.length() > 0){
+			if (resolvedType != null && resolvedType.length() > 0) {
 				sb.append(resolvedType);
 			} else {
 				// this is a generic type
@@ -194,7 +190,7 @@ public class JdtUtils {
 		// continue here with adding resolved return type
 		String returnType = iMethod.getReturnType();
 		String resolvedType = getResolvedType(returnType, declaringType);
-		if(resolvedType != null && resolvedType.length() > 0){
+		if (resolvedType != null && resolvedType.length() > 0) {
 			sb.append(resolvedType);
 		} else {
 			// this is a generic type
@@ -209,7 +205,7 @@ public class JdtUtils {
 	 * @return full qualified, resolved type name in bytecode notation
 	 */
 	private static String getTypeSignature(IType type) {
-		if(type == null){
+		if (type == null) {
 			return null;
 		}
 		/*
@@ -225,12 +221,11 @@ public class JdtUtils {
 		return Signature.C_RESOLVED + name + Signature.C_SEMICOLON;
 	}
 
-	private static void appendGenericType(StringBuffer sb, IMethod iMethod,
-			String unresolvedType) throws JavaModelException{
+	private static void appendGenericType(StringBuffer sb, IMethod iMethod, String unresolvedType) throws JavaModelException {
 		IType declaringType = iMethod.getDeclaringType();
 
 		// unresolvedType is here like "QA;" => we remove "Q" and ";"
-		if(unresolvedType.length() < 3){
+		if (unresolvedType.length() < 3) {
 			// ???? something wrong here ....
 			sb.append(unresolvedType);
 			return;
@@ -238,17 +233,17 @@ public class JdtUtils {
 		unresolvedType = unresolvedType.substring(1, unresolvedType.length() - 1);
 
 		ITypeParameter typeParameter = iMethod.getTypeParameter(unresolvedType);
-		if(typeParameter == null || !typeParameter.exists()){
+		if (typeParameter == null || !typeParameter.exists()) {
 			typeParameter = declaringType.getTypeParameter(unresolvedType);
 		}
 
 		String[] bounds = typeParameter.getBounds();
-		if(bounds.length == 0){
+		if (bounds.length == 0) {
 			sb.append("Ljava/lang/Object;"); //$NON-NLS-1$
 		} else {
 			for (String bound : bounds) {
 				String simplyName = bound;
-				simplyName =  Signature.C_UNRESOLVED + simplyName + Signature.C_NAME_END;
+				simplyName = Signature.C_UNRESOLVED + simplyName + Signature.C_NAME_END;
 				String resolvedType = getResolvedType(simplyName, declaringType);
 				sb.append(resolvedType);
 			}
@@ -261,8 +256,7 @@ public class JdtUtils {
 	 * @return full qualified "bytecode formatted" type
 	 * @throws JavaModelException on error
 	 */
-	private static String getResolvedType(String typeToResolve,
-			IType declaringType) throws JavaModelException {
+	private static String getResolvedType(String typeToResolve, IType declaringType) throws JavaModelException {
 		StringBuffer sb = new StringBuffer();
 		int arrayCount = Signature.getArrayCount(typeToResolve);
 		// test which letter is following - Q or L are for reference types
@@ -272,12 +266,12 @@ public class JdtUtils {
 			sb.append(typeToResolve);
 		} else {
 			boolean isUnresolvedType = isUnresolvedType(typeToResolve, arrayCount);
-			if(!isUnresolvedType) {
+			if (!isUnresolvedType) {
 				sb.append(typeToResolve);
 			} else {
 				// we need resolved types
 				String resolved = getResolvedTypeName(typeToResolve, declaringType);
-				if(resolved != null) {
+				if (resolved != null) {
 					while (arrayCount > 0) {
 						sb.append(Signature.C_ARRAY);
 						arrayCount--;
@@ -292,18 +286,17 @@ public class JdtUtils {
 	}
 
 	/**
-	 * Copied and modified from JavaModelUtil. Resolves a type name in the context of the
-	 * declaring type.
-	 * @param refTypeSig the type name in signature notation (for example 'QVector') this
-	 * can also be an array type, but dimensions will be ignored.
-	 * @param declaringType the context for resolving (type where the reference was made
-	 * in)
-	 * @return returns the fully qualified <b>bytecode </b> type name or build-in-type
-	 * name. if a unresoved type couldn't be resolved null is returned
+	 * Copied and modified from JavaModelUtil. Resolves a type name in the context of the declaring
+	 * type.
+	 *
+	 * @param refTypeSig the type name in signature notation (for example 'QVector') this can also
+	 *            be an array type, but dimensions will be ignored.
+	 * @param declaringType the context for resolving (type where the reference was made in)
+	 * @return returns the fully qualified <b>bytecode </b> type name or build-in-type name. if a
+	 *         unresoved type couldn't be resolved null is returned
 	 * @throws JavaModelException on error
 	 */
-	private static String getResolvedTypeName(String refTypeSig,
-			IType declaringType) throws JavaModelException {
+	private static String getResolvedTypeName(String refTypeSig, IType declaringType) throws JavaModelException {
 
 		/* the whole method is copied from JavaModelUtil.getResolvedTypeName(...).
 		 * The problem is, that JavaModelUtil uses '.' to separate package
@@ -312,18 +305,18 @@ public class JdtUtils {
 		 */
 		int arrayCount = Signature.getArrayCount(refTypeSig);
 		if (isUnresolvedType(refTypeSig, arrayCount)) {
-			String name= ""; //$NON-NLS-1$
-			int bracket= refTypeSig.indexOf(Signature.C_GENERIC_START, arrayCount + 1);
+			String name = ""; //$NON-NLS-1$
+			int bracket = refTypeSig.indexOf(Signature.C_GENERIC_START, arrayCount + 1);
 			if (bracket > 0) {
-				name= refTypeSig.substring(arrayCount + 1, bracket);
+				name = refTypeSig.substring(arrayCount + 1, bracket);
 			} else {
-				int semi= refTypeSig.indexOf(Signature.C_SEMICOLON, arrayCount + 1);
+				int semi = refTypeSig.indexOf(Signature.C_SEMICOLON, arrayCount + 1);
 				if (semi == -1) {
 					throw new IllegalArgumentException();
 				}
-				name= refTypeSig.substring(arrayCount + 1, semi);
+				name = refTypeSig.substring(arrayCount + 1, semi);
 			}
-			String[][] resolvedNames= declaringType.resolveType(name);
+			String[][] resolvedNames = declaringType.resolveType(name);
 			if (resolvedNames != null && resolvedNames.length > 0) {
 				return concatenateName(resolvedNames[0][0], resolvedNames[0][1]);
 			}
@@ -336,15 +329,16 @@ public class JdtUtils {
 	 * @param refTypeSig signature
 	 * @param arrayCount expected array count in the signature
 	 * @return true if the given string is an unresolved signature (Eclipse - internal
-	 * representation)
+	 *         representation)
 	 */
-	private static boolean isUnresolvedType(String refTypeSig, int arrayCount){
+	private static boolean isUnresolvedType(String refTypeSig, int arrayCount) {
 		char type = refTypeSig.charAt(arrayCount);
 		return type == Signature.C_UNRESOLVED;
 	}
 
 	/**
 	 * Concatenates package and class name. Both strings can be empty or <code>null</code>.
+	 *
 	 * @param packageName can be null
 	 * @param className can be null
 	 * @return result, non null, can be empty
@@ -367,6 +361,7 @@ public class JdtUtils {
 
 	/**
 	 * Test which letter is following - Q or L are for reference types
+	 *
 	 * @param first char
 	 * @return true, if character is not a symbol for reference types
 	 */
@@ -387,14 +382,14 @@ public class JdtUtils {
 
 	/**
 	 * Modified copy from org.eclipse.jdt.internal.ui.actions.SelectionConverter
+	 *
 	 * @param input can be null
 	 * @param selection can be null
 	 * @return null, if selection is null or could not be resolved to java element
 	 * @throws JavaModelException on error
 	 */
-	public static IJavaElement getElementAtOffset(IJavaElement input,
-			ITextSelection selection) throws JavaModelException {
-		if(selection == null){
+	public static IJavaElement getElementAtOffset(IJavaElement input, ITextSelection selection) throws JavaModelException {
+		if (selection == null) {
 			return null;
 		}
 		ICompilationUnit workingCopy = null;
@@ -402,7 +397,7 @@ public class JdtUtils {
 			workingCopy = (ICompilationUnit) input;
 			// be in-sync with model
 			// instead of using internal JavaModelUtil.reconcile(workingCopy);
-			synchronized(workingCopy)  {
+			synchronized (workingCopy) {
 				workingCopy.reconcile(
 						ICompilationUnit.NO_AST,
 						false /* don't force problem detection */,
@@ -418,10 +413,10 @@ public class JdtUtils {
 			IJavaElement ref = iClass.getElementAt(selection.getOffset());
 			if (ref != null) {
 				// If we are in the inner class, try to refine search result now
-				if(ref instanceof IType){
+				if (ref instanceof IType) {
 					IType type = (IType) ref;
 					IClassFile classFile = type.getClassFile();
-					if(classFile != iClass){
+					if (classFile != iClass) {
 						/*
 						 * WORKAROUND it seems that source range for constructors from
 						 * bytecode with source attached from zip files is not computed
@@ -442,32 +437,33 @@ public class JdtUtils {
 
 	/**
 	 * Modified copy from JavaModelUtil.
+	 *
 	 * @param javaElt non null
-	 * @return true, if corresponding java project has compiler setting to generate
-	 * bytecode for jdk 1.5 and above
+	 * @return true, if corresponding java project has compiler setting to generate bytecode for jdk
+	 *         1.5 and above
 	 */
 	public static boolean is50OrHigher(IJavaElement javaElt) {
 		IJavaProject project = javaElt.getJavaProject();
 		String option = project.getOption(JavaCore.COMPILER_COMPLIANCE, true);
 		boolean result = JavaCore.VERSION_1_5.equals(option);
-		if(result){
+		if (result) {
 			return result;
 		}
 		// probably > 1.5?
 		result = JavaCore.VERSION_1_4.equals(option);
-		if(result){
+		if (result) {
 			return false;
 		}
 		result = JavaCore.VERSION_1_3.equals(option);
-		if(result){
+		if (result) {
 			return false;
 		}
 		result = JavaCore.VERSION_1_2.equals(option);
-		if(result){
+		if (result) {
 			return false;
 		}
 		result = JavaCore.VERSION_1_1.equals(option);
-		if(result){
+		if (result) {
 			return false;
 		}
 		// unknown = > 1.5
@@ -475,16 +471,15 @@ public class JdtUtils {
 	}
 
 	/**
-	 * Cite: jdk1.1.8/docs/guide/innerclasses/spec/innerclasses.doc10.html: For the sake
-	 * of tools, there are some additional requirements on the naming of an inaccessible
-	 * class N. Its bytecode name must consist of the bytecode name of an enclosing class
-	 * (the immediately enclosing class, if it is a member), followed either by `$' and a
-	 * positive decimal numeral chosen by the compiler, or by `$' and the simple name of
-	 * N, or else by both (in that order). Moreover, the bytecode name of a block-local N
-	 * must consist of its enclosing package member T, the characters `$1$', and N, if the
-	 * resulting name would be unique.
-	 * <br>
+	 * Cite: jdk1.1.8/docs/guide/innerclasses/spec/innerclasses.doc10.html: For the sake of tools,
+	 * there are some additional requirements on the naming of an inaccessible class N. Its bytecode
+	 * name must consist of the bytecode name of an enclosing class (the immediately enclosing
+	 * class, if it is a member), followed either by `$' and a positive decimal numeral chosen by
+	 * the compiler, or by `$' and the simple name of N, or else by both (in that order). Moreover,
+	 * the bytecode name of a block-local N must consist of its enclosing package member T, the
+	 * characters `$1$', and N, if the resulting name would be unique. <br>
 	 * Note, that this rule was changed for static blocks after 1.5 jdk.
+	 *
 	 * @param javaElement non null
 	 * @return simply element name
 	 */
@@ -497,8 +492,7 @@ public class JdtUtils {
 			 * anonymous classes in declaring class, therefore we need to collect all here
 			 */
 			collectAllAnonymous(allAnonymous, anonType);
-			int idx = getAnonimousIndex(anonType, allAnonymous
-					.toArray(new IType[allAnonymous.size()]));
+			int idx = getAnonimousIndex(anonType, allAnonymous.toArray(new IType[allAnonymous.size()]));
 			return Integer.toString(idx);
 		}
 		String name = javaElement.getElementName();
@@ -513,7 +507,7 @@ public class JdtUtils {
 			 * So there could be still a chance, that this code fails, if java element
 			 * is not compiled with comiler settings from project, but with different
 			 */
-			if(is50OrHigher(javaElement)){
+			if (is50OrHigher(javaElement)) {
 				name = "1" + name; // compiler output changed for > 1.5 code //$NON-NLS-1$
 			} else {
 				name = "1$" + name; // see method comment, this was the case for older code //$NON-NLS-1$
@@ -543,8 +537,7 @@ public class JdtUtils {
 		return null;
 	}
 
-	private static IJavaElement getLastAncestor(IJavaElement javaElement,
-			int elementType) {
+	private static IJavaElement getLastAncestor(IJavaElement javaElement, int elementType) {
 		IJavaElement lastFound = null;
 		if (elementType == javaElement.getElementType()) {
 			lastFound = javaElement;
@@ -564,10 +557,9 @@ public class JdtUtils {
 	 * @param javaElement non null
 	 * @param topAncestor non null
 	 * @return distance to given ancestor, 0 if it is the same, -1 if ancestor with type
-	 * IJavaElement.TYPE does not exist
+	 *         IJavaElement.TYPE does not exist
 	 */
-	private static int getTopAncestorDistance(IJavaElement javaElement,
-			IJavaElement topAncestor) {
+	private static int getTopAncestorDistance(IJavaElement javaElement, IJavaElement topAncestor) {
 		if (topAncestor == javaElement) {
 			return 0;
 		}
@@ -584,10 +576,8 @@ public class JdtUtils {
 	 * @param topAncestor non null
 	 * @return first non-anonymous ancestor
 	 */
-	private static IJavaElement getFirstNonAnonymous(IJavaElement javaElement,
-			IJavaElement topAncestor) {
-		if (javaElement.getElementType() == IJavaElement.TYPE
-				&& !isAnonymousType(javaElement)) {
+	private static IJavaElement getFirstNonAnonymous(IJavaElement javaElement, IJavaElement topAncestor) {
+		if (javaElement.getElementType() == IJavaElement.TYPE && !isAnonymousType(javaElement)) {
 			return javaElement;
 		}
 		IJavaElement parent = javaElement.getParent();
@@ -607,7 +597,7 @@ public class JdtUtils {
 	 */
 	private static boolean isAnonymousType(IJavaElement javaElement) {
 		try {
-			return javaElement instanceof IType && ((IType)javaElement).isAnonymous();
+			return javaElement instanceof IType && ((IType) javaElement).isAnonymous();
 		} catch (JavaModelException e) {
 			BytecodeOutlinePlugin.log(e, IStatus.ERROR);
 		}
@@ -620,7 +610,7 @@ public class JdtUtils {
 	 */
 	private static boolean isLocal(IJavaElement innerType) {
 		try {
-			return innerType instanceof IType && ((IType)innerType).isLocal();
+			return innerType instanceof IType && ((IType) innerType).isLocal();
 		} catch (JavaModelException e) {
 			BytecodeOutlinePlugin.log(e, IStatus.ERROR);
 		}
@@ -633,12 +623,12 @@ public class JdtUtils {
 	 * @return true, if given element is inner class from initializer block or method body
 	 */
 	private static boolean isAnyParentLocal(IJavaElement elt, IJavaElement topParent) {
-		if(isLocal(elt)){
+		if (isLocal(elt)) {
 			return true;
 		}
 		IJavaElement parent = elt.getParent();
-		while(parent != null && parent != topParent){
-			if(isLocal(parent)){
+		while (parent != null && parent != topParent) {
+			if (isLocal(parent)) {
 				return true;
 			}
 			parent = parent.getParent();
@@ -652,7 +642,7 @@ public class JdtUtils {
 	 * @throws JavaModelException on error
 	 */
 	private static boolean isNonStaticInner(IType type) throws JavaModelException {
-		if(type.isMember()){
+		if (type.isMember()) {
 			return !Flags.isStatic(type.getFlags());
 		}
 		return false;
@@ -672,8 +662,7 @@ public class JdtUtils {
 	 * @return absolute path of generated bytecode package for given element
 	 * @throws JavaModelException on error
 	 */
-	private static String getPackageOutputPath(IJavaElement javaElement)
-			throws JavaModelException {
+	private static String getPackageOutputPath(IJavaElement javaElement) throws JavaModelException {
 		String dir = ""; //$NON-NLS-1$
 		if (javaElement == null) {
 			return dir;
@@ -697,9 +686,7 @@ public class JdtUtils {
 			for (IClasspathEntry classpathEntry : entries) {
 				if (classpathEntry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
 					IPath outputPath = classpathEntry.getOutputLocation();
-					if (outputPath != null
-							&& classpathEntry.getPath().isPrefixOf(
-									resource.getFullPath())) {
+					if (outputPath != null && classpathEntry.getPath().isPrefixOf(resource.getFullPath())) {
 						path = outputPath;
 						break;
 					}
@@ -710,12 +697,12 @@ public class JdtUtils {
 		if (path == null) {
 			// check the default location if not already included
 			IPath def = project.getOutputLocation();
-			if (def != null && def.isPrefixOf(resource.getFullPath())){
+			if (def != null && def.isPrefixOf(resource.getFullPath())) {
 				path = def;
 			}
 		}
 
-		if(path == null){
+		if (path == null) {
 			return dir;
 		}
 
@@ -738,7 +725,7 @@ public class JdtUtils {
 		// probably existing at first place of path
 		IPathVariableManager pathManager = workspace.getPathVariableManager();
 		URI resolvedURI = pathManager.resolveURI(URIUtil.toURI(path));
-		if(resolvedURI != null) {
+		if (resolvedURI != null) {
 			path = URIUtil.toPath(resolvedURI);
 		}
 
@@ -749,15 +736,13 @@ public class JdtUtils {
 		if (isPackageRoot(project, resource)) {
 			dir = path.toOSString();
 		} else {
-			String packPath = EclipseUtils.getJavaPackageName(javaElement)
-					.replace(Signature.C_DOT, PACKAGE_SEPARATOR);
+			String packPath = EclipseUtils.getJavaPackageName(javaElement).replace(Signature.C_DOT, PACKAGE_SEPARATOR);
 			dir = path.append(packPath).toOSString();
 		}
 		return dir;
 	}
 
-	private static boolean isPackageRoot(IJavaProject project, IResource pack)
-			throws JavaModelException {
+	private static boolean isPackageRoot(IJavaProject project, IResource pack) throws JavaModelException {
 		boolean isRoot = false;
 		if (project == null || pack == null || !(pack instanceof IContainer)) {
 			return isRoot;
@@ -772,8 +757,8 @@ public class JdtUtils {
 	}
 
 	/**
-	 * Works only for eclipse - managed/generated bytecode, ergo not with imported
-	 * classes/jars
+	 * Works only for eclipse - managed/generated bytecode, ergo not with imported classes/jars
+	 *
 	 * @param javaElement can be null
 	 * @return full os-specific file path to .class resource, containing given element
 	 */
@@ -798,12 +783,11 @@ public class JdtUtils {
 
 	/**
 	 * @param javaElement non null
-	 * @return new generated input stream for given element bytecode class file, or null
-	 * if class file cannot be found or this element is not from java source path
+	 * @return new generated input stream for given element bytecode class file, or null if class
+	 *         file cannot be found or this element is not from java source path
 	 */
 	public static byte[] readClassBytes(IJavaElement javaElement) {
-		IClassFile classFile = (IClassFile) javaElement
-				.getAncestor(IJavaElement.CLASS_FILE);
+		IClassFile classFile = (IClassFile) javaElement.getAncestor(IJavaElement.CLASS_FILE);
 
 		// existing read-only class files
 		if (classFile != null) {
@@ -819,7 +803,7 @@ public class JdtUtils {
 				return null;
 			}
 			String classPath = getByteCodePath(javaElement);
-			if(classPath.isEmpty()) {
+			if (classPath.isEmpty()) {
 				return null;
 			}
 			try {
@@ -848,8 +832,7 @@ public class JdtUtils {
 	 * @return full qualified bytecode name of given class
 	 */
 	public static String getFullBytecodeName(IClassFile classFile) {
-		IPackageFragment packageFr = (IPackageFragment) classFile
-				.getAncestor(IJavaElement.PACKAGE_FRAGMENT);
+		IPackageFragment packageFr = (IPackageFragment) classFile.getAncestor(IJavaElement.PACKAGE_FRAGMENT);
 		if (packageFr == null) {
 			return null;
 		}
@@ -864,20 +847,18 @@ public class JdtUtils {
 		return className;
 	}
 
-	private static String getClassName(IJavaElement javaElement,
-			IJavaElement topAncestor) {
+	private static String getClassName(IJavaElement javaElement, IJavaElement topAncestor) {
 		StringBuffer sb = new StringBuffer();
 		if (!javaElement.equals(topAncestor)) {
 			int elementType = javaElement.getElementType();
-			if(elementType == IJavaElement.FIELD
+			if (elementType == IJavaElement.FIELD
 					|| elementType == IJavaElement.METHOD
 					|| elementType == IJavaElement.INITIALIZER) {
 				// it's field or method
 				javaElement = getFirstAncestor(javaElement);
 			} else {
 				boolean is50OrHigher = is50OrHigher(javaElement);
-				if (!is50OrHigher &&
-						(isAnonymousType(javaElement) || isLocal(javaElement))) {
+				if (!is50OrHigher && (isAnonymousType(javaElement) || isLocal(javaElement))) {
 					// it's inner type
 					sb.append(getElementName(topAncestor));
 					sb.append(TYPE_SEPARATOR);
@@ -906,9 +887,10 @@ public class JdtUtils {
 	}
 
 	/**
-	 * Collect all anonymous classes which are on the same "name shema level"
-	 * as the given element for the compiler. The list could contain different set of
-	 * elements for the same source code, depends on the compiler and jdk version
+	 * Collect all anonymous classes which are on the same "name shema level" as the given element
+	 * for the compiler. The list could contain different set of elements for the same source code,
+	 * depends on the compiler and jdk version
+	 *
 	 * @param list for the found anon. classes, elements instanceof IType.
 	 * @param anonType the anon. type
 	 */
@@ -918,10 +900,10 @@ public class JdtUtils {
 		 * classes was changed from A$1, A$2, A$3, A$4, ..., A$n
 		 * to A$1, A$1$1, A$1$2, A$1$2$1, ..., A$2, A$2$1, A$2$2, ..., A$x$y
 		 */
-		boolean allowNested = ! is50OrHigher(anonType);
+		boolean allowNested = !is50OrHigher(anonType);
 
 		IParent declaringType;
-		if(allowNested) {
+		if (allowNested) {
 			declaringType = (IType) getLastAncestor(anonType, IJavaElement.TYPE);
 		} else {
 			declaringType = anonType.getDeclaringType();
@@ -938,20 +920,20 @@ public class JdtUtils {
 
 	/**
 	 * Traverses down the children tree of this parent and collect all child anon. classes
+	 *
 	 * @param list non null
 	 * @param parent non null
 	 * @param allowNested true to search in IType child elements too
 	 * @throws JavaModelException on error
 	 */
-	private static void collectAllAnonymous(List<IJavaElement> list, IParent parent,
-			boolean allowNested) throws JavaModelException {
+	private static void collectAllAnonymous(List<IJavaElement> list, IParent parent, boolean allowNested) throws JavaModelException {
 		IJavaElement[] children = parent.getChildren();
 		for (IJavaElement childElem : children) {
 			if (isAnonymousType(childElem)) {
 				list.add(childElem);
 			}
 			if (childElem instanceof IParent) {
-				if(allowNested || !(childElem instanceof IType)) {
+				if (allowNested || !(childElem instanceof IType)) {
 					collectAllAnonymous(list, (IParent) childElem, allowNested);
 				}
 			}
@@ -961,12 +943,11 @@ public class JdtUtils {
 	/**
 	 * @param anonType non null
 	 * @param anonymous non null
-	 * @return the index of given java element in the anon. classes list, which was used
-	 *  by compiler to generate bytecode name for given element. If the given type is not
-	 *  in the list, then return value is '-1'
+	 * @return the index of given java element in the anon. classes list, which was used by compiler
+	 *         to generate bytecode name for given element. If the given type is not in the list,
+	 *         then return value is '-1'
 	 */
 	private static int getAnonimousIndex(IType anonType, IType[] anonymous) {
-
 		for (int i = 0; i < anonymous.length; i++) {
 			if (anonymous[i] == anonType) {
 				// +1 because compiler starts generated classes always with 1
@@ -977,25 +958,23 @@ public class JdtUtils {
 	}
 
 	/**
-	 * Sort given anonymous classes in order like java compiler would generate output
-	 * classes, in context of given anonymous type
+	 * Sort given anonymous classes in order like java compiler would generate output classes, in
+	 * context of given anonymous type
+	 *
 	 * @param anonymous non null
 	 * @param anonType non null
 	 */
 	private static void sortAnonymous(List<IJavaElement> anonymous, IType anonType) {
 		SourceOffsetComparator sourceComparator = new SourceOffsetComparator();
-
-		final AnonymClassComparator classComparator = new AnonymClassComparator(
-				anonType, sourceComparator);
+		AnonymClassComparator classComparator = new AnonymClassComparator(anonType, sourceComparator);
 		Collections.sort(anonymous, classComparator);
 
-		if(BytecodeOutlinePlugin.DEBUG){
+		if (BytecodeOutlinePlugin.DEBUG) {
 			debugCompilePrio(classComparator);
 		}
 	}
 
-	private static void debugCompilePrio(
-			final AnonymClassComparator classComparator) {
+	private static void debugCompilePrio(AnonymClassComparator classComparator) {
 		final Map<IType, Integer> map = classComparator.map;
 		Comparator<IType> prioComp = (e1, e2) -> {
 			int result = map.get(e2).compareTo(map.get(e1));
@@ -1007,16 +986,16 @@ public class JdtUtils {
 
 		List<IType> keys = new ArrayList<>(map.keySet());
 		Collections.sort(keys, prioComp);
-		for (Iterator<IType> iterator = keys.iterator(); iterator.hasNext();) {
-			Object key = iterator.next();
+		for (IType key2 : keys) {
+			Object key = key2;
 			System.out.println(map.get(key) + " : " + key); //$NON-NLS-1$
 		}
 	}
 
 	/**
-	 * 1) from instance init 2) from deepest inner from instance init (deepest first) 3) from
-	 * static init 4) from deepest inner from static init (deepest first) 5) from deepest inner
-	 * (deepest first) 6) regular anon classes from main class
+	 * 1) from instance init 2) from deepest inner from instance init (deepest first) 3) from static
+	 * init 4) from deepest inner from static init (deepest first) 5) from deepest inner (deepest
+	 * first) 6) regular anon classes from main class
 	 *
 	 * <br>
 	 * Note, that nested inner anon. classes which do not have different non-anon. inner class
@@ -1038,23 +1017,22 @@ public class JdtUtils {
 		return 5;
 	}
 
-	private static int getAnonCompilePriority(IJavaElement elt,
-			IJavaElement firstAncestor, IJavaElement topAncestor, boolean is50OrHigher) {
-		if(is50OrHigher){
+	private static int getAnonCompilePriority(IJavaElement elt, IJavaElement firstAncestor, IJavaElement topAncestor, boolean is50OrHigher) {
+		if (is50OrHigher) {
 			return getAnonCompilePriority50(elt);
 		}
 
 		IJavaElement firstNonAnon = getFirstNonAnonymous(elt, topAncestor);
 
 		// get rid of children from local types
-		if(topAncestor != firstNonAnon && isLocal(firstNonAnon)){
+		if (topAncestor != firstNonAnon && isLocal(firstNonAnon)) {
 			return 5; // local anon. types have same prio as anon. from regular code
 		}
 
 		IJavaElement initBlock = getLastAncestor(elt, IJavaElement.INITIALIZER);
 		// test is for anon. classes from initializer blocks
 		if (initBlock != null) {
-			if(isAnyParentLocal(firstAncestor, topAncestor)){
+			if (isAnyParentLocal(firstAncestor, topAncestor)) {
 				return 5; // init blocks from local types have same prio as regular
 			}
 			if (firstAncestor == topAncestor) {
@@ -1088,11 +1066,11 @@ public class JdtUtils {
 	}
 
 	/**
-	 * Check if java element is an interface or abstract method or a method from
-	 * interface.
+	 * Check if java element is an interface or abstract method or a method from interface.
+	 *
 	 * @param javaEl can be null
 	 * @return true if the given element is an interface or abstract method or a method from
-	 * interface.
+	 *         interface.
 	 */
 	public static boolean isAbstractOrInterface(IJavaElement javaEl) {
 		if (javaEl == null) {
@@ -1101,41 +1079,36 @@ public class JdtUtils {
 		boolean abstractOrInterface = false;
 		try {
 			switch (javaEl.getElementType()) {
-				case IJavaElement.CLASS_FILE :
+				case IJavaElement.CLASS_FILE:
 					IClassFile classFile = (IClassFile) javaEl;
-					if(isOnClasspath(javaEl)) {
+					if (isOnClasspath(javaEl)) {
 						abstractOrInterface = classFile.isInterface();
 					} /*else {
-                       this is the case for eclipse-generated class files.
-                       if we do not perform the check in if, then we will have java model
-                       exception on classFile.isInterface() call.
-                    }*/
+						 this is the case for eclipse-generated class files.
+						 if we do not perform the check in if, then we will have java model
+						 exception on classFile.isInterface() call.
+						}*/
 					break;
-				case IJavaElement.COMPILATION_UNIT :
+				case IJavaElement.COMPILATION_UNIT:
 					ICompilationUnit cUnit = (ICompilationUnit) javaEl;
 					IType type = cUnit.findPrimaryType();
 					abstractOrInterface = type != null && type.isInterface();
 					break;
-				case IJavaElement.TYPE :
+				case IJavaElement.TYPE:
 					abstractOrInterface = ((IType) javaEl).isInterface();
 					break;
-				case IJavaElement.METHOD :
+				case IJavaElement.METHOD:
 					// test for "abstract" flag on method in a class
-					abstractOrInterface = Flags.isAbstract(((IMethod) javaEl)
-							.getFlags());
+					abstractOrInterface = Flags.isAbstract(((IMethod) javaEl).getFlags());
 					// "abstract" flags could be not exist on interface methods
 					if (!abstractOrInterface) {
-						IType ancestor = (IType) javaEl
-								.getAncestor(IJavaElement.TYPE);
-						abstractOrInterface = ancestor != null
-								&& ancestor.isInterface();
+						IType ancestor = (IType) javaEl.getAncestor(IJavaElement.TYPE);
+						abstractOrInterface = ancestor != null && ancestor.isInterface();
 					}
 					break;
-				default :
-					IType ancestor1 = (IType) javaEl
-					.getAncestor(IJavaElement.TYPE);
-					abstractOrInterface = ancestor1 != null
-							&& ancestor1.isInterface();
+				default:
+					IType ancestor1 = (IType) javaEl.getAncestor(IJavaElement.TYPE);
+					abstractOrInterface = ancestor1 != null && ancestor1.isInterface();
 					break;
 			}
 		} catch (JavaModelException e) {
@@ -1149,6 +1122,7 @@ public class JdtUtils {
 
 		/**
 		 * First source occurrence win.
+		 *
 		 * @param o1 should be IType
 		 * @param o2 should be IType
 		 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
@@ -1177,12 +1151,14 @@ public class JdtUtils {
 	static class AnonymClassComparator implements Comparator<IJavaElement> {
 
 		private final IType topAncestorType;
+
 		private final SourceOffsetComparator sourceComparator;
+
 		private final boolean is50OrHigher;
+
 		private final Map<IType, Integer> map;
 
-		public AnonymClassComparator(IType javaElement,
-				SourceOffsetComparator sourceComparator) {
+		public AnonymClassComparator(IType javaElement, SourceOffsetComparator sourceComparator) {
 			this.sourceComparator = sourceComparator;
 			is50OrHigher = is50OrHigher(javaElement);
 			topAncestorType = (IType) getLastAncestor(javaElement, IJavaElement.TYPE);
@@ -1190,13 +1166,14 @@ public class JdtUtils {
 		}
 
 		/**
-		 * Very simple comparison based on init/not init block decision and then on the
-		 * source code position
+		 * Very simple comparison based on init/not init block decision and then on the source code
+		 * position
+		 *
 		 * @param m1 non null
 		 * @param m2 non null
 		 * @return -1, 0 or 1
 		 */
-		private int compare50(IType m1, IType m2){
+		private int compare50(IType m1, IType m2) {
 
 			IJavaElement firstAncestor1 = getFirstAncestor(m1);
 			IJavaElement firstAncestor2 = getFirstAncestor(m2);
@@ -1214,26 +1191,25 @@ public class JdtUtils {
 		}
 
 		/**
-		 * If "deep" is the same, then source order win. 1) from instance init 2) from
-		 * deepest inner from instance init (deepest first) 3) from static init 4) from
-		 * deepest inner from static init (deepest first) 5) from deepest inner (deepest
-		 * first) 7) regular anon classes from main class
+		 * If "deep" is the same, then source order win. 1) from instance init 2) from deepest inner
+		 * from instance init (deepest first) 3) from static init 4) from deepest inner from static
+		 * init (deepest first) 5) from deepest inner (deepest first) 7) regular anon classes from
+		 * main class
 		 *
 		 * <br>
-		 * Note, that nested inner anon. classes which do not have different
-		 * non-anon. inner class ancestors, are compiled in they nesting order, opposite
-		 * to rule 2)
+		 * Note, that nested inner anon. classes which do not have different non-anon. inner class
+		 * ancestors, are compiled in they nesting order, opposite to rule 2)
 		 *
 		 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
 		 */
 		@Override
 		public int compare(IJavaElement o1, IJavaElement o2) {
-			if(o1 == o2){
+			if (o1 == o2) {
 				return 0;
 			}
 			IType m1 = (IType) o1;
 			IType m2 = (IType) o2;
-			if(is50OrHigher){
+			if (is50OrHigher) {
 				return compare50(m1, m2);
 			}
 
@@ -1251,21 +1227,21 @@ public class JdtUtils {
 				firstAncestor1 = getFirstNonAnonymous(m1, topAncestorType);
 				firstAncestor2 = getFirstNonAnonymous(m2, topAncestorType);
 
-				if(firstAncestor1 == firstAncestor2){
-					if(isLocal(firstAncestor1)){
+				if (firstAncestor1 == firstAncestor2) {
+					if (isLocal(firstAncestor1)) {
 						// we have to sort init blocks in local classes before other local class methods
 						// search for initializer block
 						boolean fromInitBlock1 = isFromInitBlock(m1);
 						boolean fromInitBlock2 = isFromInitBlock(m2);
-						if(fromInitBlock1 ^ fromInitBlock2){
-							return fromInitBlock1? -1 : 1;
+						if (fromInitBlock1 ^ fromInitBlock2) {
+							return fromInitBlock1 ? -1 : 1;
 						}
 					}
 					return sourceComparator.compare(m1, m2);
 				}
 
 				boolean isLocal = isLocal(firstAncestor1) || isLocal(firstAncestor2);
-				if(isLocal){
+				if (isLocal) {
 					return sourceComparator.compare(m1, m2);
 				}
 
@@ -1273,10 +1249,8 @@ public class JdtUtils {
 				 * for anonymous classes which have first non-common non-anonymous ancestor,
 				 * the order is the reversed definition order
 				 */
-				int topAncestorDistance1 = getTopAncestorDistance(
-						firstAncestor1, topAncestorType);
-				int topAncestorDistance2 = getTopAncestorDistance(
-						firstAncestor2, topAncestorType);
+				int topAncestorDistance1 = getTopAncestorDistance(firstAncestor1, topAncestorType);
+				int topAncestorDistance2 = getTopAncestorDistance(firstAncestor2, topAncestorType);
 				if (topAncestorDistance1 > topAncestorDistance2) {
 					return -1;
 				} else if (topAncestorDistance1 < topAncestorDistance2) {
@@ -1296,8 +1270,7 @@ public class JdtUtils {
 					System.out.println("Using cache"); //$NON-NLS-1$
 				}
 			} else {
-				compilePrio = getAnonCompilePriority(
-						anonType, firstAncestor, topAncestorType, is50OrHigher);
+				compilePrio = getAnonCompilePriority(anonType, firstAncestor, topAncestorType, is50OrHigher);
 				map.put(anonType, Integer.valueOf(compilePrio));
 				if (BytecodeOutlinePlugin.DEBUG) {
 					System.out.println("Calculating value!"); //$NON-NLS-1$
@@ -1308,26 +1281,23 @@ public class JdtUtils {
 	}
 
 	/**
-	 * Finds a type by the simple name.
-	 * see org.eclipse.jdt.internal.corext.codemanipulation.AddImportsOperation
+	 * Finds a type by the simple name. see
+	 * org.eclipse.jdt.internal.corext.codemanipulation.AddImportsOperation
+	 *
 	 * @param simpleTypeName non null
 	 * @param searchScope non null
 	 * @param monitor non null
-	 * @return null, if no types was found, empty array if more then one type was found,
-	 * or only one element, if single match exists
+	 * @return null, if no types was found, empty array if more then one type was found, or only one
+	 *         element, if single match exists
 	 * @throws JavaModelException on search
 	 */
-	public static IType[] getTypeForName(String simpleTypeName,
-			final IJavaSearchScope searchScope, IProgressMonitor monitor)
-					throws JavaModelException {
+	public static IType[] getTypeForName(String simpleTypeName, IJavaSearchScope searchScope, IProgressMonitor monitor) throws JavaModelException {
 		final List<IType> result = new ArrayList<>();
 		final TypeFactory fFactory = new TypeFactory();
 		TypeNameRequestor requestor = new TypeNameRequestor() {
 			@Override
-			public void acceptType(int modifiers, char[] packageName,
-					char[] simpleTypeName1, char[][] enclosingTypeNames, String path) {
-				IType type = fFactory.create(packageName, simpleTypeName1,
-						enclosingTypeNames, path, searchScope);
+			public void acceptType(int modifiers, char[] packageName, char[] simpleTypeName1, char[][] enclosingTypeNames, String path) {
+				IType type = fFactory.create(packageName, simpleTypeName1, enclosingTypeNames, path, searchScope);
 				if (type != null) {
 					result.add(type);
 				}
@@ -1350,9 +1320,9 @@ public class JdtUtils {
 	 * @return the openable elements
 	 */
 	public static IJavaElement[] selectOpenableElements(IJavaElement[] elements) {
-		List<IJavaElement> result= new ArrayList<>(elements.length);
+		List<IJavaElement> result = new ArrayList<>(elements.length);
 		for (IJavaElement element : elements) {
-			if(element == null) {
+			if (element == null) {
 				continue;
 			}
 			switch (element.getElementType()) {

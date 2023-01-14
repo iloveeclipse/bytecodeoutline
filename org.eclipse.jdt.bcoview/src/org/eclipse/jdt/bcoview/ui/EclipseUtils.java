@@ -82,8 +82,7 @@ public class EclipseUtils {
 	 * @param selectionProvider non null
 	 * @return TextSelection or null, if provider does not provide TextSelection's
 	 */
-	public static ITextSelection getSelection(
-			ISelectionProvider selectionProvider) {
+	public static ITextSelection getSelection(ISelectionProvider selectionProvider) {
 		ISelection selection = selectionProvider.getSelection();
 		if (selection instanceof ITextSelection) {
 			return (ITextSelection) selection;
@@ -105,12 +104,10 @@ public class EclipseUtils {
 			return ""; //$NON-NLS-1$
 		}
 		int type = resource.getElementType();
-		if (type == IJavaElement.PACKAGE_FRAGMENT
-				|| type == IJavaElement.PACKAGE_FRAGMENT_ROOT) {
+		if (type == IJavaElement.PACKAGE_FRAGMENT || type == IJavaElement.PACKAGE_FRAGMENT_ROOT) {
 			return name;
 		}
-		IJavaElement ancestor = resource
-				.getAncestor(IJavaElement.PACKAGE_FRAGMENT);
+		IJavaElement ancestor = resource.getAncestor(IJavaElement.PACKAGE_FRAGMENT);
 		if (ancestor != null) {
 			return ancestor.getElementName();
 		}

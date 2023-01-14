@@ -14,5 +14,5 @@
 package org.eclipse.jdt.bcoview.views;
 
 public interface IBytecodePart {
-	public int getBytecodeInstructionAtLine(int line);
+	int getBytecodeInstructionAtLine(int line);
 }

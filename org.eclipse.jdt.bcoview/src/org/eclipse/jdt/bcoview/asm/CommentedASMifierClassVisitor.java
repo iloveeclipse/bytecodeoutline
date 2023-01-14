@@ -34,16 +34,27 @@ import org.eclipse.jdt.bcoview.preferences.BCOConstants;
 public class CommentedASMifierClassVisitor extends ASMifier implements ICommentedClassVisitor {
 
 	protected final boolean showLines;
+
 	protected final boolean showLocals;
+
 	protected final boolean showStackMap;
+
 	private final DecompilerOptions options;
+
 	private JavaVersion javaVersion;
+
 	private int accessFlags;
+
 	private LabelNode currentLabel;
+
 	private int currentInsn;
+
 	private ASMifier dummyAnnVisitor;
+
 	private DecompiledMethod currMethod;
+
 	private String className;
+
 	private final ClassNode classNode;
 
 	private CommentedASMifierClassVisitor(ClassNode classNode, final DecompilerOptions options, String name, int id) {
@@ -62,8 +73,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 
 	@Override
 	protected ASMifier createASMifier(String name1, int id1) {
-		CommentedASMifierClassVisitor classVisitor = new CommentedASMifierClassVisitor(
-				classNode, options, name1, id1);
+		CommentedASMifierClassVisitor classVisitor = new CommentedASMifierClassVisitor(classNode, options, name1, id1);
 		classVisitor.currMethod = currMethod;
 		return classVisitor;
 	}
@@ -81,9 +91,8 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 	}
 
 	@Override
-	public void visit(int version, int access, String name1, String signature,
-			String superName, String[] interfaces) {
-		if(decompilingEntireClass()) {
+	public void visit(int version, int access, String name1, String signature, String superName, String[] interfaces) {
+		if (decompilingEntireClass()) {
 			super.visit(version, access, name1, signature, superName, interfaces);
 		}
 		this.className = name;
@@ -114,8 +123,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 	}
 
 	@Override
-	public void visitInnerClass(String name1, String outerName,
-			String innerName, int access) {
+	public void visitInnerClass(String name1, String outerName, String innerName, int access) {
 		if (decompilingEntireClass()) {
 			super.visitInnerClass(name1, outerName, innerName, access);
 		}
@@ -136,16 +144,15 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 	}
 
 	@Override
-	public ASMifier visitMethod(int access, String name1, String desc,
-			String signature, String[] exceptions) {
-		if(options.fieldFilter != null || options.methodFilter != null && !options.methodFilter.equals(name1 + desc)) {
+	public ASMifier visitMethod(int access, String name1, String desc, String signature, String[] exceptions) {
+		if (options.fieldFilter != null || options.methodFilter != null && !(name1 + desc).equals(options.methodFilter)) {
 			return getDummyVisitor();
 		}
 
 		MethodNode meth = null;
 		List<String> exList = Arrays.asList(exceptions);
 		for (MethodNode mn : classNode.methods) {
-			if(mn.name.equals(name1) && mn.desc.equals(desc) && mn.exceptions.equals(exList)) {
+			if (mn.name.equals(name1) && mn.desc.equals(desc) && mn.exceptions.equals(exList)) {
 				meth = mn;
 				break;
 			}
@@ -166,8 +173,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 	}
 
 	@Override
-	public ASMifier visitField(int access, String name1, String desc,
-			String signature, Object value) {
+	public ASMifier visitField(int access, String name1, String desc, String signature, Object value) {
 		if (options.methodFilter != null) {
 			return getDummyVisitor();
 		}
@@ -178,16 +184,14 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 	}
 
 	@Override
-	public void visitFieldInsn(final int opcode, final String owner1,
-			final String name1, final String desc) {
+	public void visitFieldInsn(final int opcode, final String owner1, final String name1, final String desc) {
 		addIndex(opcode);
 		super.visitFieldInsn(opcode, owner1, name1, desc);
 	}
 
 
 	@Override
-	public void visitFrame(final int type, final int nLocal,
-			final Object[] local, final int nStack, final Object[] stack) {
+	public void visitFrame(final int type, final int nLocal, final Object[] local, final int nStack, final Object[] stack) {
 		if (showStackMap) {
 			addIndex(-1);
 			super.visitFrame(type, nLocal, local, nStack, stack);
@@ -222,9 +226,9 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 		LabelNode currLabel = null;
 		for (int i = 0; i < instructions.size(); i++) {
 			AbstractInsnNode insnNode = instructions.get(i);
-			if(insnNode instanceof LabelNode) {
+			if (insnNode instanceof LabelNode) {
 				LabelNode labelNode = (LabelNode) insnNode;
-				if(labelNode.getLabel() == label) {
+				if (labelNode.getLabel() == label) {
 					currLabel = labelNode;
 				}
 			}
@@ -239,8 +243,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 	}
 
 	@Override
-	public void visitInvokeDynamicInsn(String name1, String desc, Handle bsm,
-			Object... bsmArgs) {
+	public void visitInvokeDynamicInsn(String name1, String desc, Handle bsm, Object... bsmArgs) {
 		addIndex(Opcodes.INVOKEDYNAMIC);
 		super.visitInvokeDynamicInsn(name1, desc, bsm, bsmArgs);
 	}
@@ -261,18 +264,15 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 	}
 
 	@Override
-	public void visitLookupSwitchInsn(final Label dflt, final int[] keys,
-			final Label[] labels) {
+	public void visitLookupSwitchInsn(final Label dflt, final int[] keys, final Label[] labels) {
 		addIndex(Opcodes.LOOKUPSWITCH);
 		super.visitLookupSwitchInsn(dflt, keys, labels);
 	}
 
 	@Override
-	public void visitLocalVariable(String name1, String desc,
-			String signature, Label start, Label end, int index) {
+	public void visitLocalVariable(String name1, String desc, String signature, Label start, Label end, int index) {
 		if (showLocals) {
-			super.visitLocalVariable(
-					name1, desc, signature, start, end, index);
+			super.visitLocalVariable(name1, desc, signature, start, end, index);
 		}
 	}
 
@@ -282,8 +282,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 	}
 
 	@Override
-	public void visitMethodInsn(final int opcode, final String owner,
-			final String name1, final String desc, boolean itf) {
+	public void visitMethodInsn(final int opcode, final String owner, final String name1, final String desc, boolean itf) {
 		addIndex(opcode);
 		super.visitMethodInsn(opcode, owner, name1, desc, itf);
 	}
@@ -295,8 +294,7 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 	}
 
 	@Override
-	public void visitTableSwitchInsn(final int min, final int max,
-			final Label dflt, final Label... labels) {
+	public void visitTableSwitchInsn(final int min, final int max, final Label dflt, final Label... labels) {
 		addIndex(Opcodes.TABLESWITCH);
 		super.visitTableSwitchInsn(min, max, dflt, labels);
 	}
@@ -313,14 +311,12 @@ public class CommentedASMifierClassVisitor extends ASMifier implements ICommente
 		super.visitVarInsn(opcode, var);
 	}
 
-
-
 	@Override
 	public DecompiledClassInfo getClassInfo() {
 		return new DecompiledClassInfo(javaVersion, accessFlags);
 	}
 
-	private ASMifier getDummyVisitor(){
+	private ASMifier getDummyVisitor() {
 		if (dummyAnnVisitor == null) {
 			dummyAnnVisitor = new ASMifier(DecompilerOptions.LATEST_ASM_VERSION, "", -1) { //$NON-NLS-1$
 				@Override

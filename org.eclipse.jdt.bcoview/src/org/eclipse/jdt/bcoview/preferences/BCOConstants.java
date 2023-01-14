@@ -77,7 +77,8 @@ public interface BCOConstants {
 	String SHOW_STACKMAP = "showStackmap"; //$NON-NLS-1$
 
 	/**
-	 * recalculate stackmap (to see computed frames, works for all classes even before MUSTANG) in compare
+	 * recalculate stackmap (to see computed frames, works for all classes even before MUSTANG) in
+	 * compare
 	 */
 	String DIFF_SHOW_STACKMAP = "diff_showStackmap"; //$NON-NLS-1$
 
@@ -107,20 +108,30 @@ public interface BCOConstants {
 	String SHOW_HEX_VALUES = "showHexValues"; //$NON-NLS-1$
 
 	int F_LINK_VIEW_TO_EDITOR = 0;
+
 	int F_SHOW_ONLY_SELECTED_ELEMENT = 1;
+
 	int F_SHOW_ASMIFIER_CODE = 2;
+
 	int F_SHOW_RAW_BYTECODE = 3;
+
 	int F_SHOW_LINE_INFO = 4;
+
 	int F_SHOW_VARIABLES = 5;
+
 	int F_RECALCULATE_STACKMAP = 6;
+
 	int F_EXPAND_STACKMAP = 7;
+
 	int F_SHOW_ANALYZER = 8;
+
 	int F_SHOW_STACKMAP = 9;
+
 	int F_SHOW_HEX_VALUES = 10;
 
 	/**
-	 * Value is Integer value from one of F_* constants, key is the String value of one of corresponding
-	 * preference keys. It is not intended that the map would be modified by clients.
+	 * Value is Integer value from one of F_* constants, key is the String value of one of
+	 * corresponding preference keys. It is not intended that the map would be modified by clients.
 	 */
 	Map<String, Integer> NAME_TO_FLAG_MAP = new ConstantsMap();
 

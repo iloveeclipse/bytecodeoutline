@@ -45,16 +45,14 @@ public class OpenAction extends BytecodeAction {
 		try {
 			exec(resources[0], element2);
 		} catch (Exception e) {
-			BytecodeOutlinePlugin.error("Failed to run Compare: " //$NON-NLS-1$
-					+ e.getMessage(), e);
+			BytecodeOutlinePlugin.error("Failed to run Compare: " + e.getMessage(), e); //$NON-NLS-1$
 		}
 	}
 
 	private IJavaElement selectJavaElement() {
 		IContainer input = ResourcesPlugin.getWorkspace().getRoot();
 
-		OpenClassFileDialog dialog = new OpenClassFileDialog(
-				shell, input, IResource.FILE);
+		OpenClassFileDialog dialog = new OpenClassFileDialog(shell, input, IResource.FILE);
 
 		int resultCode = dialog.open();
 		if (resultCode != IDialogConstants.OK_ID) {
@@ -62,8 +60,7 @@ public class OpenAction extends BytecodeAction {
 		}
 
 		Object[] result = dialog.getResult();
-		if (result == null || result.length == 0
-				|| !(result[0] instanceof IFile)) {
+		if (result == null || result.length == 0 || !(result[0] instanceof IFile)) {
 			return null;
 		}
 		return JavaCore.create((IFile) result[0]);
@@ -71,8 +68,7 @@ public class OpenAction extends BytecodeAction {
 
 	private static final class OpenClassFileDialog extends ResourceListSelectionDialog {
 
-		public OpenClassFileDialog(Shell parentShell, IContainer container,
-				int typesMask) {
+		public OpenClassFileDialog(Shell parentShell, IContainer container, int typesMask) {
 			super(parentShell, container, typesMask);
 			setTitle("Bytecode compare"); //$NON-NLS-1$
 			setMessage("Please select class file to compare"); //$NON-NLS-1$
@@ -87,9 +83,7 @@ public class OpenAction extends BytecodeAction {
 				return false;
 			}
 			String fileExtension = resource.getFileExtension();
-			return super.select(resource)
-					&& ("java".equals(fileExtension) || "class" //$NON-NLS-1$ //$NON-NLS-2$
-							.equals(fileExtension));
+			return super.select(resource) && ("java".equals(fileExtension) || "class".equals(fileExtension)); //$NON-NLS-1$ //$NON-NLS-2$
 		}
 	}
 
