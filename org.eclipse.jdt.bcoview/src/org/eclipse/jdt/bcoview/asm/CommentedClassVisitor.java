@@ -193,17 +193,22 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 					break;
 				case METHOD_DESCRIPTOR:
 				case HANDLE_DESCRIPTOR:
-					buf1.append("("); //$NON-NLS-1$
-					Type[] types = Type.getArgumentTypes(desc);
-					for (int i = 0; i < types.length; ++i) {
-						if (i > 0) {
-							buf1.append(", "); //$NON-NLS-1$
+					if (!desc.startsWith("(")) { //$NON-NLS-1$
+						// Handle to access record fields
+						buf1.append(getSimpleName(Type.getType(desc)));
+					} else {
+						buf1.append("("); //$NON-NLS-1$
+						Type[] types = Type.getArgumentTypes(desc);
+						for (int i = 0; i < types.length; ++i) {
+							if (i > 0) {
+								buf1.append(", "); //$NON-NLS-1$
+							}
+							buf1.append(getSimpleName(types[i]));
 						}
-						buf1.append(getSimpleName(types[i]));
+						buf1.append(") : "); //$NON-NLS-1$
+						Type returnType = Type.getReturnType(desc);
+						buf1.append(getSimpleName(returnType));
 					}
-					buf1.append(") : "); //$NON-NLS-1$
-					Type returnType = Type.getReturnType(desc);
-					buf1.append(getSimpleName(returnType));
 					break;
 				case FIELD_DESCRIPTOR:
 					if ("T".equals(desc)) { //$NON-NLS-1$
@@ -533,7 +538,6 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 		addIndex(Opcodes.MULTIANEWARRAY);
 		super.visitMultiANewArrayInsn(desc, dims);
 	}
-
 
 	@Override
 	public void visitLineNumber(int line, Label start) {
