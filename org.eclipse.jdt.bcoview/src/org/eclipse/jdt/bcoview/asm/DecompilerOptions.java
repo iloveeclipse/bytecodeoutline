@@ -19,15 +19,15 @@ import org.objectweb.asm.Opcodes;
 
 public class DecompilerOptions {
 
-    public static int LATEST_ASM_VERSION = Opcodes.ASM9;
+	public static int LATEST_ASM_VERSION = Opcodes.ASM9;
 
-    public final String fieldFilter;
-    public final String methodFilter;
-    public final BitSet modes;
+	public final String fieldFilter;
+	public final String methodFilter;
+	public final BitSet modes;
 
-    public DecompilerOptions(final String fieldFilter, final String methodFilter, final BitSet modes) {
-            this.fieldFilter = fieldFilter;
-            this.methodFilter = methodFilter;
-            this.modes = modes;
-    }
+	public DecompilerOptions(final String fieldFilter, final String methodFilter, final BitSet modes) {
+		this.fieldFilter = fieldFilter;
+		this.methodFilter = methodFilter;
+		this.modes = modes;
+	}
 }

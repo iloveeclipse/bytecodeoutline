@@ -36,78 +36,78 @@ import org.eclipse.jface.viewers.ISelectionChangedListener;
  */
 class BCOViewSelectionProvider implements IPostSelectionProvider {
 
-    private IPostSelectionProvider realProvider;
-    private final List<IPostSelectionProvider> selProviders;
-    private ISelection selection;
+	private IPostSelectionProvider realProvider;
+	private final List<IPostSelectionProvider> selProviders;
+	private ISelection selection;
 
-    public BCOViewSelectionProvider(){
-        super();
-        selProviders = new ArrayList<>();
-    }
+	public BCOViewSelectionProvider(){
+		super();
+		selProviders = new ArrayList<>();
+	}
 
-    public void setCurrentSelectionProvider(IPostSelectionProvider provider){
-        if(!selProviders.contains(provider)){
-            BytecodeOutlinePlugin.log(
-                new Exception(
-                    "Current selection provider is not registered yet"), //$NON-NLS-1$
-                IStatus.WARNING);
-            return;
-        }
-        realProvider = provider;
-        if(selection != null) {
-            realProvider.setSelection(selection);
-        }
-    }
+	public void setCurrentSelectionProvider(IPostSelectionProvider provider){
+		if(!selProviders.contains(provider)){
+			BytecodeOutlinePlugin.log(
+					new Exception(
+							"Current selection provider is not registered yet"), //$NON-NLS-1$
+					IStatus.WARNING);
+			return;
+		}
+		realProvider = provider;
+		if(selection != null) {
+			realProvider.setSelection(selection);
+		}
+	}
 
-    public void registerSelectionProvider(IPostSelectionProvider provider) {
-        if(!selProviders.contains(provider)){
-            selProviders.add(provider);
-        }
-    }
+	public void registerSelectionProvider(IPostSelectionProvider provider) {
+		if(!selProviders.contains(provider)){
+			selProviders.add(provider);
+		}
+	}
 
-    @Override
-    public void addPostSelectionChangedListener(ISelectionChangedListener listener) {
-        for (int i = 0; i < selProviders.size(); i++) {
-            IPostSelectionProvider provider = selProviders.get(i);
-            provider.addPostSelectionChangedListener(listener);
-        }
-    }
+	@Override
+	public void addPostSelectionChangedListener(ISelectionChangedListener listener) {
+		for (int i = 0; i < selProviders.size(); i++) {
+			IPostSelectionProvider provider = selProviders.get(i);
+			provider.addPostSelectionChangedListener(listener);
+		}
+	}
 
-    @Override
-    public void removePostSelectionChangedListener(ISelectionChangedListener listener) {
-        for (int i = 0; i < selProviders.size(); i++) {
-            IPostSelectionProvider provider = selProviders.get(i);
-            provider.removePostSelectionChangedListener(listener);
-        }
-    }
+	@Override
+	public void removePostSelectionChangedListener(ISelectionChangedListener listener) {
+		for (int i = 0; i < selProviders.size(); i++) {
+			IPostSelectionProvider provider = selProviders.get(i);
+			provider.removePostSelectionChangedListener(listener);
+		}
+	}
 
-    @Override
-    public void addSelectionChangedListener(ISelectionChangedListener listener) {
-        for (int i = 0; i < selProviders.size(); i++) {
-            IPostSelectionProvider provider = selProviders.get(i);
-            provider.addSelectionChangedListener(listener);
-        }
-    }
+	@Override
+	public void addSelectionChangedListener(ISelectionChangedListener listener) {
+		for (int i = 0; i < selProviders.size(); i++) {
+			IPostSelectionProvider provider = selProviders.get(i);
+			provider.addSelectionChangedListener(listener);
+		}
+	}
 
-    @Override
-    public ISelection getSelection() {
-        return realProvider != null? realProvider.getSelection() : null;
-    }
+	@Override
+	public ISelection getSelection() {
+		return realProvider != null? realProvider.getSelection() : null;
+	}
 
-    @Override
-    public void removeSelectionChangedListener(ISelectionChangedListener listener) {
-        for (int i = 0; i < selProviders.size(); i++) {
-            IPostSelectionProvider provider = selProviders.get(i);
-            provider.removeSelectionChangedListener(listener);
-        }
-    }
+	@Override
+	public void removeSelectionChangedListener(ISelectionChangedListener listener) {
+		for (int i = 0; i < selProviders.size(); i++) {
+			IPostSelectionProvider provider = selProviders.get(i);
+			provider.removeSelectionChangedListener(listener);
+		}
+	}
 
-    @Override
-    public void setSelection(ISelection selection) {
-        this.selection = selection;
-        if(realProvider != null) {
-            realProvider.setSelection(selection);
-        }
-    }
+	@Override
+	public void setSelection(ISelection selection) {
+		this.selection = selection;
+		if(realProvider != null) {
+			realProvider.setSelection(selection);
+		}
+	}
 
 }

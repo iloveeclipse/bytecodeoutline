@@ -28,40 +28,40 @@ import org.eclipse.ui.PlatformUI;
  */
 public class OpenBytecodeReferenceAction implements IViewActionDelegate {
 
-    public OpenBytecodeReferenceAction() {
-        super();
-    }
+	public OpenBytecodeReferenceAction() {
+		super();
+	}
 
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
-     */
-    @Override
-    public void run(IAction action) {
-        try {
-            PlatformUI.getWorkbench().getActiveWorkbenchWindow()
-                .getActivePage().showView(
-                    "org.eclipse.jdt.bcoview.views.BytecodeReferenceView"); //$NON-NLS-1$
-        } catch (PartInitException e) {
-            BytecodeOutlinePlugin.error(
-                "Could not open Bytecode Reference View: " + e.getMessage(), e); //$NON-NLS-1$
-        }
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.ui.IActionDelegate#run(org.eclipse.jface.action.IAction)
+	 */
+	@Override
+	public void run(IAction action) {
+		try {
+			PlatformUI.getWorkbench().getActiveWorkbenchWindow()
+			.getActivePage().showView(
+					"org.eclipse.jdt.bcoview.views.BytecodeReferenceView"); //$NON-NLS-1$
+		} catch (PartInitException e) {
+			BytecodeOutlinePlugin.error(
+					"Could not open Bytecode Reference View: " + e.getMessage(), e); //$NON-NLS-1$
+		}
 
-    }
+	}
 
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action.IAction,
-     * org.eclipse.jface.viewers.ISelection)
-     */
-    @Override
-    public void selectionChanged(IAction action, ISelection selection) {
-        // no op
-    }
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.ui.IActionDelegate#selectionChanged(org.eclipse.jface.action.IAction,
+	 * org.eclipse.jface.viewers.ISelection)
+	 */
+	@Override
+	public void selectionChanged(IAction action, ISelection selection) {
+		// no op
+	}
 
-    @Override
-    public void init(IViewPart view) {
-        // no op
-    }
+	@Override
+	public void init(IViewPart view) {
+		// no op
+	}
 
 }

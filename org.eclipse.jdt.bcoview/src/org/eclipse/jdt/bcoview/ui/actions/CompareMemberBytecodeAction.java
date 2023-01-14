@@ -27,43 +27,43 @@ import org.eclipse.jdt.core.IMember;
 
 public class CompareMemberBytecodeAction extends BytecodeAction {
 
-    @Override
-    public void run(IAction action) {
-        IJavaElement[] resources = getSelectedResources();
-        try {
-            exec(resources[0], resources[1]);
-        } catch (Exception e) {
-            BytecodeOutlinePlugin.error("Failed to run Compare: " //$NON-NLS-1$
-                + e.getMessage(), e);
-        }
-    }
+	@Override
+	public void run(IAction action) {
+		IJavaElement[] resources = getSelectedResources();
+		try {
+			exec(resources[0], resources[1]);
+		} catch (Exception e) {
+			BytecodeOutlinePlugin.error("Failed to run Compare: " //$NON-NLS-1$
+					+ e.getMessage(), e);
+		}
+	}
 
-    @Override
-    protected IJavaElement[] getSelectedResources() {
-        ArrayList<Object> resources = null;
-        if (!selection.isEmpty()) {
-            resources = new ArrayList<>();
-            for (Iterator<?> elements = selection.iterator(); elements.hasNext();) {
-                Object next = elements.next();
-                if (next instanceof IMember) {
-                    resources.add(next);
-                    continue;
-                } else if (next instanceof IAdaptable) {
-                    IAdaptable a = (IAdaptable) next;
-                    Object adapter = a.getAdapter(IMember.class);
-                    if (adapter instanceof IMember) {
-                        resources.add(adapter);
-                        continue;
-                    }
-                }
-            }
-        }
+	@Override
+	protected IJavaElement[] getSelectedResources() {
+		ArrayList<Object> resources = null;
+		if (!selection.isEmpty()) {
+			resources = new ArrayList<>();
+			for (Iterator<?> elements = selection.iterator(); elements.hasNext();) {
+				Object next = elements.next();
+				if (next instanceof IMember) {
+					resources.add(next);
+					continue;
+				} else if (next instanceof IAdaptable) {
+					IAdaptable a = (IAdaptable) next;
+					Object adapter = a.getAdapter(IMember.class);
+					if (adapter instanceof IMember) {
+						resources.add(adapter);
+						continue;
+					}
+				}
+			}
+		}
 
-        if (resources != null && !resources.isEmpty()) {
-            return resources.toArray(new IJavaElement[resources
-                .size()]);
-        }
+		if (resources != null && !resources.isEmpty()) {
+			return resources.toArray(new IJavaElement[resources
+			                                          .size()]);
+		}
 
-        return new IJavaElement[0];
-    }
+		return new IJavaElement[0];
+	}
 }

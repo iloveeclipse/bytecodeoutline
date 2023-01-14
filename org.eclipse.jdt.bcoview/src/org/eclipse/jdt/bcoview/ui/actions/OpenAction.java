@@ -32,65 +32,65 @@ import org.eclipse.jdt.core.JavaCore;
 
 public class OpenAction extends BytecodeAction {
 
-    @Override
-    public void run(IAction action) {
-        // always only one element!
-        IJavaElement[] resources = getSelectedResources();
+	@Override
+	public void run(IAction action) {
+		// always only one element!
+		IJavaElement[] resources = getSelectedResources();
 
-        // select one from input dialog
-        IJavaElement element2 = selectJavaElement();
-        if (element2 == null) {
-            return;
-        }
-        try {
-            exec(resources[0], element2);
-        } catch (Exception e) {
-            BytecodeOutlinePlugin.error("Failed to run Compare: " //$NON-NLS-1$
-                + e.getMessage(), e);
-        }
-    }
+		// select one from input dialog
+		IJavaElement element2 = selectJavaElement();
+		if (element2 == null) {
+			return;
+		}
+		try {
+			exec(resources[0], element2);
+		} catch (Exception e) {
+			BytecodeOutlinePlugin.error("Failed to run Compare: " //$NON-NLS-1$
+					+ e.getMessage(), e);
+		}
+	}
 
-    private IJavaElement selectJavaElement() {
-        IContainer input = ResourcesPlugin.getWorkspace().getRoot();
+	private IJavaElement selectJavaElement() {
+		IContainer input = ResourcesPlugin.getWorkspace().getRoot();
 
-        OpenClassFileDialog dialog = new OpenClassFileDialog(
-            shell, input, IResource.FILE);
+		OpenClassFileDialog dialog = new OpenClassFileDialog(
+				shell, input, IResource.FILE);
 
-        int resultCode = dialog.open();
-        if (resultCode != IDialogConstants.OK_ID) {
-            return null;
-        }
+		int resultCode = dialog.open();
+		if (resultCode != IDialogConstants.OK_ID) {
+			return null;
+		}
 
-        Object[] result = dialog.getResult();
-        if (result == null || result.length == 0
-            || !(result[0] instanceof IFile)) {
-            return null;
-        }
-        return JavaCore.create((IFile) result[0]);
-    }
+		Object[] result = dialog.getResult();
+		if (result == null || result.length == 0
+				|| !(result[0] instanceof IFile)) {
+			return null;
+		}
+		return JavaCore.create((IFile) result[0]);
+	}
 
-    private static final class OpenClassFileDialog extends ResourceListSelectionDialog {
+	private static final class OpenClassFileDialog extends ResourceListSelectionDialog {
 
-        public OpenClassFileDialog(Shell parentShell, IContainer container,
-            int typesMask) {
-            super(parentShell, container, typesMask);
-            setTitle("Bytecode compare"); //$NON-NLS-1$
-            setMessage("Please select class file to compare"); //$NON-NLS-1$
-        }
+		public OpenClassFileDialog(Shell parentShell, IContainer container,
+				int typesMask) {
+			super(parentShell, container, typesMask);
+			setTitle("Bytecode compare"); //$NON-NLS-1$
+			setMessage("Please select class file to compare"); //$NON-NLS-1$
+		}
 
-        /**
-         * Extends the super's filter to exclude derived resources.
-         */
-        @Override
-        protected boolean select(IResource resource) {
-            if (resource == null) {
-                return false;
-            }
-            String fileExtension = resource.getFileExtension();
-            return super.select(resource)
-                && ("java".equals(fileExtension) || "class" //$NON-NLS-1$ //$NON-NLS-2$
-                    .equals(fileExtension));
-        }
-    }
+		/**
+		 * Extends the super's filter to exclude derived resources.
+		 */
+		@Override
+		protected boolean select(IResource resource) {
+			if (resource == null) {
+				return false;
+			}
+			String fileExtension = resource.getFileExtension();
+			return super.select(resource)
+					&& ("java".equals(fileExtension) || "class" //$NON-NLS-1$ //$NON-NLS-2$
+							.equals(fileExtension));
+		}
+	}
 
 }

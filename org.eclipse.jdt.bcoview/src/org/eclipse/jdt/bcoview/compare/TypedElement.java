@@ -39,97 +39,97 @@ import org.eclipse.jdt.core.IJavaElement;
 
 public class TypedElement extends BufferedContent implements ITypedElement, IStructureComparator {
 
-    private final String name;
+	private final String name;
 
-    private String type;
+	private String type;
 
-    private final String methodName;
+	private final String methodName;
 
-    private final IJavaElement element;
+	private final IJavaElement element;
 
-    /** used by Eclipse to recognize appropriated viewer */
-    public static final String TYPE_BYTECODE = "bytecode"; //$NON-NLS-1$
+	/** used by Eclipse to recognize appropriated viewer */
+	public static final String TYPE_BYTECODE = "bytecode"; //$NON-NLS-1$
 
-    /** used by Eclipse to recognize appropriated viewer */
-    public static final String TYPE_ASM_IFIER = "java"; //$NON-NLS-1$
+	/** used by Eclipse to recognize appropriated viewer */
+	public static final String TYPE_ASM_IFIER = "java"; //$NON-NLS-1$
 
-    private final BitSet modes;
+	private final BitSet modes;
 
-    public TypedElement(String name, String methodName, String type, IJavaElement element, BitSet modes) {
-        super();
-        this.name = name;
-        this.methodName = methodName;
-        this.type = type;
-        this.element = element;
-        this.modes = modes;
-    }
+	public TypedElement(String name, String methodName, String type, IJavaElement element, BitSet modes) {
+		super();
+		this.name = name;
+		this.methodName = methodName;
+		this.type = type;
+		this.element = element;
+		this.modes = modes;
+	}
 
-    @Override
-    public String getName() {
-        return name;
-    }
+	@Override
+	public String getName() {
+		return name;
+	}
 
-    @Override
-    public String getType() {
-        return type;
-    }
+	@Override
+	public String getType() {
+		return type;
+	}
 
-    protected void setType(String type) {
-        this.type = type;
-    }
+	protected void setType(String type) {
+		this.type = type;
+	}
 
-    public String getElementName() {
-        return JdtUtils.getElementName(element);
-    }
+	public String getElementName() {
+		return JdtUtils.getElementName(element);
+	}
 
-    @Override
-    public Image getImage() {
-        // default image for .class files
-        return CompareUI.getImage("class"); //$NON-NLS-1$
-    }
+	@Override
+	public Image getImage() {
+		// default image for .class files
+		return CompareUI.getImage("class"); //$NON-NLS-1$
+	}
 
-    @Override
-    public Object[] getChildren() {
-        return new TypedElement[0];
-    }
+	@Override
+	public Object[] getChildren() {
+		return new TypedElement[0];
+	}
 
-    @Override
-    protected InputStream createStream() throws CoreException {
-        byte[] classBytes = JdtUtils.readClassBytes(element);
-        if (classBytes == null) {
-            throw new CoreException(new Status(
-                IStatus.ERROR, "org.eclipse.jdt.bcoview", -1, //$NON-NLS-1$
-                "Can't read bytecode for: " + element, null)); //$NON-NLS-1$
-        }
-        DecompiledClass decompiledClass = null;
-        try {
-            decompiledClass = DecompilerHelper.getDecompiledClass(
-                classBytes, new DecompilerOptions(null, methodName, modes));
-        } catch (UnsupportedClassVersionError e){
-            throw new CoreException(new Status(
-                IStatus.ERROR, "org.eclipse.jdt.bcoview", -1, //$NON-NLS-1$
-                "Error caused by attempt to load class compiled with Java version which" //$NON-NLS-1$
-                + " is not supported by current JVM", e)); //$NON-NLS-1$
-        }
-        final byte[] bytes = decompiledClass.getText().getBytes(Charset.forName("UTF-8")); //$NON-NLS-1$
-        // use internal buffering to prevent multiple calls to this method
-        Display.getDefault().syncExec(new Runnable(){
-            @Override
-            public void run() {
-                setContent(bytes);
-            }
-        });
+	@Override
+	protected InputStream createStream() throws CoreException {
+		byte[] classBytes = JdtUtils.readClassBytes(element);
+		if (classBytes == null) {
+			throw new CoreException(new Status(
+					IStatus.ERROR, "org.eclipse.jdt.bcoview", -1, //$NON-NLS-1$
+					"Can't read bytecode for: " + element, null)); //$NON-NLS-1$
+		}
+		DecompiledClass decompiledClass = null;
+		try {
+			decompiledClass = DecompilerHelper.getDecompiledClass(
+					classBytes, new DecompilerOptions(null, methodName, modes));
+		} catch (UnsupportedClassVersionError e){
+			throw new CoreException(new Status(
+					IStatus.ERROR, "org.eclipse.jdt.bcoview", -1, //$NON-NLS-1$
+					"Error caused by attempt to load class compiled with Java version which" //$NON-NLS-1$
+					+ " is not supported by current JVM", e)); //$NON-NLS-1$
+		}
+		final byte[] bytes = decompiledClass.getText().getBytes(Charset.forName("UTF-8")); //$NON-NLS-1$
+		// use internal buffering to prevent multiple calls to this method
+		Display.getDefault().syncExec(new Runnable(){
+			@Override
+			public void run() {
+				setContent(bytes);
+			}
+		});
 
-        return new ByteArrayInputStream(bytes);
-    }
+		return new ByteArrayInputStream(bytes);
+	}
 
-    /**
-     * @param mode one of BCOConstants.F_* modes
-     * @param value to set
-     */
-    public void setMode(int mode, boolean value){
-        modes.set(mode, value);
-        // force create new stream
-        discardBuffer();
-    }
+	/**
+	 * @param mode one of BCOConstants.F_* modes
+	 * @param value to set
+	 */
+	public void setMode(int mode, boolean value){
+		modes.set(mode, value);
+		// force create new stream
+		discardBuffer();
+	}
 }

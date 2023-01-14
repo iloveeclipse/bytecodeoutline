@@ -16,7 +16,7 @@ package org.eclipse.jdt.bcoview.asm;
 import java.util.List;
 
 public interface ICommentedClassVisitor {
-    List<?> getText();
+	List<?> getText();
 
-    DecompiledClassInfo getClassInfo();
+	DecompiledClassInfo getClassInfo();
 }

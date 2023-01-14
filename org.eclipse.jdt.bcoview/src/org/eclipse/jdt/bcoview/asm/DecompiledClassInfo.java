@@ -15,13 +15,13 @@ package org.eclipse.jdt.bcoview.asm;
 
 
 public class DecompiledClassInfo {
-    public final JavaVersion javaVersion;
-    public final int accessFlags;
-    public final int major;
+	public final JavaVersion javaVersion;
+	public final int accessFlags;
+	public final int major;
 
-    public DecompiledClassInfo(JavaVersion javaVersion, int accessFlags) {
-        this.javaVersion = javaVersion;
-        this.accessFlags = accessFlags;
-        major = javaVersion.major;
-    }
+	public DecompiledClassInfo(JavaVersion javaVersion, int accessFlags) {
+		this.javaVersion = javaVersion;
+		this.accessFlags = accessFlags;
+		major = javaVersion.major;
+	}
 }

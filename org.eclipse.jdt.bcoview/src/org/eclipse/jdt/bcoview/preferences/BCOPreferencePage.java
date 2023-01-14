@@ -39,144 +39,144 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
  * via the preference store.
  */
 public class BCOPreferencePage extends FieldEditorPreferencePage
-    implements
-        IWorkbenchPreferencePage {
+implements
+IWorkbenchPreferencePage {
 
-    public BCOPreferencePage() {
-        super(GRID);
-        setPreferenceStore(BytecodeOutlinePlugin.getDefault()
-            .getPreferenceStore());
-        setDescription(BytecodeOutlinePlugin
-            .getResourceString("BCOPreferencePage.description")); //$NON-NLS-1$
-    }
+	public BCOPreferencePage() {
+		super(GRID);
+		setPreferenceStore(BytecodeOutlinePlugin.getDefault()
+				.getPreferenceStore());
+		setDescription(BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.description")); //$NON-NLS-1$
+	}
 
-    @Override
-    public void setVisible(boolean visible) {
-        super.setVisible(visible);
-    }
+	@Override
+	public void setVisible(boolean visible) {
+		super.setVisible(visible);
+	}
 
-    @Override
-    protected void adjustGridLayout() {
-        super.adjustGridLayout();
-    }
+	@Override
+	protected void adjustGridLayout() {
+		super.adjustGridLayout();
+	}
 
-    /*
-     * Creates the field editors. Field editors are abstractions of the common GUI blocks
-     * needed to manipulate various types of preferences. Each field editor knows how to
-     * save and restore itself.
-     */
-    @Override
-    public void createFieldEditors() {
+	/*
+	 * Creates the field editors. Field editors are abstractions of the common GUI blocks
+	 * needed to manipulate various types of preferences. Each field editor knows how to
+	 * save and restore itself.
+	 */
+	@Override
+	public void createFieldEditors() {
 
-        Composite fieldEditorParent = getFieldEditorParent();
+		Composite fieldEditorParent = getFieldEditorParent();
 
-        TabFolder tabFolder = new TabFolder(fieldEditorParent, SWT.TOP);
-        tabFolder.setLayoutData(new GridData(GridData.FILL_BOTH));
+		TabFolder tabFolder = new TabFolder(fieldEditorParent, SWT.TOP);
+		tabFolder.setLayoutData(new GridData(GridData.FILL_BOTH));
 
-        TabItem tabPrefs = new TabItem(tabFolder, SWT.NONE);
-        tabPrefs.setText(BytecodeOutlinePlugin
-          .getResourceString("BCOPreferencePage.defaultsGroup")); //$NON-NLS-1$
+		TabItem tabPrefs = new TabItem(tabFolder, SWT.NONE);
+		tabPrefs.setText(BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.defaultsGroup")); //$NON-NLS-1$
 
-        TabItem tabCompare = new TabItem(tabFolder, SWT.NONE);
-        tabCompare.setText(BytecodeOutlinePlugin
-            .getResourceString("BCOPreferencePage.compareGroup")); //$NON-NLS-1$
+		TabItem tabCompare = new TabItem(tabFolder, SWT.NONE);
+		tabCompare.setText(BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.compareGroup")); //$NON-NLS-1$
 
-        Group viewGroup = new Group(tabFolder, SWT.NONE);
-        viewGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
-        tabPrefs.setControl(viewGroup);
+		Group viewGroup = new Group(tabFolder, SWT.NONE);
+		viewGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
+		tabPrefs.setControl(viewGroup);
 
-        Group compareGroup = new Group(tabFolder, SWT.NONE);
-        compareGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
-        tabCompare.setControl(compareGroup);
+		Group compareGroup = new Group(tabFolder, SWT.NONE);
+		compareGroup.setLayoutData(new GridData(GridData.FILL_BOTH));
+		tabCompare.setControl(compareGroup);
 
-        addField(new BooleanFieldEditor(
-            BCOConstants.LINK_VIEW_TO_EDITOR, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.linkViewToEditor"), //$NON-NLS-1$
-            viewGroup));
+		addField(new BooleanFieldEditor(
+				BCOConstants.LINK_VIEW_TO_EDITOR, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.linkViewToEditor"), //$NON-NLS-1$
+				viewGroup));
 
-        addField(new BooleanFieldEditor(
-            BCOConstants.LINK_REF_VIEW_TO_EDITOR, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.linkRefViewToEditor"), //$NON-NLS-1$
-            viewGroup));
+		addField(new BooleanFieldEditor(
+				BCOConstants.LINK_REF_VIEW_TO_EDITOR, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.linkRefViewToEditor"), //$NON-NLS-1$
+				viewGroup));
 
-        addField(new BooleanFieldEditor(
-            BCOConstants.SHOW_ONLY_SELECTED_ELEMENT, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.showOnlySelected"), //$NON-NLS-1$
-            viewGroup));
+		addField(new BooleanFieldEditor(
+				BCOConstants.SHOW_ONLY_SELECTED_ELEMENT, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.showOnlySelected"), //$NON-NLS-1$
+				viewGroup));
 
-        addField(new BooleanFieldEditor(
-            BCOConstants.SHOW_RAW_BYTECODE, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.showRawBytecode"), //$NON-NLS-1$
-            viewGroup));
+		addField(new BooleanFieldEditor(
+				BCOConstants.SHOW_RAW_BYTECODE, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.showRawBytecode"), //$NON-NLS-1$
+				viewGroup));
 
-        addField(new BooleanFieldEditor(
-            BCOConstants.SHOW_ASMIFIER_CODE, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.showAsmifierCode"), //$NON-NLS-1$
-            viewGroup));
+		addField(new BooleanFieldEditor(
+				BCOConstants.SHOW_ASMIFIER_CODE, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.showAsmifierCode"), //$NON-NLS-1$
+				viewGroup));
 
-        addField(new BooleanFieldEditor(
-            BCOConstants.SHOW_ANALYZER, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.showAnalyzer"), viewGroup)); //$NON-NLS-1$
+		addField(new BooleanFieldEditor(
+				BCOConstants.SHOW_ANALYZER, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.showAnalyzer"), viewGroup)); //$NON-NLS-1$
 
-        addField(new BooleanFieldEditor(
-            BCOConstants.SHOW_LINE_INFO, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.showLineInfo"), viewGroup)); //$NON-NLS-1$
+		addField(new BooleanFieldEditor(
+				BCOConstants.SHOW_LINE_INFO, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.showLineInfo"), viewGroup)); //$NON-NLS-1$
 
-        addField(new BooleanFieldEditor(
-            BCOConstants.SHOW_VARIABLES, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.showVariables"), //$NON-NLS-1$
-            viewGroup));
+		addField(new BooleanFieldEditor(
+				BCOConstants.SHOW_VARIABLES, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.showVariables"), //$NON-NLS-1$
+				viewGroup));
 
-        addField(new BooleanFieldEditor(
-            BCOConstants.SHOW_STACKMAP, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.showStackMap"), viewGroup)); //$NON-NLS-1$
+		addField(new BooleanFieldEditor(
+				BCOConstants.SHOW_STACKMAP, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.showStackMap"), viewGroup)); //$NON-NLS-1$
 
-        addField(new BooleanFieldEditor(
-            BCOConstants.SHOW_HEX_VALUES, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.showHexValues"), //$NON-NLS-1$
-            viewGroup));
+		addField(new BooleanFieldEditor(
+				BCOConstants.SHOW_HEX_VALUES, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.showHexValues"), //$NON-NLS-1$
+				viewGroup));
 
-        addField(new BooleanFieldEditor(
-            BCOConstants.EXPAND_STACKMAP, BytecodeOutlinePlugin
-            .getResourceString("BCOPreferencePage.expandStackMap"), //$NON-NLS-1$
-            viewGroup));
+		addField(new BooleanFieldEditor(
+				BCOConstants.EXPAND_STACKMAP, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.expandStackMap"), //$NON-NLS-1$
+				viewGroup));
 
-        addField(new BooleanFieldEditor(
-            BCOConstants.DIFF_SHOW_ASMIFIER_CODE, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.diffShowAsmifierCode"), //$NON-NLS-1$
-            compareGroup));
-        addField(new BooleanFieldEditor(
-            BCOConstants.DIFF_SHOW_LINE_INFO, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.diffShowLineInfo"), //$NON-NLS-1$
-            compareGroup));
-        addField(new BooleanFieldEditor(
-            BCOConstants.DIFF_SHOW_VARIABLES, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.diffShowVariables"), //$NON-NLS-1$
-            compareGroup));
-        addField(new BooleanFieldEditor(
-            BCOConstants.DIFF_SHOW_STACKMAP, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.diffShowStackMap"), //$NON-NLS-1$
-            compareGroup));
+		addField(new BooleanFieldEditor(
+				BCOConstants.DIFF_SHOW_ASMIFIER_CODE, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.diffShowAsmifierCode"), //$NON-NLS-1$
+				compareGroup));
+		addField(new BooleanFieldEditor(
+				BCOConstants.DIFF_SHOW_LINE_INFO, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.diffShowLineInfo"), //$NON-NLS-1$
+				compareGroup));
+		addField(new BooleanFieldEditor(
+				BCOConstants.DIFF_SHOW_VARIABLES, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.diffShowVariables"), //$NON-NLS-1$
+				compareGroup));
+		addField(new BooleanFieldEditor(
+				BCOConstants.DIFF_SHOW_STACKMAP, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.diffShowStackMap"), //$NON-NLS-1$
+				compareGroup));
 
-        addField(new BooleanFieldEditor(
-            BCOConstants.DIFF_EXPAND_STACKMAP, BytecodeOutlinePlugin
-                .getResourceString("BCOPreferencePage.diffExpandStackMap"), //$NON-NLS-1$
-            compareGroup));
+		addField(new BooleanFieldEditor(
+				BCOConstants.DIFF_EXPAND_STACKMAP, BytecodeOutlinePlugin
+				.getResourceString("BCOPreferencePage.diffExpandStackMap"), //$NON-NLS-1$
+				compareGroup));
 
-        // addField( new BooleanFieldEditor( BCOConstants.RECALCULATE_STACKMAP,
-        // BytecodeOutlinePlugin.getResourceString(
-        // "BCOPreferencePage.recalculateStackMap" ),
-        // getFieldEditorParent() ) );
-    }
+		// addField( new BooleanFieldEditor( BCOConstants.RECALCULATE_STACKMAP,
+		// BytecodeOutlinePlugin.getResourceString(
+		// "BCOPreferencePage.recalculateStackMap" ),
+		// getFieldEditorParent() ) );
+	}
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.eclipse.ui.IWorkbenchPreferencePage#init(org.eclipse.ui.IWorkbench)
-     */
-    @Override
-    public void init(IWorkbench workbench) {
-        //
-    }
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see org.eclipse.ui.IWorkbenchPreferencePage#init(org.eclipse.ui.IWorkbench)
+	 */
+	@Override
+	public void init(IWorkbench workbench) {
+		//
+	}
 
 }

@@ -21,15 +21,15 @@ import org.eclipse.jdt.core.IJavaElement;
 
 public class CompareBytecodeAction extends BytecodeAction {
 
-    @Override
-    public void run(IAction action) {
-        IJavaElement[] resources = getSelectedResources();
-        try {
-            exec(resources[0], resources[1]);
-        } catch (Exception e) {
-            BytecodeOutlinePlugin.error("Failed to run Compare: " //$NON-NLS-1$
-                + e.getMessage(), e);
-        }
-    }
+	@Override
+	public void run(IAction action) {
+		IJavaElement[] resources = getSelectedResources();
+		try {
+			exec(resources[0], resources[1]);
+		} catch (Exception e) {
+			BytecodeOutlinePlugin.error("Failed to run Compare: " //$NON-NLS-1$
+					+ e.getMessage(), e);
+		}
+	}
 
 }
