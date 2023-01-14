@@ -2,7 +2,7 @@
 <feature
       id="org.eclipse.jdt.bcoview.feature"
       label="Bytecode Outline"
-      version="1.0.1.qualifier"
+      version="1.0.2.qualifier"
       provider-name="Andrey Loskutov"
       plugin="org.eclipse.jdt.bcoview">
 
