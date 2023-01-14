@@ -18,25 +18,26 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.BitSet;
 
-import org.eclipse.compare.BufferedContent;
-import org.eclipse.compare.CompareUI;
-import org.eclipse.compare.ITypedElement;
-import org.eclipse.compare.structuremergeviewer.IStructureComparator;
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.jdt.bcoview.asm.DecompiledClass;
 import org.eclipse.jdt.bcoview.asm.DecompilerHelper;
 import org.eclipse.jdt.bcoview.asm.DecompilerOptions;
 import org.eclipse.jdt.bcoview.ui.JdtUtils;
-import org.eclipse.jdt.core.IJavaElement;
+
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
 
-public class TypedElement extends BufferedContent
-    implements
-        ITypedElement,
-        IStructureComparator {
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+
+import org.eclipse.compare.BufferedContent;
+import org.eclipse.compare.CompareUI;
+import org.eclipse.compare.ITypedElement;
+import org.eclipse.compare.structuremergeviewer.IStructureComparator;
+
+import org.eclipse.jdt.core.IJavaElement;
+
+public class TypedElement extends BufferedContent implements ITypedElement, IStructureComparator {
 
     private final String name;
 
@@ -54,13 +55,6 @@ public class TypedElement extends BufferedContent
 
     private final BitSet modes;
 
-    /**
-     * Constructor for TypedElement.
-     * @param name
-     * @param type
-     * @param element
-     * @param modes
-     */
     public TypedElement(String name, String methodName, String type, IJavaElement element, BitSet modes) {
         super();
         this.name = name;
@@ -70,33 +64,20 @@ public class TypedElement extends BufferedContent
         this.modes = modes;
     }
 
-    /**
-     * @see org.eclipse.compare.ITypedElement#getName()
-     */
     @Override
     public String getName() {
         return name;
     }
 
-
-    /**
-     * @see org.eclipse.compare.ITypedElement#getType()
-     */
     @Override
     public String getType() {
         return type;
     }
 
-    /**
-     * @param type The type to set.
-     */
     protected void setType(String type) {
         this.type = type;
     }
 
-    /**
-     * @return name
-     */
     public String getElementName() {
         return JdtUtils.getElementName(element);
     }
@@ -123,7 +104,7 @@ public class TypedElement extends BufferedContent
         DecompiledClass decompiledClass = null;
         try {
             decompiledClass = DecompilerHelper.getDecompiledClass(
-                classBytes, new DecompilerOptions(null, methodName, modes, null));
+                classBytes, new DecompilerOptions(null, methodName, modes));
         } catch (UnsupportedClassVersionError e){
             throw new CoreException(new Status(
                 IStatus.ERROR, "org.eclipse.jdt.bcoview", -1, //$NON-NLS-1$
@@ -143,9 +124,8 @@ public class TypedElement extends BufferedContent
     }
 
     /**
-     *
      * @param mode one of BCOConstants.F_* modes
-     * @param value
+     * @param value to set
      */
     public void setMode(int mode, boolean value){
         modes.set(mode, value);

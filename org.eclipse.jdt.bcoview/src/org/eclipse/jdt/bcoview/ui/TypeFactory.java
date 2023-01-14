@@ -17,12 +17,15 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
+import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
+
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
+
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.Path;
-import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
+
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaModel;
@@ -57,7 +60,7 @@ public class TypeFactory {
         fProjects = getProjectList();
     }
 
-    private IType getType(IJavaSearchScope searchScope, IJavaElement container) {
+    private IType getType(IJavaElement container) {
         try {
             if (container instanceof ICompilationUnit) {
                 return findTypeInCompilationUnit((ICompilationUnit) container,
@@ -87,11 +90,15 @@ public class TypeFactory {
 
     /**
      * Will be called at most two times if the return value was not null.
-     * @param searchScope
-     * return any non-null value.
+     * @param packageName non null
+     * @param simpleTypeName1 non null
+     * @param enclosingName non null
+     * @param path non null
+     * @param searchScope non null
+     * @return any non-null value.
      */
     public IType create(char[] packageName, char[] simpleTypeName1,
-            char[][] enclosingName, int modifiers, String path,
+            char[][] enclosingName, String path,
             IJavaSearchScope searchScope) {
         this.enclosingNames = enclosingName;
         this.simpleTypeName = new String(simpleTypeName1);
@@ -100,21 +107,19 @@ public class TypeFactory {
         int index = path.indexOf(IJavaSearchScope.JAR_FILE_ENTRY_SEPARATOR);
         IType result = null;
         if (index != -1) {
-            result = createJarFileEntryTypeInfo(pn, simpleTypeName, enclosingName,
-                    modifiers, path, index, searchScope);
+            result = createJarFileEntryTypeInfo(pn, simpleTypeName,
+                    path, index, searchScope);
         } else {
             String project = getProject(path);
             if (project != null) {
-                result = createIFileTypeInfo(pn, simpleTypeName, enclosingName,
-                        modifiers, path, project, searchScope);
+                result = createIFileTypeInfo(pn, simpleTypeName, path, project);
             }
         }
         return result;
     }
 
     private IType createIFileTypeInfo(String packageName, String typeName,
-            char[][] enclosingName, int modifiers, String path, String project,
-            IJavaSearchScope searchScope) {
+            String path, String project) {
         String rest = path.substring(project.length() + 1); // the first slashes.
         int index = rest.lastIndexOf(SEPARATOR);
         if (index == -1) {
@@ -144,14 +149,13 @@ public class TypeFactory {
             file = typeName;
         }
 
-        IFileTypeInfo fileTypeInfo = new IFileTypeInfo(packageName, typeName,
-                enclosingName, modifiers, project, src, file, extension);
-        IJavaElement container = fileTypeInfo.getContainer(searchScope);
-        return getType(searchScope, container);
+        IFileTypeInfo fileTypeInfo = new IFileTypeInfo(packageName, project, src, file, extension);
+        IJavaElement container = fileTypeInfo.getContainer();
+        return getType(container);
     }
 
     protected IType createJarFileEntryTypeInfo(String packageName, String typeName,
-            char[][] enclosingName, int modifiers, String path, int index,
+            String path, int index,
             IJavaSearchScope searchScope) {
         String jar = path.substring(0, index);
         String rest = path.substring(index + 1);
@@ -172,12 +176,11 @@ public class TypeFactory {
         if (typeName.equals(file)) {
             file = typeName;
         }
-        JarFileEntryTypeInfo info = new JarFileEntryTypeInfo(packageName, typeName,
-                enclosingName, modifiers, jar, file, extension);
+        JarFileEntryTypeInfo info = new JarFileEntryTypeInfo(packageName, jar, file, extension);
         IJavaElement container;
         try {
             container = info.getContainer(searchScope);
-            return getType(searchScope, container);
+            return getType(container);
         } catch (JavaModelException e) {
             BytecodeOutlinePlugin.error("createJarFileEntryTypeInfo() fails for: " + simpleTypeName, e); //$NON-NLS-1$
         }
@@ -231,6 +234,8 @@ public class TypeFactory {
      * This is a replace for IType.getTypeQualifiedName()
      * which uses '$' as separators. As '$' is also a valid character in an id
      * this is ambiguous. JavaCore PR: 1GCFUNT
+     * @param type non null
+     * @return FQN
      */
     private static String getTypeQualifiedName(IType type) {
         try {
@@ -253,6 +258,7 @@ public class TypeFactory {
      * @param cu the compilation unit to search in
      * @param typeQualifiedName the type qualified name (type name with enclosing type names (separated by dots))
      * @return the type found, or null if not existing
+     * @throws JavaModelException on error
      */
     private static IType findTypeInCompilationUnit(ICompilationUnit cu,
             String typeQualifiedName) throws JavaModelException {
@@ -276,8 +282,7 @@ public class TypeFactory {
 
         private final String pkg;
 
-        public JarFileEntryTypeInfo(String pkg, String name, char[][] enclosingTypes,
-                int modifiers, String jar, String fileName, String extension) {
+        public JarFileEntryTypeInfo(String pkg, String jar, String fileName, String extension) {
 
             this.pkg = pkg;
             fJar = jar;
@@ -346,8 +351,7 @@ public class TypeFactory {
 
         private final String pkg;
 
-        public IFileTypeInfo(String pkg, String name, char[][] enclosingTypes,
-                int modifiers, String project, String sourceFolder, String file,
+        public IFileTypeInfo(String pkg, String project, String sourceFolder, String file,
                 String extension) {
             this.pkg = pkg;
             fProject = project;
@@ -356,7 +360,7 @@ public class TypeFactory {
             fExtension = extension;
         }
 
-        private IJavaElement getContainer(IJavaSearchScope scope) {
+        private IJavaElement getContainer() {
             IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
             IPath path = new Path(getPath());
             IResource resource = root.findMember(path);

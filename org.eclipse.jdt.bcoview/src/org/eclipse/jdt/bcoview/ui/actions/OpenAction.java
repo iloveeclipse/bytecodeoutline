@@ -13,17 +13,22 @@
  *******************************************************************************/
 package org.eclipse.jdt.bcoview.ui.actions;
 
+import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
+
+import org.eclipse.swt.widgets.Shell;
+
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.JavaCore;
+
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.swt.widgets.Shell;
+
 import org.eclipse.ui.dialogs.ResourceListSelectionDialog;
+
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.JavaCore;
 
 public class OpenAction extends BytecodeAction {
 
@@ -64,16 +69,8 @@ public class OpenAction extends BytecodeAction {
         return JavaCore.create((IFile) result[0]);
     }
 
-    /**
-     * @author Andrei
-     */
     private static final class OpenClassFileDialog extends ResourceListSelectionDialog {
 
-        /**
-         * @param parentShell
-         * @param container
-         * @param typesMask
-         */
         public OpenClassFileDialog(Shell parentShell, IContainer container,
             int typesMask) {
             super(parentShell, container, typesMask);
@@ -83,7 +80,6 @@ public class OpenAction extends BytecodeAction {
 
         /**
          * Extends the super's filter to exclude derived resources.
-         * @since 3.0
          */
         @Override
         protected boolean select(IResource resource) {

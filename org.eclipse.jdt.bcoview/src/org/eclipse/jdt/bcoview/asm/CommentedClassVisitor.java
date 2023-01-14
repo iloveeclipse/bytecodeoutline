@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import org.eclipse.jdt.bcoview.preferences.BCOConstants;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
@@ -32,6 +31,8 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.util.Printer;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceMethodVisitor;
+
+import org.eclipse.jdt.bcoview.preferences.BCOConstants;
 
 public class CommentedClassVisitor extends Textifier implements ICommentedClassVisitor {
 
@@ -230,7 +231,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
     }
 
     /**
-     * @param t
+     * @param t non null
      * @return simply class name without any package/outer class information
      */
     public static String getSimpleName(Type t) {
@@ -240,6 +241,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 
     /**
      * @param name Java type name(s).
+     * @param separator package name separator
      * @return simply class name(s) without any package/outer class information, but with
      * "generics" information from given name parameter.
      */
@@ -398,7 +400,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
     }
 
     /**
-     * @param value
+     * @param value some int
      * @return char value from int, together with char name if it is a control char,
      * or an empty string
      */
@@ -598,4 +600,5 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
         }
         return dummyAnnVisitor;
     }
+
 }

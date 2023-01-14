@@ -16,26 +16,23 @@ package org.eclipse.jdt.bcoview;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
-/**
- * The main plugin class to be used in the desktop.
- */
+import org.eclipse.swt.widgets.Shell;
+
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+
+import org.eclipse.jface.dialogs.MessageDialog;
+
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
+
 public class BytecodeOutlinePlugin extends AbstractUIPlugin {
-    //The shared instance.
     private static BytecodeOutlinePlugin plugin;
-    //Resource bundle.
     private ResourceBundle resourceBundle;
     public static boolean DEBUG;
 
-    /**
-     * The constructor.
-     */
     public BytecodeOutlinePlugin() {
         super();
         if(plugin != null){
@@ -50,11 +47,6 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
         }
     }
 
-    /**
-     * This method is called upon plug-in activation
-     * @param context
-     * @throws Exception
-     */
     @Override
     public void start(BundleContext context) throws Exception {
         super.start(context);
@@ -71,7 +63,7 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
 
     /**
      * Returns the string from the plugin's resource bundle, or 'key' if not found.
-     * @param key
+     * @param key preference key
      * @return translation
      */
     public static String getResourceString(String key) {
@@ -86,9 +78,6 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
         }
     }
 
-    /**
-     * Returns the plugin's resource bundle,
-     */
     public ResourceBundle getResourceBundle() {
         return resourceBundle;
     }
@@ -98,14 +87,9 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
      * @return shell object
      */
     public static Shell getShell() {
-        return getDefault().getWorkbench().getActiveWorkbenchWindow()
-            .getShell();
+        return PlatformUI.getWorkbench().getDisplay().getActiveShell();
     }
 
-    /**
-     * @param messageID
-     * @param error
-     */
     public static void error(String messageID, Throwable error) {
         Shell shell = getShell();
         String message = getResourceString("BytecodeOutline.Error"); //$NON-NLS-1$
@@ -123,11 +107,7 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
             new Status(IStatus.ERROR, "BytecodeOutline", 0, message, error)); //$NON-NLS-1$
     }
 
-    /**
-     * @param statusID one of IStatus. constants like IStatus.ERROR etc
-     * @param error
-     */
-    public static void log(Throwable error, int statusID) {
+    public static void log(Throwable error, int severity) {
         String message = error.getMessage();
         if(message == null){
             message = error.toString();
@@ -135,7 +115,7 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
         getDefault().getLog()
             .log(
                 new Status(
-                    statusID,
+                    severity,
                     "BytecodeOutline", 0, message, error)); //$NON-NLS-1$
     }
 

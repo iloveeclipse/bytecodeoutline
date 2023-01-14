@@ -24,8 +24,9 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import org.eclipse.core.filebuffers.FileBuffers;
-import org.eclipse.core.runtime.IStatus;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.util.Printer;
+
 import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
 import org.eclipse.jdt.bcoview.asm.DecompiledClass;
 import org.eclipse.jdt.bcoview.asm.DecompiledMethod;
@@ -36,53 +37,7 @@ import org.eclipse.jdt.bcoview.preferences.BCOConstants;
 import org.eclipse.jdt.bcoview.ui.EclipseUtils;
 import org.eclipse.jdt.bcoview.ui.JdtUtils;
 import org.eclipse.jdt.bcoview.ui.actions.DefaultToggleAction;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.JavaModelException;
-import org.eclipse.jdt.core.search.IJavaSearchScope;
-import org.eclipse.jdt.core.search.SearchEngine;
-import org.eclipse.jdt.internal.ui.JavaPlugin;
-import org.eclipse.jdt.internal.ui.javaeditor.JavaElementHyperlink;
-import org.eclipse.jdt.internal.ui.javaeditor.JavaElementHyperlinkDetector;
-import org.eclipse.jdt.internal.ui.javaeditor.JavaSourceViewer;
-import org.eclipse.jdt.internal.ui.text.JavaWordFinder;
-import org.eclipse.jdt.internal.ui.text.java.hover.JavadocBrowserInformationControlInput;
-import org.eclipse.jdt.internal.ui.text.java.hover.JavadocHover;
-import org.eclipse.jdt.ui.actions.OpenAction;
-import org.eclipse.jdt.ui.actions.SelectionDispatchAction;
-import org.eclipse.jdt.ui.text.IColorManager;
-import org.eclipse.jdt.ui.text.IJavaPartitions;
-import org.eclipse.jdt.ui.text.JavaSourceViewerConfiguration;
-import org.eclipse.jdt.ui.text.JavaTextTools;
-import org.eclipse.jface.action.Action;
-import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.action.IMenuListener;
-import org.eclipse.jface.action.IMenuManager;
-import org.eclipse.jface.action.IToolBarManager;
-import org.eclipse.jface.action.MenuManager;
-import org.eclipse.jface.action.Separator;
-import org.eclipse.jface.action.StatusLineManager;
-import org.eclipse.jface.preference.IPreferenceStore;
-import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.jface.text.Document;
-import org.eclipse.jface.text.IDocument;
-import org.eclipse.jface.text.IFindReplaceTarget;
-import org.eclipse.jface.text.IRegion;
-import org.eclipse.jface.text.ITextHover;
-import org.eclipse.jface.text.ITextListener;
-import org.eclipse.jface.text.ITextOperationTarget;
-import org.eclipse.jface.text.ITextSelection;
-import org.eclipse.jface.text.ITextViewer;
-import org.eclipse.jface.text.TextEvent;
-import org.eclipse.jface.text.TextViewer;
-import org.eclipse.jface.text.hyperlink.IHyperlink;
-import org.eclipse.jface.text.hyperlink.IHyperlinkDetector;
-import org.eclipse.jface.text.quickassist.IQuickAssistAssistant;
-import org.eclipse.jface.text.source.ISourceViewer;
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
-import org.eclipse.jface.viewers.TableViewer;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.StackLayout;
@@ -106,6 +61,42 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Widget;
+
+import org.eclipse.core.runtime.IStatus;
+
+import org.eclipse.core.filebuffers.FileBuffers;
+
+import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.action.IMenuListener;
+import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.IToolBarManager;
+import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.action.StatusLineManager;
+import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.viewers.TableViewer;
+
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.Document;
+import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.IFindReplaceTarget;
+import org.eclipse.jface.text.IRegion;
+import org.eclipse.jface.text.ITextHover;
+import org.eclipse.jface.text.ITextListener;
+import org.eclipse.jface.text.ITextOperationTarget;
+import org.eclipse.jface.text.ITextSelection;
+import org.eclipse.jface.text.ITextViewer;
+import org.eclipse.jface.text.TextEvent;
+import org.eclipse.jface.text.TextViewer;
+import org.eclipse.jface.text.hyperlink.IHyperlink;
+import org.eclipse.jface.text.hyperlink.IHyperlinkDetector;
+import org.eclipse.jface.text.quickassist.IQuickAssistAssistant;
+import org.eclipse.jface.text.source.ISourceViewer;
+
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorReference;
@@ -120,15 +111,36 @@ import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.console.actions.TextViewerAction;
 import org.eclipse.ui.part.ViewPart;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+
 import org.eclipse.ui.texteditor.FindReplaceAction;
 import org.eclipse.ui.texteditor.ITextEditor;
 import org.eclipse.ui.texteditor.IUpdate;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.util.Printer;
+
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.search.IJavaSearchScope;
+import org.eclipse.jdt.core.search.SearchEngine;
+
+import org.eclipse.jdt.ui.actions.OpenAction;
+import org.eclipse.jdt.ui.actions.SelectionDispatchAction;
+import org.eclipse.jdt.ui.text.IColorManager;
+import org.eclipse.jdt.ui.text.IJavaPartitions;
+import org.eclipse.jdt.ui.text.JavaSourceViewerConfiguration;
+import org.eclipse.jdt.ui.text.JavaTextTools;
+
+import org.eclipse.jdt.internal.ui.JavaPlugin;
+import org.eclipse.jdt.internal.ui.javaeditor.JavaElementHyperlink;
+import org.eclipse.jdt.internal.ui.javaeditor.JavaElementHyperlinkDetector;
+import org.eclipse.jdt.internal.ui.javaeditor.JavaSourceViewer;
+import org.eclipse.jdt.internal.ui.text.JavaWordFinder;
+import org.eclipse.jdt.internal.ui.text.java.hover.JavadocBrowserInformationControlInput;
+import org.eclipse.jdt.internal.ui.text.java.hover.JavadocHover;
 
 /**
  * This view shows decompiled java bytecode
  */
+@SuppressWarnings("restriction")
 public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
     // orientations
@@ -377,10 +389,6 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
         }
     }
 
-    /**
-     * This is a callback that will allow us to create the viewer and initialize it.
-     * @param parent
-     */
     @Override
     public void createPartControl(Composite parent) {
         errorColor = parent.getDisplay().getSystemColor(SWT.COLOR_RED);
@@ -642,9 +650,9 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
         mmanager.add(new Separator());
 
         toggleOrientationActions = new ToggleOrientationAction[]{
-            new ToggleOrientationAction(this, VIEW_ORIENTATION_VERTICAL),
-            new ToggleOrientationAction(this, VIEW_ORIENTATION_HORIZONTAL),
-            new ToggleOrientationAction(this, VIEW_ORIENTATION_AUTOMATIC)};
+            new ToggleOrientationAction(VIEW_ORIENTATION_VERTICAL),
+            new ToggleOrientationAction(VIEW_ORIENTATION_HORIZONTAL),
+            new ToggleOrientationAction(VIEW_ORIENTATION_AUTOMATIC)};
         for (int i = 0; i < toggleOrientationActions.length; ++i) {
             mmanager.add(toggleOrientationActions[i]);
         }
@@ -1183,9 +1191,6 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
         toggleVerifierAction.setEnabled(true);
     }
 
-    /**
-     * @param result
-     */
     private void updateStatus(DecompiledClass result, int bytecodeOffsetStart,
         int bytecodeOffsetEnd) {
         // clear error messages, if any
@@ -1473,7 +1478,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
     /**
      * check if at least one java editor is open - if not, deactivate me
-     * @param checkNewSelection
+     * @param checkNewSelection check selection in active editor
      */
     protected void checkOpenEditors(boolean checkNewSelection) {
         IEditorReference[] editorReferences = getSite().getPage()
@@ -1494,7 +1499,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
     }
 
     /**
-     * @param childEl
+     * @param childEl can be null
      * @return true if java element selection was changed (means, that previous selection
      * do not match to the given element)
      */
@@ -1525,7 +1530,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
     }
 
     /**
-     * @param childEl
+     * @param childEl can be null
      * @return return null if type is not known or bytecode is not written or cannot be
      * found
      */
@@ -1545,11 +1550,6 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
         DecompiledClass decompiledClass = null;
         int available = bytes.length;
         try {
-            ClassLoader cl = null;
-            if (modes.get(BCOConstants.F_SHOW_ANALYZER)) {
-                cl = JdtUtils.getClassLoader(type);
-            }
-
             String fieldName = null;
             String methodName = null;
             /*
@@ -1564,7 +1564,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
                 }
             }
             decompiledClass = DecompilerHelper.getDecompiledClass(
-                bytes, new DecompilerOptions(fieldName, methodName, modes, cl));
+                bytes, new DecompilerOptions(fieldName, methodName, modes));
         } catch (Exception e) {
             try {
                 // check if compilation unit is ok - then this is the user problem
@@ -1730,8 +1730,8 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
     /**
      * Set the bit with given index to given value and remembers it in the preferences
-     * @param bitIndex
-     * @param value
+     * @param bitIndex one of BCOConstants.F_* constants
+     * @param value flag
      */
     protected void setMode(int bitIndex, boolean value) {
         modes.set(bitIndex, value);
@@ -1762,7 +1762,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 
         private final int actionOrientation;
 
-        public ToggleOrientationAction(BytecodeOutlineView v, int orientation) {
+        public ToggleOrientationAction(int orientation) {
             super("", AS_RADIO_BUTTON); //$NON-NLS-1$
 
             String symbolicName = BytecodeOutlinePlugin.getDefault()
@@ -1878,9 +1878,6 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
          * @param element the Java element to open
          * @param qualify <code>true</code> if the hyperlink text should show a qualified name for
          *            element
-         * @param editor the active Java editor
-         *
-         * @since 3.7.1
          */
         protected void addHyperlinks2(List<IHyperlink> hyperlinksCollector, IRegion wordRegion, SelectionDispatchAction openAction, IJavaElement element, boolean qualify) {
             hyperlinksCollector.add(new JavaElementHyperlink(wordRegion, openAction, element, qualify));
@@ -1920,7 +1917,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
         }
     }
 
-    private final class JavadocHoverExtension extends JavadocHover {
+	private final class JavadocHoverExtension extends JavadocHover {
 
         private final Set<String> OPCODES = new HashSet<>(Arrays.asList(Printer.OPCODES));
 

@@ -15,10 +15,7 @@ package org.eclipse.jdt.bcoview.ui;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -29,20 +26,23 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
+
 import org.eclipse.core.filesystem.URIUtil;
-import org.eclipse.core.resources.IContainer;
-import org.eclipse.core.resources.IFolder;
-import org.eclipse.core.resources.IPathVariableManager;
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IWorkspace;
-import org.eclipse.core.resources.IWorkspaceRoot;
-import org.eclipse.core.resources.ResourcesPlugin;
+
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
-import org.eclipse.jdt.bcoview.asm.DecompiledClass;
+
+import org.eclipse.core.resources.IContainer;
+import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IPathVariableManager;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.ResourcesPlugin;
+
+import org.eclipse.jface.text.ITextSelection;
+
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -52,7 +52,6 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IMember;
 import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.IOrdinaryClassFile;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.IPackageFragmentRoot;
 import org.eclipse.jdt.core.IParent;
@@ -67,9 +66,6 @@ import org.eclipse.jdt.core.search.IJavaSearchScope;
 import org.eclipse.jdt.core.search.SearchEngine;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.jdt.core.search.TypeNameRequestor;
-import org.eclipse.jface.text.ITextSelection;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.InnerClassNode;
 
 public class JdtUtils {
     /** package separator in bytecode notation */
@@ -115,7 +111,7 @@ public class JdtUtils {
     }
 
     /**
-     * @param childEl
+     * @param childEl non null
      * @return method signature, if given java element is either initializer or method,
      * otherwise returns null.
      */
@@ -209,7 +205,7 @@ public class JdtUtils {
     }
 
     /**
-     * @param type
+     * @param type can be null
      * @return full qualified, resolved type name in bytecode notation
      */
     private static String getTypeSignature(IType type) {
@@ -260,10 +256,10 @@ public class JdtUtils {
     }
 
     /**
-     * @param typeToResolve
-     * @param declaringType
+     * @param typeToResolve non null
+     * @param declaringType non null
      * @return full qualified "bytecode formatted" type
-     * @throws JavaModelException
+     * @throws JavaModelException on error
      */
     private static String getResolvedType(String typeToResolve,
         IType declaringType) throws JavaModelException {
@@ -304,6 +300,7 @@ public class JdtUtils {
      * in)
      * @return returns the fully qualified <b>bytecode </b> type name or build-in-type
      * name. if a unresoved type couldn't be resolved null is returned
+     * @throws JavaModelException on error
      */
     private static String getResolvedTypeName(String refTypeSig,
         IType declaringType) throws JavaModelException {
@@ -336,7 +333,7 @@ public class JdtUtils {
     }
 
     /**
-     * @param refTypeSig
+     * @param refTypeSig signature
      * @param arrayCount expected array count in the signature
      * @return true if the given string is an unresolved signature (Eclipse - internal
      * representation)
@@ -348,6 +345,9 @@ public class JdtUtils {
 
     /**
      * Concatenates package and class name. Both strings can be empty or <code>null</code>.
+     * @param packageName can be null
+     * @param className can be null
+     * @return result, non null, can be empty
      */
     private static String concatenateName(String packageName, String className) {
         StringBuffer buf = new StringBuffer();
@@ -367,8 +367,8 @@ public class JdtUtils {
 
     /**
      * Test which letter is following - Q or L are for reference types
-     * @param first
-     * @return true, if character is not a simbol for reference types
+     * @param first char
+     * @return true, if character is not a symbol for reference types
      */
     private static boolean isPrimitiveType(char first) {
         return (first != Signature.C_RESOLVED && first != Signature.C_UNRESOLVED);
@@ -386,55 +386,11 @@ public class JdtUtils {
     }
 
     /**
-     * @param cf
-     * @param dc
-     * @return inner type which has the same name as the given string, or null
-     */
-    public static IOrdinaryClassFile getInnerType(IOrdinaryClassFile cf, DecompiledClass dc,
-        String typeSignature) {
-        if(typeSignature.endsWith(";")){ //$NON-NLS-1$
-            typeSignature = typeSignature.substring(0, typeSignature.length()-1);
-            if(typeSignature.startsWith("L")){ //$NON-NLS-1$
-                typeSignature = typeSignature.substring(1, typeSignature.length());
-            }
-        }
-        /*
-         * For inner and anonymous classes from the blocks or methods
-         * getFullyQualifiedName() does not work if class was compiled with 1.5
-         * and will never match the fullTypeName...
-         * I'm not sure if it is intended or if it is a bug
-         * in Eclipse: instead of A$1B we get A$B for B class from a method in A
-         *
-         * NB: for binary types without source attachment the method elements doesn't
-         * contain source and therefore could not resolve child elements.
-         * So the search for local types will never work...
-         *
-         * Therefore we do not use Eclipse API and use ClassNode->InnerClassNode elements
-         */
-        ClassNode cn = dc.getClassNode();
-        List<InnerClassNode> innerClasses = cn.innerClasses;
-
-        for (int i = 0; i < innerClasses.size(); i++) {
-            InnerClassNode in = innerClasses.get(i);
-            if(typeSignature.equals(in.name)){
-                int idx = typeSignature.lastIndexOf(PACKAGE_SEPARATOR);
-                String className = typeSignature;
-                if (idx > 0) {
-                    className = typeSignature.substring(idx + 1, typeSignature.length());
-                }
-                className += ".class"; //$NON-NLS-1$
-                return (IOrdinaryClassFile) cf.getType().getPackageFragment().getClassFile(className);
-            }
-        }
-        return null;
-    }
-
-    /**
      * Modified copy from org.eclipse.jdt.internal.ui.actions.SelectionConverter
-     * @param input
-     * @param selection
+     * @param input can be null
+     * @param selection can be null
      * @return null, if selection is null or could not be resolved to java element
-     * @throws JavaModelException
+     * @throws JavaModelException on error
      */
     public static IJavaElement getElementAtOffset(IJavaElement input,
         ITextSelection selection) throws JavaModelException {
@@ -486,7 +442,7 @@ public class JdtUtils {
 
     /**
      * Modified copy from JavaModelUtil.
-     * @param javaElt
+     * @param javaElt non null
      * @return true, if corresponding java project has compiler setting to generate
      * bytecode for jdk 1.5 and above
      */
@@ -529,7 +485,7 @@ public class JdtUtils {
      * resulting name would be unique.
      * <br>
      * Note, that this rule was changed for static blocks after 1.5 jdk.
-     * @param javaElement
+     * @param javaElement non null
      * @return simply element name
      */
     public static String getElementName(IJavaElement javaElement) {
@@ -573,7 +529,7 @@ public class JdtUtils {
     }
 
     /**
-     * @param javaElement
+     * @param javaElement non null
      * @return null, if javaElement is top level class
      */
     private static IType getFirstAncestor(IJavaElement javaElement) {
@@ -605,7 +561,8 @@ public class JdtUtils {
     }
 
     /**
-     * @param javaElement
+     * @param javaElement non null
+     * @param topAncestor non null
      * @return distance to given ancestor, 0 if it is the same, -1 if ancestor with type
      * IJavaElement.TYPE does not exist
      */
@@ -623,7 +580,8 @@ public class JdtUtils {
     }
 
     /**
-     * @param javaElement
+     * @param javaElement non null
+     * @param topAncestor non null
      * @return first non-anonymous ancestor
      */
     private static IJavaElement getFirstNonAnonymous(IJavaElement javaElement,
@@ -644,7 +602,7 @@ public class JdtUtils {
     }
 
     /**
-     * @param javaElement
+     * @param javaElement can be null
      * @return true, if given element is anonymous inner class
      */
     private static boolean isAnonymousType(IJavaElement javaElement) {
@@ -670,7 +628,8 @@ public class JdtUtils {
     }
 
     /**
-     * @param elt
+     * @param elt non null
+     * @param topParent non null
      * @return true, if given element is inner class from initializer block or method body
      */
     private static boolean isAnyParentLocal(IJavaElement elt, IJavaElement topParent) {
@@ -688,9 +647,9 @@ public class JdtUtils {
     }
 
     /**
-     * @param type
+     * @param type non null
      * @return true, if given element is non static inner class
-     * @throws JavaModelException
+     * @throws JavaModelException on error
      */
     private static boolean isNonStaticInner(IType type) throws JavaModelException {
         if(type.isMember()){
@@ -700,7 +659,7 @@ public class JdtUtils {
     }
 
     /**
-     * @param innerType should be inner type.
+     * @param type should be inner type.
      * @return true, if given element is a type defined in the initializer block
      */
     private static boolean isFromInitBlock(IType type) {
@@ -709,9 +668,9 @@ public class JdtUtils {
     }
 
     /**
-     * @param javaElement
+     * @param javaElement can be null
      * @return absolute path of generated bytecode package for given element
-     * @throws JavaModelException
+     * @throws JavaModelException on error
      */
     private static String getPackageOutputPath(IJavaElement javaElement)
         throws JavaModelException {
@@ -798,12 +757,6 @@ public class JdtUtils {
         return dir;
     }
 
-    /**
-     * @param project
-     * @param pack
-     * @return true if 'pack' argument is package root
-     * @throws JavaModelException
-     */
     private static boolean isPackageRoot(IJavaProject project, IResource pack)
         throws JavaModelException {
         boolean isRoot = false;
@@ -822,7 +775,7 @@ public class JdtUtils {
     /**
      * Works only for eclipse - managed/generated bytecode, ergo not with imported
      * classes/jars
-     * @param javaElement
+     * @param javaElement can be null
      * @return full os-specific file path to .class resource, containing given element
      */
     public static String getByteCodePath(IJavaElement javaElement) {
@@ -845,7 +798,7 @@ public class JdtUtils {
     }
 
     /**
-     * @param javaElement
+     * @param javaElement non null
      * @return new generated input stream for given element bytecode class file, or null
      * if class file cannot be found or this element is not from java source path
      */
@@ -892,7 +845,7 @@ public class JdtUtils {
     }
 
     /**
-     * @param classFile
+     * @param classFile non null
      * @return full qualified bytecode name of given class
      */
     public static String getFullBytecodeName(IClassFile classFile) {
@@ -912,11 +865,6 @@ public class JdtUtils {
         return className;
     }
 
-    /**
-     * @param javaElement
-     * @param topAncestor
-     * @param sb
-     */
     private static String getClassName(IJavaElement javaElement,
         IJavaElement topAncestor) {
         StringBuffer sb = new StringBuffer();
@@ -991,10 +939,10 @@ public class JdtUtils {
 
     /**
      * Traverses down the children tree of this parent and collect all child anon. classes
-     * @param list
-     * @param parent
+     * @param list non null
+     * @param parent non null
      * @param allowNested true to search in IType child elements too
-     * @throws JavaModelException
+     * @throws JavaModelException on error
      */
     private static void collectAllAnonymous(List<IJavaElement> list, IParent parent,
         boolean allowNested) throws JavaModelException {
@@ -1013,8 +961,8 @@ public class JdtUtils {
     }
 
     /**
-     * @param anonType
-     * @param anonymous
+     * @param anonType non null
+     * @param anonymous non null
      * @return the index of given java element in the anon. classes list, which was used
      *  by compiler to generate bytecode name for given element. If the given type is not
      *  in the list, then return value is '-1'
@@ -1033,7 +981,8 @@ public class JdtUtils {
     /**
      * Sort given anonymous classes in order like java compiler would generate output
      * classes, in context of given anonymous type
-     * @param anonymous
+     * @param anonymous non null
+     * @param anonType non null
      */
     private static void sortAnonymous(List<IJavaElement> anonymous, IType anonType) {
         SourceOffsetComparator sourceComparator = new SourceOffsetComparator();
@@ -1050,7 +999,7 @@ public class JdtUtils {
     private static void debugCompilePrio(
         final AnonymClassComparator classComparator) {
         final Map<IType, Integer> map = classComparator.map;
-        Comparator<IType> prioComp = new Comparator<IType>() {
+        Comparator<IType> prioComp = new Comparator<>() {
 
             @Override
             public int compare(IType e1, IType e2) {
@@ -1080,12 +1029,10 @@ public class JdtUtils {
      * Note, that nested inner anon. classes which do not have different non-anon. inner class
      * ancestors, are compiled in they nesting order, opposite to rule 2)
      *
-     * @param javaElement
-     * @return priority - lesser mean wil be compiled later, a value > 0
-     * @throws JavaModelException
+     * @param javaElement non null
+     * @return priority - lesser mean will be compiled later, a value > 0
      */
-    private static int getAnonCompilePriority50(IJavaElement javaElement,
-        IJavaElement firstAncestor, IJavaElement topAncestor) {
+    private static int getAnonCompilePriority50(IJavaElement javaElement) {
 
         // search for initializer block
         IJavaElement initBlock = getLastAncestor(javaElement, IJavaElement.INITIALIZER);
@@ -1101,7 +1048,7 @@ public class JdtUtils {
     private static int getAnonCompilePriority(IJavaElement elt,
         IJavaElement firstAncestor, IJavaElement topAncestor, boolean is50OrHigher) {
         if(is50OrHigher){
-            return getAnonCompilePriority50(elt, firstAncestor, topAncestor);
+            return getAnonCompilePriority50(elt);
         }
 
         IJavaElement firstNonAnon = getFirstNonAnonymous(elt, topAncestor);
@@ -1147,81 +1094,11 @@ public class JdtUtils {
         return Flags.isStatic(topFlags);
     }
 
-    public static ClassLoader getClassLoader(IJavaElement type) {
-        ClassLoader cl;
-
-        IJavaProject javaProject = type.getJavaProject();
-        List<URL> urls = new ArrayList<>();
-
-        getClassURLs(javaProject, urls);
-
-        if (urls.isEmpty()) {
-            cl = JdtUtils.class.getClassLoader();
-        } else {
-            cl = new URLClassLoader(urls.toArray(new URL[urls.size()]));
-        }
-        return cl;
-    }
-
-    private static void getClassURLs(IJavaProject javaProject, List<URL> urls) {
-        IProject project = javaProject.getProject();
-        IWorkspaceRoot workspaceRoot = project.getWorkspace().getRoot();
-
-        IClasspathEntry[] paths = null;
-        IPath defaultOutputLocation = null;
-        try {
-            paths = javaProject.getResolvedClasspath(true);
-            defaultOutputLocation = javaProject.getOutputLocation();
-        } catch (JavaModelException e) {
-            // don't show message to user neither log it
-            // BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-        }
-        if (paths != null) {
-            IPath projectPath = javaProject.getProject().getLocation();
-            for (int i = 0; i < paths.length; ++i) {
-                IClasspathEntry cpEntry = paths[i];
-                IPath p = null;
-                if (cpEntry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
-                    // filter out source container - there are unused for class
-                    // search - add bytecode output location instead
-                    p = cpEntry.getOutputLocation();
-                    if (p == null) {
-                        // default output used:
-                        p = defaultOutputLocation;
-                    }
-                } else if (cpEntry.getEntryKind() == IClasspathEntry.CPE_PROJECT) {
-                    String projName = cpEntry.getPath().toPortableString()
-                        .substring(1);
-                    IProject proj = workspaceRoot.getProject(projName);
-                    IJavaProject projj = JavaCore.create(proj);
-                    getClassURLs(projj, urls);
-                    continue;
-                } else {
-                    p = cpEntry.getPath();
-                }
-
-                if (p == null) {
-                    continue;
-                }
-                if (!p.toFile().exists()) {
-                    // removeFirstSegments: remove project from relative path
-                    p = projectPath.append(p.removeFirstSegments(1));
-                    if (!p.toFile().exists()) {
-                        continue;
-                    }
-                }
-                try {
-                    urls.add(p.toFile().toURI().toURL());
-                } catch (MalformedURLException e) {
-                    // don't show message to user
-                    BytecodeOutlinePlugin.log(e, IStatus.ERROR);
-                }
-            }
-        }
-    }
-
     /**
      * Check if java element is an interface or abstract method or a method from
+     * interface.
+     * @param javaEl can be null
+     * @return true if the given element is an interface or abstract method or a method from
      * interface.
      */
     public static boolean isAbstractOrInterface(IJavaElement javaEl) {
@@ -1311,10 +1188,6 @@ public class JdtUtils {
         private final boolean is50OrHigher;
         private final Map<IType, Integer> map;
 
-        /**
-         * @param javaElement
-         * @param sourceComparator
-         */
         public AnonymClassComparator(IType javaElement,
             SourceOffsetComparator sourceComparator) {
             this.sourceComparator = sourceComparator;
@@ -1324,8 +1197,11 @@ public class JdtUtils {
         }
 
         /**
-         * Very simple comparision based on init/not init block decision and then on the
+         * Very simple comparison based on init/not init block decision and then on the
          * source code position
+         * @param m1 non null
+         * @param m2 non null
+         * @return -1, 0 or 1
          */
         private int compare50(IType m1, IType m2){
 
@@ -1441,8 +1317,12 @@ public class JdtUtils {
     /**
      * Finds a type by the simple name.
      * see org.eclipse.jdt.internal.corext.codemanipulation.AddImportsOperation
+     * @param simpleTypeName non null
+     * @param searchScope non null
+     * @param monitor non null
      * @return null, if no types was found, empty array if more then one type was found,
      * or only one element, if single match exists
+     * @throws JavaModelException on search
      */
     public static IType[] getTypeForName(String simpleTypeName,
         final IJavaSearchScope searchScope, IProgressMonitor monitor)
@@ -1454,7 +1334,7 @@ public class JdtUtils {
             public void acceptType(int modifiers, char[] packageName,
                 char[] simpleTypeName1, char[][] enclosingTypeNames, String path) {
                 IType type = fFactory.create(packageName, simpleTypeName1,
-                    enclosingTypeNames, modifiers, path, searchScope);
+                    enclosingTypeNames, path, searchScope);
                 if (type != null) {
                     result.add(type);
                 }

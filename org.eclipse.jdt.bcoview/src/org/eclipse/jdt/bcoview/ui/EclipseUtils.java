@@ -13,18 +13,24 @@
  *******************************************************************************/
 package org.eclipse.jdt.bcoview.ui;
 
-import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.internal.ui.javaeditor.EditorUtility;
-import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionProvider;
+
+import org.eclipse.jface.text.ITextSelection;
+
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
+
 import org.eclipse.ui.texteditor.ITextEditor;
 
+import org.eclipse.jdt.core.IJavaElement;
+
+import org.eclipse.jdt.internal.ui.javaeditor.EditorUtility;
+
+@SuppressWarnings("restriction")
 public class EclipseUtils {
 
     /**
@@ -38,8 +44,7 @@ public class EclipseUtils {
      * @return current active editor in workbench
      */
     public static IEditorPart getActiveEditor() {
-        IWorkbenchWindow window = BytecodeOutlinePlugin.getDefault()
-            .getWorkbench().getActiveWorkbenchWindow();
+        IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
         if (window != null) {
             IWorkbenchPage page = window.getActivePage();
             if (page != null) {
@@ -49,10 +54,6 @@ public class EclipseUtils {
         return null;
     }
 
-    /**
-     * @param part
-     * @return editor input as IJavaElement
-     */
     public static IJavaElement getJavaInput(IEditorPart part) {
         IJavaElement input = part.getAdapter(IJavaElement.class);
         if (input != null) {
@@ -69,11 +70,6 @@ public class EclipseUtils {
         return input;
     }
 
-    /**
-     * @param editor
-     * @param offset
-     * @param length
-     */
     public static void selectInEditor(ITextEditor editor, int offset, int length) {
         IEditorPart active = getActiveEditor();
         if (active != editor) {
@@ -83,7 +79,7 @@ public class EclipseUtils {
     }
 
     /**
-     * @param selectionProvider
+     * @param selectionProvider non null
      * @return TextSelection or null, if provider does not provide TextSelection's
      */
     public static ITextSelection getSelection(
@@ -96,8 +92,8 @@ public class EclipseUtils {
     }
 
     /**
-     * @param resource
-     * @return full package name in default java notation (with dots)
+     * @param resource can be null
+     * @return full package name in default java notation (with dots) or empty string
      */
     public static String getJavaPackageName(IJavaElement resource) {
         String name;
