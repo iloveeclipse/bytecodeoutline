@@ -19,7 +19,7 @@ import org.objectweb.asm.Opcodes;
 
 public class DecompilerOptions {
 
-	public static int LATEST_ASM_VERSION = Opcodes.ASM9;
+	public static final int LATEST_ASM_VERSION = Opcodes.ASM9;
 
 	public final String fieldFilter;
 	public final String methodFilter;

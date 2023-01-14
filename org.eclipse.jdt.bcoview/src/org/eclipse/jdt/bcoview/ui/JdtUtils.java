@@ -858,7 +858,7 @@ public class JdtUtils {
 		packageName = packageName.replace(Signature.C_DOT, PACKAGE_SEPARATOR);
 
 		String className = classFile.getElementName();
-		if (packageName != null && packageName.length() > 0) {
+		if (packageName.length() > 0) {
 			return packageName + PACKAGE_SEPARATOR + className;
 		}
 		return className;
