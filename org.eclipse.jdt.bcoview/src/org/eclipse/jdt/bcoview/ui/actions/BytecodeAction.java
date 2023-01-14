@@ -15,7 +15,6 @@ package org.eclipse.jdt.bcoview.ui.actions;
 
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Iterator;
 
 import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
 import org.eclipse.jdt.bcoview.compare.BytecodeCompare;
@@ -111,8 +110,7 @@ public abstract class BytecodeAction implements IObjectActionDelegate {
 		ArrayList<Object> resources = null;
 		if (!selection.isEmpty()) {
 			resources = new ArrayList<>();
-			for (Iterator<?> elements = selection.iterator(); elements.hasNext();) {
-				Object next = elements.next();
+			for (Object next : selection) {
 				if (next instanceof IFile) {
 					resources.add(JavaCore.create((IFile)next));
 					continue;

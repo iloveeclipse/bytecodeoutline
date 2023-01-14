@@ -292,8 +292,7 @@ public class CommentedClassVisitor extends Textifier implements ICommentedClassV
 
 	private Index getIndex(Label label) {
 		Index index;
-		for (int i = 0; i < text.size(); i++) {
-			Object o = text.get(i);
+		for (Object o : text) {
 			if (o instanceof Index) {
 				index = (Index) o;
 				if (index.labelNode != null

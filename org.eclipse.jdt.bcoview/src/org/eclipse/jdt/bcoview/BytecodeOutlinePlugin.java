@@ -70,7 +70,7 @@ public class BytecodeOutlinePlugin extends AbstractUIPlugin {
 		ResourceBundle bundle = BytecodeOutlinePlugin.getDefault()
 				.getResourceBundle();
 		try {
-			return (bundle != null)
+			return bundle != null
 					? bundle.getString(key)
 							: key;
 		} catch (MissingResourceException e) {

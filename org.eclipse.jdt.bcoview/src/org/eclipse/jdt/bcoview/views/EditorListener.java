@@ -62,12 +62,9 @@ public class EditorListener implements ISelectionListener, IFileBufferListener, 
 					 */
 					Display display = Display.getDefault();
 					// fork
-					display.asyncExec(new Runnable() {
-						@Override
-						public void run() {
-							if(view != null) {
-								view.checkOpenEditors(true);
-							}
+					display.asyncExec(() -> {
+						if(view != null) {
+							view.checkOpenEditors(true);
 						}
 					});
 				}
@@ -90,20 +87,12 @@ public class EditorListener implements ISelectionListener, IFileBufferListener, 
 			if(!isDirty){
 				// this one will be called in UI thread after some delay, because we need
 				// to wait until the bytecode will be written on disk
-				final Runnable runnable2 = new Runnable() {
-					@Override
-					public void run() {
-						view.handleBufferIsDirty(isDirty);
-					}
-				};
+				final Runnable runnable2 = () -> view.handleBufferIsDirty(isDirty);
 				// this one will be called in UI thread ASAP and allow us to leave
 				// current (probably non-UI) thread
-				Runnable runnable1 = new Runnable() {
-					@Override
-					public void run() {
-						Display display = Display.getCurrent();
-						display.timerExec(1000, runnable2);
-					}
+				Runnable runnable1 = () -> {
+					Display display = Display.getCurrent();
+					display.timerExec(1000, runnable2);
 				};
 				Display display = Display.getDefault();
 				// fork

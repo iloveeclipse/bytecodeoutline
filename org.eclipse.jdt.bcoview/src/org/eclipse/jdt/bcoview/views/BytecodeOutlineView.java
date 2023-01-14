@@ -68,7 +68,6 @@ import org.eclipse.core.filebuffers.FileBuffers;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
@@ -77,7 +76,6 @@ import org.eclipse.jface.action.StatusLineManager;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 
 import org.eclipse.jface.text.BadLocationException;
@@ -90,7 +88,6 @@ import org.eclipse.jface.text.ITextListener;
 import org.eclipse.jface.text.ITextOperationTarget;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.text.ITextViewer;
-import org.eclipse.jface.text.TextEvent;
 import org.eclipse.jface.text.TextViewer;
 import org.eclipse.jface.text.hyperlink.IHyperlink;
 import org.eclipse.jface.text.hyperlink.IHyperlinkDetector;
@@ -286,8 +283,8 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		setRawModeAction
 		.setEnabled(on && !toggleASMifierModeAction.isChecked());
 		boolean showAnalyzer = on && toggleVerifierAction.isChecked();
-		for (int i = 0; i < toggleOrientationActions.length; ++i) {
-			toggleOrientationActions[i].setEnabled(showAnalyzer);
+		for (ToggleOrientationAction toggleOrientationAction : toggleOrientationActions) {
+			toggleOrientationAction.setEnabled(showAnalyzer);
 		}
 	}
 
@@ -653,8 +650,8 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 				new ToggleOrientationAction(VIEW_ORIENTATION_VERTICAL),
 				new ToggleOrientationAction(VIEW_ORIENTATION_HORIZONTAL),
 				new ToggleOrientationAction(VIEW_ORIENTATION_AUTOMATIC)};
-		for (int i = 0; i < toggleOrientationActions.length; ++i) {
-			mmanager.add(toggleOrientationActions[i]);
+		for (ToggleOrientationAction toggleOrientationAction : toggleOrientationActions) {
+			mmanager.add(toggleOrientationAction);
 		}
 
 		tmanager.add(linkWithEditorAction);
@@ -742,13 +739,7 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		String id = "org.eclipse.jdt.bcoview.views.BytecodeOutlineView#ContextMenu"; //$NON-NLS-1$
 		contextMenuManager = new MenuManager("#ContextMenu", id); //$NON-NLS-1$
 		contextMenuManager.setRemoveAllWhenShown(true);
-		contextMenuManager.addMenuListener(new IMenuListener() {
-
-			@Override
-			public void menuAboutToShow(IMenuManager m) {
-				contextMenuAboutToShow(m);
-			}
-		});
+		contextMenuManager.addMenuListener(this::contextMenuAboutToShow);
 		Menu menu = contextMenuManager.createContextMenu(textControl);
 		textControl.setMenu(menu);
 
@@ -772,27 +763,19 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		IDocument document = new Document(""); //$NON-NLS-1$
 		textViewer.setDocument(document);
 
-		textSelectionListener = new ISelectionChangedListener() {
-
-			@Override
-			public void selectionChanged(SelectionChangedEvent event) {
-				// Updates selection dependent actions like find/copy.
-				Iterator<String> iterator = selectionActions.iterator();
-				while (iterator.hasNext()) {
-					updateAction(iterator.next());
-				}
+		textSelectionListener = event -> {
+			// Updates selection dependent actions like find/copy.
+			Iterator<String> iterator = selectionActions.iterator();
+			while (iterator.hasNext()) {
+				updateAction(iterator.next());
 			}
 		};
 
-		textListener = new ITextListener() {
-
-			@Override
-			public void textChanged(TextEvent event) {
-				IUpdate findReplace = (IUpdate) globalActions
-						.get(ActionFactory.FIND.getId());
-				if (findReplace != null) {
-					findReplace.update();
-				}
+		textListener = event -> {
+			IUpdate findReplace = (IUpdate) globalActions
+					.get(ActionFactory.FIND.getId());
+			if (findReplace != null) {
+				findReplace.update();
 			}
 		};
 
@@ -1184,8 +1167,8 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			hasAnalyzerError = true;
 			// currentErrorMessage = ...
 		}
-		for (int i = 0; i < errors.size(); ++i) {
-			int l = errors.get(i).intValue();
+		for (Integer error : errors) {
+			int l = error.intValue();
 			tableControl.getItem(l).setForeground(errorColor);
 		}
 		toggleVerifierAction.setEnabled(true);
@@ -1702,10 +1685,10 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 				? SWT.HORIZONTAL
 						: SWT.VERTICAL);
 
-		for (int i = 0; i < toggleOrientationActions.length; ++i) {
-			toggleOrientationActions[i]
-					.setChecked(orientation == toggleOrientationActions[i]
-							.getOrientation());
+		for (ToggleOrientationAction toggleOrientationAction : toggleOrientationActions) {
+			toggleOrientationAction
+			.setChecked(orientation == toggleOrientationAction
+			.getOrientation());
 		}
 
 		currentOrientation = orientation;
@@ -1750,8 +1733,8 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 		}
 		stackComposite.layout();
 
-		for (int i = 0; i < toggleOrientationActions.length; ++i) {
-			toggleOrientationActions[i].setEnabled(showAnalyzer);
+		for (ToggleOrientationAction toggleOrientationAction : toggleOrientationActions) {
+			toggleOrientationAction.setEnabled(showAnalyzer);
 		}
 		mmanager.markDirty();
 		mmanager.update();
@@ -1853,13 +1836,13 @@ public class BytecodeOutlineView extends ViewPart implements IBytecodePart {
 			if (elements.length == 0) {
 				return null;
 			}
-			for (int i = 0; i < elements.length; i++) {
-				if (elements[i] == null) {
+			for (IJavaElement element : elements) {
+				if (element == null) {
 					continue;
 				}
 				addHyperlinks2(
 						links, wordRegion, (SelectionDispatchAction) openAction,
-						elements[i], elements.length > 1);
+						element, elements.length > 1);
 			}
 			if (links.size() == 0) {
 				return null;

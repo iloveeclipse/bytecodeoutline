@@ -113,12 +113,7 @@ public class TypedElement extends BufferedContent implements ITypedElement, IStr
 		}
 		final byte[] bytes = decompiledClass.getText().getBytes(Charset.forName("UTF-8")); //$NON-NLS-1$
 		// use internal buffering to prevent multiple calls to this method
-		Display.getDefault().syncExec(new Runnable(){
-			@Override
-			public void run() {
-				setContent(bytes);
-			}
-		});
+		Display.getDefault().syncExec(() -> setContent(bytes));
 
 		return new ByteArrayInputStream(bytes);
 	}

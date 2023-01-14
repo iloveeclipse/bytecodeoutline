@@ -53,7 +53,7 @@ public class DecompiledClass {
 	public boolean isAbstractOrInterface() {
 		int accessFlags = classInfo.accessFlags;
 		return (accessFlags & Opcodes.ACC_ABSTRACT) != 0
-				|| ((accessFlags & Opcodes.ACC_INTERFACE) != 0);
+				|| (accessFlags & Opcodes.ACC_INTERFACE) != 0;
 	}
 
 	public boolean isDefaultMethodPossible(){
@@ -63,8 +63,7 @@ public class DecompiledClass {
 	public String getText() {
 		if (value == null) {
 			StringBuffer buf = new StringBuffer();
-			for (int i = 0; i < text.size(); ++i) {
-				Object o = text.get(i);
+			for (Object o : text) {
 				if (o instanceof DecompiledMethod) {
 					buf.append(((DecompiledMethod) o).getText());
 				} else {
@@ -82,8 +81,8 @@ public class DecompiledClass {
 			Object o = text.get(i);
 			if (o instanceof DecompiledMethod) {
 				String[][] mlines = ((DecompiledMethod) o).getTextTable();
-				for (int j = 0; j < mlines.length; ++j) {
-					lines.add(mlines[j]);
+				for (String[] mline : mlines) {
+					lines.add(mline);
 				}
 			} else {
 				lines.add(new String[]{"", "", "", o.toString(), ""}); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
@@ -94,8 +93,7 @@ public class DecompiledClass {
 
 	public int getBytecodeOffset(final int decompiledLine) {
 		int currentDecompiledLine = 0;
-		for (int i = 0; i < text.size(); ++i) {
-			Object o = text.get(i);
+		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
 				DecompiledMethod m = (DecompiledMethod) o;
 				Integer offset = m.getBytecodeOffset(decompiledLine
@@ -113,8 +111,7 @@ public class DecompiledClass {
 
 	public int getBytecodeInsn(final int decompiledLine) {
 		int currentDecompiledLine = 0;
-		for (int i = 0; i < text.size(); ++i) {
-			Object o = text.get(i);
+		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
 				DecompiledMethod m = (DecompiledMethod) o;
 				Integer opcode = m.getBytecodeInsn(decompiledLine
@@ -132,8 +129,7 @@ public class DecompiledClass {
 
 	public int getSourceLine(final int decompiledLine) {
 		int currentDecompiledLine = 0;
-		for (int i = 0; i < text.size(); ++i) {
-			Object o = text.get(i);
+		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
 				DecompiledMethod m = (DecompiledMethod) o;
 				int l = m.getSourceLine(decompiledLine - currentDecompiledLine);
@@ -150,8 +146,7 @@ public class DecompiledClass {
 
 	public DecompiledMethod getMethod(final int decompiledLine) {
 		int currentDecompiledLine = 0;
-		for (int i = 0; i < text.size(); ++i) {
-			Object o = text.get(i);
+		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
 				DecompiledMethod m = (DecompiledMethod) o;
 				int l = m.getSourceLine(decompiledLine - currentDecompiledLine);
@@ -186,8 +181,7 @@ public class DecompiledClass {
 
 	public int getDecompiledLine(String methSignature) {
 		int currentDecompiledLine = 0;
-		for (int i = 0; i < text.size(); ++i) {
-			Object o = text.get(i);
+		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
 				DecompiledMethod m = (DecompiledMethod) o;
 				if (methSignature.equals(m.getSignature())) {
@@ -203,8 +197,7 @@ public class DecompiledClass {
 
 	public String[][][] getFrameTablesForInsn(final int insn,
 			boolean useQualifiedNames) {
-		for (int i = 0; i < text.size(); ++i) {
-			Object o = text.get(i);
+		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
 				DecompiledMethod m = (DecompiledMethod) o;
 				String[][][] frame = m.getFrameTablesForInsn(insn, useQualifiedNames);
@@ -218,8 +211,7 @@ public class DecompiledClass {
 	public String[][][] getFrameTables(final int decompiledLine,
 			boolean useQualifiedNames) {
 		int currentDecompiledLine = 0;
-		for (int i = 0; i < text.size(); ++i) {
-			Object o = text.get(i);
+		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
 				DecompiledMethod m = (DecompiledMethod) o;
 				String[][][] frame = m.getFrameTables(decompiledLine
@@ -237,8 +229,7 @@ public class DecompiledClass {
 
 	public int getDecompiledLine(final int sourceLine) {
 		int currentDecompiledLine = 0;
-		for (int i = 0; i < text.size(); ++i) {
-			Object o = text.get(i);
+		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
 				DecompiledMethod m = (DecompiledMethod) o;
 				int l = m.getDecompiledLine(sourceLine);
@@ -261,8 +252,7 @@ public class DecompiledClass {
 	 */
 	public int getDecompiledLine(final DecompiledMethod m1, final int decompiledLine) {
 		int currentDecompiledLine = 0;
-		for (int i = 0; i < text.size(); ++i) {
-			Object o = text.get(i);
+		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
 				if (o == m1){
 					return currentDecompiledLine + decompiledLine;
@@ -298,8 +288,7 @@ public class DecompiledClass {
 	public DecompiledMethod getBestDecompiledMatch(int sourceLine) {
 		DecompiledMethod bestM = null;
 
-		for (int i = 0; i < text.size(); ++i) {
-			Object o = text.get(i);
+		for (Object o : text) {
 			if (o instanceof DecompiledMethod) {
 				DecompiledMethod m = (DecompiledMethod) o;
 				int line = m.getBestDecompiledLine(sourceLine);

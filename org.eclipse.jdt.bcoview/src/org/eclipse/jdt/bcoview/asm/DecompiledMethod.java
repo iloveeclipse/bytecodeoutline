@@ -257,8 +257,7 @@ public class DecompiledMethod {
 	}
 
 	private void updateLocals(final Index index, final Map<Integer, String> locals) {
-		for (int i = 0; i < localVariables.size(); ++i) {
-			LocalVariableNode lvNode = localVariables.get(i);
+		for (LocalVariableNode lvNode : localVariables) {
 			if (lvNode.start == index.labelNode) {
 				locals.put(Integer.valueOf(lvNode.index), lvNode.name);
 			} else if (lvNode.end == index.labelNode) {
@@ -271,11 +270,10 @@ public class DecompiledMethod {
 		int currentDecompiledLine = 0;
 		int firstLine = -1;
 		int lastLine = -1;
-		for (int i = 0; i < text.size(); ++i) {
+		for (Object o : text) {
 			int currentOpcode = -1;
 			int currentInsn1 = -1;
 			int currentSourceLine = -1;
-			Object o = text.get(i);
 			if (o instanceof Index) {
 				Index index = (Index) o;
 				Integer sourceLine = null;
@@ -319,8 +317,7 @@ public class DecompiledMethod {
 
 	public String getText() {
 		StringBuffer buf = new StringBuffer();
-		for (int i = 0; i < text.size(); ++i) {
-			Object o = text.get(i);
+		for (Object o : text) {
 			if (!(o instanceof Index)) {
 				buf.append((String) o);
 			}
@@ -458,8 +455,7 @@ public class DecompiledMethod {
 				ArrayList<String[]> locals = new ArrayList<>();
 				for (int i = 0; i < f.getLocals(); ++i) {
 					String varName = ""; //$NON-NLS-1$
-					for (Iterator<LocalVariableNode> it = localVariables.iterator(); it.hasNext();) {
-						LocalVariableNode lvnode = it.next();
+					for (LocalVariableNode lvnode : localVariables) {
 						int n = lvnode.index;
 						if( n==i) {
 							varName = lvnode.name;

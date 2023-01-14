@@ -67,24 +67,21 @@ class BCOViewSelectionProvider implements IPostSelectionProvider {
 
 	@Override
 	public void addPostSelectionChangedListener(ISelectionChangedListener listener) {
-		for (int i = 0; i < selProviders.size(); i++) {
-			IPostSelectionProvider provider = selProviders.get(i);
+		for (IPostSelectionProvider provider : selProviders) {
 			provider.addPostSelectionChangedListener(listener);
 		}
 	}
 
 	@Override
 	public void removePostSelectionChangedListener(ISelectionChangedListener listener) {
-		for (int i = 0; i < selProviders.size(); i++) {
-			IPostSelectionProvider provider = selProviders.get(i);
+		for (IPostSelectionProvider provider : selProviders) {
 			provider.removePostSelectionChangedListener(listener);
 		}
 	}
 
 	@Override
 	public void addSelectionChangedListener(ISelectionChangedListener listener) {
-		for (int i = 0; i < selProviders.size(); i++) {
-			IPostSelectionProvider provider = selProviders.get(i);
+		for (IPostSelectionProvider provider : selProviders) {
 			provider.addSelectionChangedListener(listener);
 		}
 	}
@@ -96,8 +93,7 @@ class BCOViewSelectionProvider implements IPostSelectionProvider {
 
 	@Override
 	public void removeSelectionChangedListener(ISelectionChangedListener listener) {
-		for (int i = 0; i < selProviders.size(); i++) {
-			IPostSelectionProvider provider = selProviders.get(i);
+		for (IPostSelectionProvider provider : selProviders) {
 			provider.removeSelectionChangedListener(listener);
 		}
 	}

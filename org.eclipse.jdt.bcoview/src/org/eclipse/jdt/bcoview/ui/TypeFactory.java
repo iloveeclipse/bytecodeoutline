@@ -14,7 +14,6 @@
 package org.eclipse.jdt.bcoview.ui;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
@@ -78,8 +77,8 @@ public class TypeFactory {
 	public String getTypeQualifiedName() {
 		if (enclosingNames != null && enclosingNames.length > 0) {
 			StringBuffer buf = new StringBuffer();
-			for (int i = 0; i < enclosingNames.length; i++) {
-				buf.append(enclosingNames[i]);
+			for (char[] enclosingName : enclosingNames) {
+				buf.append(enclosingName);
 				buf.append('.');
 			}
 			buf.append(simpleTypeName);
@@ -188,8 +187,7 @@ public class TypeFactory {
 	}
 
 	private String getProject(String path) {
-		for (int i = 0; i < fProjects.length; i++) {
-			String project = fProjects[i];
+		for (String project : fProjects) {
 			if (path.startsWith(project, 1)) {
 				return project;
 			}
@@ -212,19 +210,16 @@ public class TypeFactory {
 		// We have to sort the list of project names to make sure that we cut of the longest
 		// project from the path, if two projects with the same prefix exist. For example
 		// org.eclipse.jdt.ui and org.eclipse.jdt.ui.tests.
-		Arrays.sort(result, new Comparator<String>() {
-			@Override
-			public int compare(String o1, String o2) {
-				int l1 = o1.length();
-				int l2 = o2.length();
-				if (l1 < l2) {
-					return 1;
-				}
-				if (l2 < l1) {
-					return -1;
-				}
-				return 0;
+		Arrays.sort(result, (o1, o2) -> {
+			int l1 = o1.length();
+			int l2 = o2.length();
+			if (l1 < l2) {
+				return 1;
 			}
+			if (l2 < l1) {
+				return -1;
+			}
+			return 0;
 		});
 		return result;
 	}
@@ -263,10 +258,10 @@ public class TypeFactory {
 	private static IType findTypeInCompilationUnit(ICompilationUnit cu,
 			String typeQualifiedName) throws JavaModelException {
 		IType[] types = cu.getAllTypes();
-		for (int i = 0; i < types.length; i++) {
-			String currName = getTypeQualifiedName(types[i]);
+		for (IType type : types) {
+			String currName = getTypeQualifiedName(type);
 			if (typeQualifiedName.equals(currName)) {
-				return types[i];
+				return type;
 			}
 		}
 		return null;
@@ -295,8 +290,7 @@ public class TypeFactory {
 			IJavaModel jmodel = JavaCore.create(ResourcesPlugin.getWorkspace().getRoot());
 			IPath[] enclosedPaths = scope.enclosingProjectsAndJars();
 
-			for (int i = 0; i < enclosedPaths.length; i++) {
-				IPath curr = enclosedPaths[i];
+			for (IPath curr : enclosedPaths) {
 				if (curr.segmentCount() == 1) {
 					IJavaProject jproject = jmodel.getJavaProject(curr.segment(0));
 					IPackageFragmentRoot root = jproject.getPackageFragmentRoot(fJar);
@@ -307,8 +301,7 @@ public class TypeFactory {
 			}
 			List<IPath> paths = Arrays.asList(enclosedPaths);
 			IJavaProject[] projects = jmodel.getJavaProjects();
-			for (int i = 0; i < projects.length; i++) {
-				IJavaProject jproject = projects[i];
+			for (IJavaProject jproject : projects) {
 				if (!paths.contains(jproject.getPath())) {
 					IPackageFragmentRoot root = jproject.getPackageFragmentRoot(fJar);
 					if (root.exists()) {

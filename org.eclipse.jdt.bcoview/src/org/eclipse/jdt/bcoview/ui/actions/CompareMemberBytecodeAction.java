@@ -14,7 +14,6 @@
 package org.eclipse.jdt.bcoview.ui.actions;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.eclipse.jdt.bcoview.BytecodeOutlinePlugin;
 
@@ -43,8 +42,7 @@ public class CompareMemberBytecodeAction extends BytecodeAction {
 		ArrayList<Object> resources = null;
 		if (!selection.isEmpty()) {
 			resources = new ArrayList<>();
-			for (Iterator<?> elements = selection.iterator(); elements.hasNext();) {
-				Object next = elements.next();
+			for (Object next : selection) {
 				if (next instanceof IMember) {
 					resources.add(next);
 					continue;

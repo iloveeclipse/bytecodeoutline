@@ -83,8 +83,8 @@ public class JdtUtils {
 	public static IJavaElement getMethod(IParent parent, String signature){
 		try {
 			IJavaElement[] children = parent.getChildren();
-			for (int i = 0; i < children.length; i++) {
-				IJavaElement javaElement = children[i];
+			for (IJavaElement child : children) {
+				IJavaElement javaElement = child;
 				switch (javaElement.getElementType()) {
 					case IJavaElement.INITIALIZER :
 						// fall through
@@ -180,13 +180,13 @@ public class JdtUtils {
 		}
 
 		// doSomething(Lgenerics/DummyForAsmGenerics;)Lgenerics/DummyForAsmGenerics;
-		for (int i = 0; i < parameterTypes.length; i++) {
-			String resolvedType = getResolvedType(parameterTypes[i], declaringType);
+		for (String parameterType : parameterTypes) {
+			String resolvedType = getResolvedType(parameterType, declaringType);
 			if(resolvedType != null && resolvedType.length() > 0){
 				sb.append(resolvedType);
 			} else {
 				// this is a generic type
-				appendGenericType(sb, iMethod, parameterTypes[i]);
+				appendGenericType(sb, iMethod, parameterType);
 			}
 		}
 		sb.append(')');
@@ -246,8 +246,8 @@ public class JdtUtils {
 		if(bounds.length == 0){
 			sb.append("Ljava/lang/Object;"); //$NON-NLS-1$
 		} else {
-			for (int i = 0; i < bounds.length; i++) {
-				String simplyName = bounds[i];
+			for (String bound : bounds) {
+				String simplyName = bound;
 				simplyName =  Signature.C_UNRESOLVED + simplyName + Signature.C_NAME_END;
 				String resolvedType = getResolvedType(simplyName, declaringType);
 				sb.append(resolvedType);
@@ -371,7 +371,7 @@ public class JdtUtils {
 	 * @return true, if character is not a symbol for reference types
 	 */
 	private static boolean isPrimitiveType(char first) {
-		return (first != Signature.C_RESOLVED && first != Signature.C_UNRESOLVED);
+		return first != Signature.C_RESOLVED && first != Signature.C_UNRESOLVED;
 	}
 
 	/**
@@ -694,8 +694,7 @@ public class JdtUtils {
 		// resolve multiple output locations here
 		if (project.exists() && project.getProject().isOpen()) {
 			IClasspathEntry entries[] = project.getRawClasspath();
-			for (int i = 0; i < entries.length; i++) {
-				IClasspathEntry classpathEntry = entries[i];
+			for (IClasspathEntry classpathEntry : entries) {
 				if (classpathEntry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
 					IPath outputPath = classpathEntry.getOutputLocation();
 					if (outputPath != null
@@ -947,8 +946,7 @@ public class JdtUtils {
 	private static void collectAllAnonymous(List<IJavaElement> list, IParent parent,
 			boolean allowNested) throws JavaModelException {
 		IJavaElement[] children = parent.getChildren();
-		for (int i = 0; i < children.length; i++) {
-			IJavaElement childElem = children[i];
+		for (IJavaElement childElem : children) {
 			if (isAnonymousType(childElem)) {
 				list.add(childElem);
 			}
@@ -999,17 +997,12 @@ public class JdtUtils {
 	private static void debugCompilePrio(
 			final AnonymClassComparator classComparator) {
 		final Map<IType, Integer> map = classComparator.map;
-		Comparator<IType> prioComp = new Comparator<>() {
-
-			@Override
-			public int compare(IType e1, IType e2) {
-				int result = map.get(e2).compareTo(map.get(e1));
-				if (result == 0) {
-					return e1.toString().compareTo(e2.toString());
-				}
-				return result;
+		Comparator<IType> prioComp = (e1, e2) -> {
+			int result = map.get(e2).compareTo(map.get(e1));
+			if (result == 0) {
+				return e1.toString().compareTo(e2.toString());
 			}
-
+			return result;
 		};
 
 		List<IType> keys = new ArrayList<>(map.keySet());
@@ -1358,8 +1351,7 @@ public class JdtUtils {
 	 */
 	public static IJavaElement[] selectOpenableElements(IJavaElement[] elements) {
 		List<IJavaElement> result= new ArrayList<>(elements.length);
-		for (int i= 0; i < elements.length; i++) {
-			IJavaElement element= elements[i];
+		for (IJavaElement element : elements) {
 			if(element == null) {
 				continue;
 			}
